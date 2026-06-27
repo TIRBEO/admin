@@ -59,19 +59,25 @@ export const SIDEBAR_VISIBILITY: Record<AdminRole, string[]> = {
     "overview", "users", "settings", "analytics",
     "security", "content", "integrations", "reports",
     "trash", "admins", "audit",
+    "system-status", "notifications", "content-approval",
+    "backups", "announcements", "exports", "impersonation",
   ],
   admin: [
     "overview", "users", "settings", "analytics",
     "security", "content", "integrations", "reports",
     "trash", "admins", "audit",
+    "system-status", "notifications", "content-approval",
+    "backups", "announcements", "exports",
   ],
   manager: [
     "overview", "settings", "analytics",
     "content", "integrations", "reports", "trash",
+    "notifications", "content-approval", "announcements", "exports",
   ],
   editor: [
     "overview", "settings", "analytics",
     "content", "reports",
+    "notifications", "exports",
   ],
   viewer: [
     "overview", "analytics", "reports",

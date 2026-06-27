@@ -17,6 +17,13 @@ import PricingPage from "@/pages/PricingPage";
 import AdminsPage from "@/pages/AdminsPage";
 import AuditLogPage from "@/pages/AuditLogPage";
 import SettingsPage from "@/pages/Settings";
+import SystemStatus from "@/pages/SystemStatus";
+import NotificationsPage from "@/pages/NotificationsPage";
+import ContentApproval from "@/pages/ContentApproval";
+import BackupManager from "@/pages/BackupManager";
+import AnnouncementManager from "@/pages/AnnouncementManager";
+import ExportManager from "@/pages/ExportManager";
+import UserImpersonation from "@/pages/UserImpersonation";
 
 function ProtectedRoute({ children, minRole = "viewer" }: { children: React.ReactNode; minRole?: AdminRole }) {
   const { session, admin, loading } = useAuth();
@@ -70,6 +77,15 @@ export default function App() {
         <Route path="/pricing" element={<ProtectedRoute minRole="editor"><PricingPage /></ProtectedRoute>} />
         <Route path="/admins" element={<ProtectedRoute minRole="admin"><AdminsPage /></ProtectedRoute>} />
         <Route path="/audit-log" element={<ProtectedRoute minRole="admin"><AuditLogPage /></ProtectedRoute>} />
+        <Route path="/admin/system-status" element={<ProtectedRoute minRole="manager"><SystemStatus /></ProtectedRoute>} />
+        <Route path="/admin/notifications" element={<ProtectedRoute minRole="editor"><NotificationsPage /></ProtectedRoute>} />
+        <Route path="/admin/admins" element={<ProtectedRoute minRole="admin"><AdminsPage /></ProtectedRoute>} />
+        <Route path="/admin/audit" element={<ProtectedRoute minRole="admin"><AuditLogPage /></ProtectedRoute>} />
+        <Route path="/admin/content-approval" element={<ProtectedRoute minRole="manager"><ContentApproval /></ProtectedRoute>} />
+        <Route path="/admin/backups" element={<ProtectedRoute minRole="admin"><BackupManager /></ProtectedRoute>} />
+        <Route path="/admin/announcements" element={<ProtectedRoute minRole="manager"><AnnouncementManager /></ProtectedRoute>} />
+        <Route path="/admin/exports" element={<ProtectedRoute minRole="editor"><ExportManager /></ProtectedRoute>} />
+        <Route path="/admin/impersonation" element={<ProtectedRoute minRole="super_admin"><UserImpersonation /></ProtectedRoute>} />
 
         <Route path="/apps/:appId/overview" element={<ProtectedRoute minRole="viewer"><Dashboard /></ProtectedRoute>} />
         <Route path="/apps/:appId/settings" element={<ProtectedRoute minRole="editor"><SettingsPage /></ProtectedRoute>} />

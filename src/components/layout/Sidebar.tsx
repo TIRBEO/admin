@@ -4,6 +4,7 @@ import { canViewSidebarItem } from "../../lib/permissions";
 import {
   LayoutDashboard, Users, Settings, BarChart3, Shield,
   FileText, Plug, FileBarChart, Trash2, UserCog, ScrollText,
+  Activity, Bell, FileCheck, HardDrive, Megaphone, Download, Eye,
 } from "lucide-react";
 import { APPS } from "../../lib/apps.config";
 
@@ -24,8 +25,15 @@ export function Sidebar({ currentApp }: { currentApp: string }) {
   ];
 
   const adminItems = [
+    { icon: Activity, label: "System Status", path: "/admin/system-status", key: "system-status" },
+    { icon: Bell, label: "Notifications", path: "/admin/notifications", key: "notifications" },
     { icon: UserCog, label: "Admins", path: "/admin/admins", key: "admins" },
     { icon: ScrollText, label: "Audit Log", path: "/admin/audit", key: "audit" },
+    { icon: FileCheck, label: "Content Approval", path: "/admin/content-approval", key: "content-approval" },
+    { icon: HardDrive, label: "Backups", path: "/admin/backups", key: "backups" },
+    { icon: Megaphone, label: "Announcements", path: "/admin/announcements", key: "announcements" },
+    { icon: Download, label: "Exports", path: "/admin/exports", key: "exports" },
+    { icon: Eye, label: "Impersonation", path: "/admin/impersonation", key: "impersonation" },
   ];
 
   const visibleNavItems = navItems.filter(item => role && canViewSidebarItem(role, item.key));
