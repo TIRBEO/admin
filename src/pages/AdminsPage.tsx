@@ -45,11 +45,22 @@ export default function AdminsPage() {
     setError("");
     if (!newEmail) { setError("Email is required"); return; }
 
-    // Look up the user in auth.users via admin API
-    const { data: users, error: listError } = await supabase.auth.admin.listUsers();
-    if (listError) { setError("Failed to look up user. Ensure you have admin privileges."); return; }
+    // Look up the user via serverless API (uses service_role key server-side)
+    let found;
+    try {
+      const resp = await fetch("/api/lookup-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: newEmail.toLowerCase().trim() }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) { setError(data.error || "Failed to look up user"); return; }
+      found = data;
+    } catch {
+      setError("Failed to look up user. Server error.");
+      return;
+    }
 
-    const found = users?.users.find((u) => u.email === newEmail.toLowerCase().trim());
     if (!found) { setError(`User "${newEmail}" not found. They must sign up first.`); return; }
 
     // Check if already admin
@@ -59,7 +70,7 @@ export default function AdminsPage() {
     const { error: insertError } = await supabase.from("admin_users").insert({
       user_id: found.id,
       email: newEmail.toLowerCase().trim(),
-      display_name: newDisplayName || found.user_metadata?.display_name || found.email,
+      display_name: newDisplayName || found.display_name || found.email,
       role: newRole,
     });
 
