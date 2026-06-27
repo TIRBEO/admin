@@ -1,16 +1,17 @@
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../lib/useAuth";
 import { canViewSidebarItem } from "../../lib/permissions";
+import { APPS } from "../../lib/apps.config";
 import {
   LayoutDashboard, Users, Settings, BarChart3, Shield,
   FileText, Plug, FileBarChart, Trash2, UserCog, ScrollText,
   Activity, Bell, FileCheck, HardDrive, Megaphone, Download, Eye,
 } from "lucide-react";
-import { APPS } from "../../lib/apps.config";
 
 export function Sidebar({ currentApp }: { currentApp: string }) {
   const { role, admin } = useAuth();
   const app = APPS[currentApp];
+  const AppIcon = app?.icon;
 
   const navItems = [
     { icon: LayoutDashboard, label: "Overview", path: `/apps/${currentApp}/overview`, key: "overview" },
@@ -34,6 +35,7 @@ export function Sidebar({ currentApp }: { currentApp: string }) {
     { icon: Megaphone, label: "Announcements", path: "/admin/announcements", key: "announcements" },
     { icon: Download, label: "Exports", path: "/admin/exports", key: "exports" },
     { icon: Eye, label: "Impersonation", path: "/admin/impersonation", key: "impersonation" },
+    { icon: FileText, label: "Blog", path: "/admin/blog", key: "blog" },
   ];
 
   const visibleNavItems = navItems.filter(item => role && canViewSidebarItem(role, item.key));
@@ -43,14 +45,13 @@ export function Sidebar({ currentApp }: { currentApp: string }) {
     <aside className="w-64 bg-neutral-950 border-r border-white/5 flex flex-col h-screen sticky top-0">
       <div className="p-4 border-b border-white/5">
         <div className="flex items-center gap-3">
-          <span className="text-3xl">{app?.icon || "📱"}</span>
+          {AppIcon && <AppIcon className="w-6 h-6 text-neutral-300" />}
           <div className="flex-1 min-w-0">
             <div className="text-sm font-semibold text-white truncate">{app?.name || "Select App"}</div>
             <div className="text-xs text-neutral-500">v{app?.version || "1.0.0"}</div>
           </div>
         </div>
       </div>
-
       <nav className="flex-1 overflow-y-auto p-3 space-y-1">
         {visibleNavItems.map((item) => (
           <NavLink
@@ -68,7 +69,6 @@ export function Sidebar({ currentApp }: { currentApp: string }) {
             <span className="text-sm">{item.label}</span>
           </NavLink>
         ))}
-
         {visibleAdminItems.length > 0 && (
           <>
             <div className="h-px bg-white/5 my-3" />
@@ -92,7 +92,6 @@ export function Sidebar({ currentApp }: { currentApp: string }) {
           </>
         )}
       </nav>
-
       <div className="p-4 border-t border-white/5">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-neutral-800 flex items-center justify-center text-neutral-300 font-semibold text-sm">

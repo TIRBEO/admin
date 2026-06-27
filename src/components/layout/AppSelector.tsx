@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown, Check, Search } from "lucide-react";
+import { ChevronDown, Check, Search, type LucideIcon } from "lucide-react";
 import { useAuth } from "../../lib/useAuth";
 import { useAppStore } from "../../hooks/useAppStore";
 import { APPS, APP_OPTIONS } from "../../lib/apps.config";
@@ -15,6 +15,7 @@ export function AppSelector({ currentApp, onAppChange }: {
   const { role } = useAuth();
 
   const currentAppConfig = APPS[currentApp];
+  const CurrentIcon = currentAppConfig?.icon;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -35,7 +36,7 @@ export function AppSelector({ currentApp, onAppChange }: {
   const getVisibleApps = () => {
     const allApps = APP_OPTIONS.filter(app => APPS[app.value].isActive);
     if (role === "super_admin" || role === "admin") return allApps;
-    return allApps.filter(app => !["identity", "company"].includes(app.value));
+    return allApps.filter(app => app.value !== "identity");
   };
 
   const visibleApps = getVisibleApps();
@@ -49,7 +50,7 @@ export function AppSelector({ currentApp, onAppChange }: {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-3 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 transition-all duration-200 min-w-[200px]"
       >
-        <span className="text-2xl">{currentAppConfig?.icon || "📱"}</span>
+        {CurrentIcon && <CurrentIcon className="w-5 h-5 text-neutral-300" />}
         <div className="flex-1 text-left">
           <div className="text-sm font-medium text-white">{currentAppConfig?.name || "Select App"}</div>
           <div className="text-xs text-neutral-400">{currentAppConfig?.version || "v1.0.0"}</div>
@@ -104,6 +105,7 @@ export function AppSelector({ currentApp, onAppChange }: {
 function AppOption({ appId, isActive, onClick }: { appId: string; isActive: boolean; onClick: () => void }) {
   const app = APPS[appId];
   if (!app) return null;
+  const AppIcon = app.icon;
   return (
     <button
       onClick={onClick}
@@ -113,7 +115,7 @@ function AppOption({ appId, isActive, onClick }: { appId: string; isActive: bool
           : "hover:bg-white/5 text-neutral-300 hover:text-white"
       }`}
     >
-      <span className="text-xl">{app.icon}</span>
+      <AppIcon className="w-5 h-5" />
       <div className="flex-1 text-left">
         <div className="text-sm font-medium">{app.name}</div>
         <div className="text-xs text-neutral-500 truncate">{app.description}</div>
@@ -124,7 +126,7 @@ function AppOption({ appId, isActive, onClick }: { appId: string; isActive: bool
             ? "bg-emerald-500/20 text-emerald-400"
             : "bg-neutral-500/20 text-neutral-400"
         }`}>
-          {app.isActive ? "● Live" : "Coming Soon"}
+          {app.isActive ? "Active" : "Inactive"}
         </span>
         {isActive && <Check className="w-4 h-4 text-indigo-400" />}
       </div>

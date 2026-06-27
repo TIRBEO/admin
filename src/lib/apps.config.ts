@@ -1,19 +1,18 @@
+import {
+  MessageSquare, Building2, MessageCircle, BookOpen,
+  ClipboardList, Calendar, FileText, Shield,
+  type LucideIcon,
+} from "lucide-react";
+
 export interface AppConfig {
   id: string;
   name: string;
-  icon: string;
+  icon: LucideIcon;
   slug: string;
   description: string;
   version: string;
   isActive: boolean;
-  routes: {
-    overview: string;
-    settings: string;
-    users: string;
-    analytics: string;
-    content: string;
-    integrations: string;
-  };
+  routes: Record<string, string>;
   settingsSchema: Record<string, {
     label: string;
     fields: AppSettingField[];
@@ -38,18 +37,21 @@ export const APPS: Record<string, AppConfig> = {
   chat: {
     id: "chat",
     name: "Tirbeo Chat",
-    icon: "💬",
+    icon: MessageSquare,
     slug: "chat",
     description: "Real-time messaging with channels, threads, and voice calls",
     version: "1.0.0",
     isActive: true,
     routes: {
-      overview: "/apps/chat",
+      overview: "/apps/chat/overview",
       settings: "/apps/chat/settings",
       users: "/apps/chat/users",
       analytics: "/apps/chat/analytics",
       content: "/apps/chat/content",
       integrations: "/apps/chat/integrations",
+      reports: "/apps/chat/reports",
+      trash: "/apps/chat/trash",
+      security: "/apps/chat/security",
     },
     settingsSchema: {
       general: {
@@ -69,18 +71,18 @@ export const APPS: Record<string, AppConfig> = {
         fields: [
           { key: "profanity_filter", type: "toggle", label: "Enable Profanity Filter", default: true },
           { key: "auto_moderation", type: "toggle", label: "Auto-Moderate Messages", default: false },
-          { key: "max_mentions_per_message", type: "number", label: "Max @Mentions per Message", default: 5 },
-          { key: "rate_limit_messages", type: "number", label: "Messages per Minute Limit", default: 30 },
+          { key: "max_mentions", type: "number", label: "Max @Mentions per Message", default: 5 },
+          { key: "rate_limit", type: "number", label: "Messages per Minute Limit", default: 30 },
           { key: "moderation_queue", type: "select", label: "Moderation Queue", options: ["None", "Manual Review", "AI-Assisted"], default: "Manual Review" },
         ],
       },
       channels: {
         label: "Channel Settings",
         fields: [
-          { key: "allow_public_channels", type: "toggle", label: "Allow Public Channels", default: true },
-          { key: "allow_private_channels", type: "toggle", label: "Allow Private Channels", default: true },
-          { key: "max_channels_per_community", type: "number", label: "Max Channels per Community", default: 50 },
-          { key: "allow_voice_channels", type: "toggle", label: "Allow Voice Channels", default: true },
+          { key: "allow_public", type: "toggle", label: "Allow Public Channels", default: true },
+          { key: "allow_private", type: "toggle", label: "Allow Private Channels", default: true },
+          { key: "max_channels", type: "number", label: "Max Channels per Community", default: 50 },
+          { key: "allow_voice", type: "toggle", label: "Allow Voice Channels", default: true },
         ],
       },
     },
@@ -88,18 +90,21 @@ export const APPS: Record<string, AppConfig> = {
   company: {
     id: "company",
     name: "Company Content",
-    icon: "🏢",
+    icon: Building2,
     slug: "company",
     description: "Manage company pages, team, careers, and content",
     version: "1.0.0",
     isActive: true,
     routes: {
-      overview: "/apps/company",
+      overview: "/apps/company/overview",
       settings: "/apps/company/settings",
       users: "/apps/company/users",
       analytics: "/apps/company/analytics",
       content: "/apps/company/content",
       integrations: "/apps/company/integrations",
+      reports: "/apps/company/reports",
+      trash: "/apps/company/trash",
+      security: "/apps/company/security",
     },
     settingsSchema: {
       general: {
@@ -124,115 +129,90 @@ export const APPS: Record<string, AppConfig> = {
   discuss: {
     id: "discuss",
     name: "Tirbeo Discuss",
-    icon: "📝",
+    icon: MessageCircle,
     slug: "discuss",
     description: "Structured discussions with voting, Q&A, and tagging",
     version: "1.0.0",
     isActive: false,
-    routes: {
-      overview: "/apps/discuss",
-      settings: "/apps/discuss/settings",
-      users: "/apps/discuss/users",
-      analytics: "/apps/discuss/analytics",
-      content: "/apps/discuss/content",
-      integrations: "/apps/discuss/integrations",
-    },
+    routes: {},
     settingsSchema: {},
   },
   resources: {
     id: "resources",
     name: "Tirbeo Resources",
-    icon: "📚",
+    icon: BookOpen,
     slug: "resources",
     description: "Community-curated library of files, links, and media",
     version: "1.0.0",
     isActive: false,
-    routes: {
-      overview: "/apps/resources",
-      settings: "/apps/resources/settings",
-      users: "/apps/resources/users",
-      analytics: "/apps/resources/analytics",
-      content: "/apps/resources/content",
-      integrations: "/apps/resources/integrations",
-    },
+    routes: {},
     settingsSchema: {},
   },
   projects: {
     id: "projects",
     name: "Tirbeo Projects",
-    icon: "📋",
+    icon: ClipboardList,
     slug: "projects",
     description: "Project management with Kanban boards and task tracking",
     version: "1.0.0",
     isActive: false,
-    routes: {
-      overview: "/apps/projects",
-      settings: "/apps/projects/settings",
-      users: "/apps/projects/users",
-      analytics: "/apps/projects/analytics",
-      content: "/apps/projects/content",
-      integrations: "/apps/projects/integrations",
-    },
+    routes: {},
     settingsSchema: {},
   },
   events: {
     id: "events",
     name: "Tirbeo Events",
-    icon: "📅",
+    icon: Calendar,
     slug: "events",
     description: "Event creation, calendar, and RSVP management",
     version: "1.0.0",
     isActive: false,
-    routes: {
-      overview: "/apps/events",
-      settings: "/apps/events/settings",
-      users: "/apps/events/users",
-      analytics: "/apps/events/analytics",
-      content: "/apps/events/content",
-      integrations: "/apps/events/integrations",
-    },
+    routes: {},
     settingsSchema: {},
   },
   wiki: {
     id: "wiki",
     name: "Tirbeo Wiki",
-    icon: "📖",
+    icon: FileText,
     slug: "wiki",
     description: "Collaborative documentation with version history",
     version: "1.0.0",
     isActive: false,
-    routes: {
-      overview: "/apps/wiki",
-      settings: "/apps/wiki/settings",
-      users: "/apps/wiki/users",
-      analytics: "/apps/wiki/analytics",
-      content: "/apps/wiki/content",
-      integrations: "/apps/wiki/integrations",
-    },
+    routes: {},
     settingsSchema: {},
   },
   identity: {
     id: "identity",
     name: "Tirbeo Identity",
-    icon: "🔐",
+    icon: Shield,
     slug: "identity",
     description: "Central authentication and identity management",
     version: "1.0.0",
-    isActive: false,
+    isActive: true,
     routes: {
-      overview: "/apps/identity",
+      overview: "/apps/identity/overview",
       settings: "/apps/identity/settings",
       users: "/apps/identity/users",
       analytics: "/apps/identity/analytics",
-      content: "/apps/identity/content",
-      integrations: "/apps/identity/integrations",
+      security: "/apps/identity/security",
     },
-    settingsSchema: {},
+    settingsSchema: {
+      general: {
+        label: "Auth Settings",
+        fields: [
+          { key: "allow_registration", type: "toggle", label: "Allow Registration", default: true },
+          { key: "require_email_verification", type: "toggle", label: "Require Email Verification", default: true },
+          { key: "session_duration", type: "number", label: "Session Duration (hours)", default: 24 },
+          { key: "mfa_required", type: "toggle", label: "Require MFA for Admins", default: false },
+        ],
+      },
+    },
   },
 };
 
 export const ACTIVE_APPS = Object.values(APPS).filter(app => app.isActive);
-export const APP_OPTIONS = Object.values(APPS).map(app => ({
-  label: `${app.icon} ${app.name}`,
+export const APP_OPTIONS = Object.values(APPS).filter(app => app.isActive).map(app => ({
+  label: app.name,
   value: app.id,
+  icon: app.icon,
 }));

@@ -2,8 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/lib/useAuth";
 import { hasMinRole, type AdminRole } from "@/lib/session";
 import AdminLayout from "@/components/AdminLayout";
-import Dashboard from "@/pages/Dashboard";
 import Login from "@/pages/Login";
+import Dashboard from "@/pages/Dashboard";
 import SiteConfigPage from "@/pages/SiteConfig";
 import PagesList from "@/pages/PagesList";
 import NavLinksPage from "@/pages/NavLinks";
@@ -24,10 +24,15 @@ import BackupManager from "@/pages/BackupManager";
 import AnnouncementManager from "@/pages/AnnouncementManager";
 import ExportManager from "@/pages/ExportManager";
 import UserImpersonation from "@/pages/UserImpersonation";
+import AnalyticsPage from "@/pages/AnalyticsPage";
+import SecurityPage from "@/pages/SecurityPage";
+import IntegrationsPage from "@/pages/IntegrationsPage";
+import ReportsPage from "@/pages/ReportsPage";
+import TrashPage from "@/pages/TrashPage";
+import BlogPage from "@/pages/BlogPage";
 
 function ProtectedRoute({ children, minRole = "viewer" }: { children: React.ReactNode; minRole?: AdminRole }) {
   const { session, admin, loading } = useAuth();
-
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-neutral-950">
@@ -35,10 +40,8 @@ function ProtectedRoute({ children, minRole = "viewer" }: { children: React.Reac
       </div>
     );
   }
-
   if (!session) return <Navigate to="/login" replace />;
-
-  const sessionRole = admin?.role || session?.admin.role;
+  const sessionRole = admin?.role || session?.admin?.role;
   if (sessionRole && !hasMinRole(sessionRole, minRole)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-neutral-950 p-6">
@@ -54,7 +57,6 @@ function ProtectedRoute({ children, minRole = "viewer" }: { children: React.Reac
       </div>
     );
   }
-
   return <AdminLayout>{children}</AdminLayout>;
 }
 
@@ -63,7 +65,6 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
-
         <Route path="/" element={<ProtectedRoute minRole="viewer"><Dashboard /></ProtectedRoute>} />
         <Route path="/site-config" element={<ProtectedRoute minRole="admin"><SiteConfigPage /></ProtectedRoute>} />
         <Route path="/pages" element={<ProtectedRoute minRole="editor"><PagesList /></ProtectedRoute>} />
@@ -86,26 +87,16 @@ export default function App() {
         <Route path="/admin/announcements" element={<ProtectedRoute minRole="manager"><AnnouncementManager /></ProtectedRoute>} />
         <Route path="/admin/exports" element={<ProtectedRoute minRole="editor"><ExportManager /></ProtectedRoute>} />
         <Route path="/admin/impersonation" element={<ProtectedRoute minRole="super_admin"><UserImpersonation /></ProtectedRoute>} />
-
+        <Route path="/admin/blog" element={<ProtectedRoute minRole="editor"><BlogPage /></ProtectedRoute>} />
         <Route path="/apps/:appId/overview" element={<ProtectedRoute minRole="viewer"><Dashboard /></ProtectedRoute>} />
         <Route path="/apps/:appId/settings" element={<ProtectedRoute minRole="editor"><SettingsPage /></ProtectedRoute>} />
         <Route path="/apps/:appId/users" element={<ProtectedRoute minRole="editor"><AdminsPage /></ProtectedRoute>} />
-        <Route path="/apps/:appId/analytics" element={<ProtectedRoute minRole="viewer">
-          <div className="text-center text-neutral-500 py-12"><p>Analytics coming soon</p></div>
-        </ProtectedRoute>} />
-        <Route path="/apps/:appId/security" element={<ProtectedRoute minRole="editor">
-          <div className="text-center text-neutral-500 py-12"><p>Security settings coming soon</p></div>
-        </ProtectedRoute>} />
+        <Route path="/apps/:appId/analytics" element={<ProtectedRoute minRole="viewer"><AnalyticsPage /></ProtectedRoute>} />
+        <Route path="/apps/:appId/security" element={<ProtectedRoute minRole="editor"><SecurityPage /></ProtectedRoute>} />
         <Route path="/apps/:appId/content" element={<ProtectedRoute minRole="editor"><DocsPage /></ProtectedRoute>} />
-        <Route path="/apps/:appId/integrations" element={<ProtectedRoute minRole="editor">
-          <div className="text-center text-neutral-500 py-12"><p>Integrations coming soon</p></div>
-        </ProtectedRoute>} />
-        <Route path="/apps/:appId/reports" element={<ProtectedRoute minRole="viewer">
-          <div className="text-center text-neutral-500 py-12"><p>Reports coming soon</p></div>
-        </ProtectedRoute>} />
-        <Route path="/apps/:appId/trash" element={<ProtectedRoute minRole="manager">
-          <div className="text-center text-neutral-500 py-12"><p>Trash coming soon</p></div>
-        </ProtectedRoute>} />
+        <Route path="/apps/:appId/integrations" element={<ProtectedRoute minRole="editor"><IntegrationsPage /></ProtectedRoute>} />
+        <Route path="/apps/:appId/reports" element={<ProtectedRoute minRole="viewer"><ReportsPage /></ProtectedRoute>} />
+        <Route path="/apps/:appId/trash" element={<ProtectedRoute minRole="manager"><TrashPage /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   );

@@ -35,7 +35,10 @@ export function ChatSettings() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{app.icon} {app.name} Settings</h1>
+          <div className="flex items-center gap-3">
+            <app.icon className="w-6 h-6 text-neutral-400" />
+            <h1 className="text-2xl font-semibold tracking-tight">{app.name} Settings</h1>
+          </div>
           <p className="text-sm text-neutral-500 mt-1">Configure {app.name} for your community</p>
         </div>
         <div className="flex items-center gap-3">
