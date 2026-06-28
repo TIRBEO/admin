@@ -1,27 +1,43 @@
 import { useParams } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAppStore } from "../hooks/useAppStore";
 import { APPS } from "../lib/apps.config";
 import { supabase } from "../lib/supabase";
-import { Trash2, RotateCcw, AlertTriangle, FileText } from "lucide-react";
+import { Trash2, RotateCcw, AlertTriangle, FileText, RefreshCw } from "lucide-react";
+
+interface TrashItem {
+  id: string;
+  entity_type: string;
+  title: string;
+  deleted_at: string;
+}
 
 export default function TrashPage() {
   const { appId } = useParams<{ appId: string }>();
   const { currentApp } = useAppStore();
   const app = APPS[appId || currentApp];
   const AppIcon = app?.icon;
+  const [items, setItems] = useState<TrashItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [items, setItems] = useState([
-    { id: "1", title: "Draft: Welcome Post", deleted_at: "2026-06-26", type: "page" },
-    { id: "2", title: "Old FAQ Section", deleted_at: "2026-06-25", type: "section" },
-    { id: "3", title: "Testimonial: John D.", deleted_at: "2026-06-24", type: "testimonial" },
-  ]);
+  const fetchTrash = async () => {
+    setLoading(true);
+    const { data } = await supabase.from("trash_items")
+      .select("*")
+      .order("deleted_at", { ascending: false });
+    if (data) setItems(data);
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchTrash(); }, []);
 
   const restore = async (id: string) => {
+    await supabase.from("trash_items").delete().eq("id", id);
     setItems(prev => prev.filter(i => i.id !== id));
   };
 
   const deletePermanently = async (id: string) => {
+    await supabase.from("trash_items").delete().eq("id", id);
     setItems(prev => prev.filter(i => i.id !== id));
   };
 
@@ -31,13 +47,22 @@ export default function TrashPage() {
 
   return (
     <div className="p-6 max-w-3xl">
-      <div className="flex items-center gap-3 mb-8">
-        {AppIcon && <AppIcon className="w-6 h-6 text-neutral-400" />}
-        <Trash2 className="w-6 h-6 text-neutral-400" />
-        <h1 className="text-2xl font-semibold tracking-tight">{app.name} Trash</h1>
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+          {AppIcon && <AppIcon className="w-6 h-6 text-neutral-400" />}
+          <Trash2 className="w-6 h-6 text-neutral-400" />
+          <h1 className="text-2xl font-semibold tracking-tight">{app.name} Trash</h1>
+        </div>
+        <button onClick={fetchTrash} className="flex items-center gap-2 rounded-lg border border-neutral-800 px-3 py-2 text-sm text-neutral-400 hover:text-white transition-colors">
+          <RefreshCw className="h-4 w-4" />
+        </button>
       </div>
 
-      {items.length === 0 ? (
+      {loading ? (
+        <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-12 text-center">
+          <p className="text-sm text-neutral-500">Loading trash...</p>
+        </div>
+      ) : items.length === 0 ? (
         <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-12 text-center">
           <Trash2 className="w-12 h-12 mx-auto mb-3 text-neutral-700" />
           <p className="text-sm text-neutral-500">Trash is empty</p>
@@ -50,23 +75,17 @@ export default function TrashPage() {
                 <FileText className="w-4 h-4 text-neutral-600" />
                 <div>
                   <p className="text-sm text-neutral-200">{item.title}</p>
-                  <p className="text-xs text-neutral-500">Deleted {item.deleted_at}</p>
+                  <p className="text-xs text-neutral-500">Deleted {new Date(item.deleted_at).toLocaleDateString()} &middot; {item.entity_type}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => restore(item.id)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-lg text-xs transition-colors"
-                >
-                  <RotateCcw className="w-3 h-3" />
-                  Restore
+                <button onClick={() => restore(item.id)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-lg text-xs transition-colors">
+                  <RotateCcw className="w-3 h-3" /> Restore
                 </button>
-                <button
-                  onClick={() => deletePermanently(item.id)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-900/30 hover:bg-red-900/50 text-red-400 rounded-lg text-xs transition-colors"
-                >
-                  <AlertTriangle className="w-3 h-3" />
-                  Delete
+                <button onClick={() => deletePermanently(item.id)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-900/30 hover:bg-red-900/50 text-red-400 rounded-lg text-xs transition-colors">
+                  <AlertTriangle className="w-3 h-3" /> Delete
                 </button>
               </div>
             </div>

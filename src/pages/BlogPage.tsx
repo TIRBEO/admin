@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { FileText, Plus, Edit2, Trash2, Eye, X, Save, CheckCircle, XCircle } from "lucide-react";
+import BlogEditor from "../components/BlogEditor";
 
 interface BlogPost {
   id?: string;
@@ -19,10 +20,9 @@ export default function BlogPage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<BlogPost | null>(null);
   const [saving, setSaving] = useState(false);
+  const [preview, setPreview] = useState(false);
 
-  useEffect(() => {
-    loadPosts();
-  }, []);
+  useEffect(() => { loadPosts(); }, []);
 
   const loadPosts = async () => {
     const { data } = await supabase.from("blog_posts").select("*").order("created_at", { ascending: false });
@@ -35,6 +35,7 @@ export default function BlogPage() {
       title: "", slug: "", content: "", excerpt: "",
       author_name: "Admin", published: false,
     });
+    setPreview(false);
   };
 
   const savePost = async () => {
@@ -70,6 +71,8 @@ export default function BlogPage() {
     loadPosts();
   };
 
+  const stripHtml = (html: string) => html.replace(/<[^>]*>/g, "").substring(0, 120);
+
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-8">
@@ -84,7 +87,7 @@ export default function BlogPage() {
 
       {editing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="bg-neutral-900 rounded-2xl border border-neutral-800 w-full max-w-2xl max-h-[80vh] overflow-y-auto m-4">
+          <div className="bg-neutral-900 rounded-2xl border border-neutral-800 w-full max-w-4xl max-h-[90vh] overflow-y-auto m-4">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-semibold text-neutral-200">{editing.id ? "Edit Post" : "New Post"}</h2>
@@ -93,15 +96,17 @@ export default function BlogPage() {
                 </button>
               </div>
               <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-neutral-400 mb-1">Title</label>
-                  <input value={editing.title} onChange={e => setEditing({ ...editing, title: e.target.value })}
-                    className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-white" />
-                </div>
-                <div>
-                  <label className="block text-sm text-neutral-400 mb-1">Slug</label>
-                  <input value={editing.slug} onChange={e => setEditing({ ...editing, slug: e.target.value })}
-                    className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-white font-mono" />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-neutral-400 mb-1">Title</label>
+                    <input value={editing.title} onChange={e => setEditing({ ...editing, title: e.target.value })}
+                      className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-white" />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-neutral-400 mb-1">Slug</label>
+                    <input value={editing.slug} onChange={e => setEditing({ ...editing, slug: e.target.value })}
+                      className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-white font-mono" />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm text-neutral-400 mb-1">Excerpt</label>
@@ -109,20 +114,30 @@ export default function BlogPage() {
                     rows={2} className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-white resize-none" />
                 </div>
                 <div>
-                  <label className="block text-sm text-neutral-400 mb-1">Content (Markdown)</label>
-                  <textarea value={editing.content} onChange={e => setEditing({ ...editing, content: e.target.value })}
-                    rows={12} className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-white font-mono resize-none" />
+                  <label className="block text-sm text-neutral-400 mb-1">Content</label>
+                  {preview ? (
+                    <div className="min-h-[400px] rounded-xl border border-neutral-800 bg-neutral-950 p-4 text-sm text-neutral-300 prose-custom max-w-none"
+                      dangerouslySetInnerHTML={{ __html: editing.content }} />
+                  ) : (
+                    <BlogEditor content={editing.content} onChange={(html) => setEditing({ ...editing, content: html })} />
+                  )}
                 </div>
-                <div>
-                  <label className="block text-sm text-neutral-400 mb-1">Author</label>
-                  <input value={editing.author_name} onChange={e => setEditing({ ...editing, author_name: e.target.value })}
-                    className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-white" />
-                </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => setEditing({ ...editing, published: !editing.published })}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${editing.published ? "bg-emerald-600 text-white" : "bg-neutral-800 text-neutral-400"}`}>
-                    {editing.published ? "Published" : "Draft"}
-                  </button>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-neutral-400 mb-1">Author</label>
+                    <input value={editing.author_name} onChange={e => setEditing({ ...editing, author_name: e.target.value })}
+                      className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-white" />
+                  </div>
+                  <div className="flex items-end gap-2">
+                    <button onClick={() => setEditing({ ...editing, published: !editing.published })}
+                      className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${editing.published ? "bg-emerald-600 text-white" : "bg-neutral-800 text-neutral-400"}`}>
+                      {editing.published ? "Published" : "Draft"}
+                    </button>
+                    <button onClick={() => setPreview(!preview)}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-neutral-800 text-neutral-400 hover:text-neutral-200 transition-colors">
+                      <Eye className="w-3.5 h-3.5" />{preview ? "Edit" : "Preview"}
+                    </button>
+                  </div>
                 </div>
               </div>
               <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-neutral-800">
@@ -155,7 +170,10 @@ export default function BlogPage() {
                 <FileText className="w-4 h-4 text-neutral-600 shrink-0" />
                 <div className="min-w-0">
                   <p className="text-sm text-neutral-200 truncate">{post.title}</p>
-                  <p className="text-xs text-neutral-500 truncate">{post.slug} &middot; {post.author_name}</p>
+                  <p className="text-xs text-neutral-500 truncate">
+                    {post.slug} &middot; {post.author_name}
+                    {post.content && <span className="ml-2 text-neutral-600">{stripHtml(post.content)}...</span>}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
