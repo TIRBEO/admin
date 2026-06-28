@@ -24,12 +24,14 @@ import BackupManager from "@/pages/BackupManager";
 import AnnouncementManager from "@/pages/AnnouncementManager";
 import ExportManager from "@/pages/ExportManager";
 import UserImpersonation from "@/pages/UserImpersonation";
+import UsersPage from "@/pages/UsersPage";
 import AnalyticsPage from "@/pages/AnalyticsPage";
 import SecurityPage from "@/pages/SecurityPage";
 import IntegrationsPage from "@/pages/IntegrationsPage";
 import ReportsPage from "@/pages/ReportsPage";
 import TrashPage from "@/pages/TrashPage";
 import BlogPage from "@/pages/BlogPage";
+import ImpersonateHandler from "@/pages/ImpersonateHandler";
 
 function ProtectedRoute({ children, minRole = "viewer" }: { children: React.ReactNode; minRole?: AdminRole }) {
   const { session, admin, loading } = useAuth();
@@ -87,10 +89,11 @@ export default function App() {
         <Route path="/admin/announcements" element={<ProtectedRoute minRole="manager"><AnnouncementManager /></ProtectedRoute>} />
         <Route path="/admin/exports" element={<ProtectedRoute minRole="editor"><ExportManager /></ProtectedRoute>} />
         <Route path="/admin/impersonation" element={<ProtectedRoute minRole="super_admin"><UserImpersonation /></ProtectedRoute>} />
+        <Route path="/impersonate" element={<ImpersonateHandler />} />
         <Route path="/admin/blog" element={<ProtectedRoute minRole="editor"><BlogPage /></ProtectedRoute>} />
         <Route path="/apps/:appId/overview" element={<ProtectedRoute minRole="viewer"><Dashboard /></ProtectedRoute>} />
         <Route path="/apps/:appId/settings" element={<ProtectedRoute minRole="editor"><SettingsPage /></ProtectedRoute>} />
-        <Route path="/apps/:appId/users" element={<ProtectedRoute minRole="editor"><AdminsPage /></ProtectedRoute>} />
+        <Route path="/apps/:appId/users" element={<ProtectedRoute minRole="editor"><UsersPage /></ProtectedRoute>} />
         <Route path="/apps/:appId/analytics" element={<ProtectedRoute minRole="viewer"><AnalyticsPage /></ProtectedRoute>} />
         <Route path="/apps/:appId/security" element={<ProtectedRoute minRole="editor"><SecurityPage /></ProtectedRoute>} />
         <Route path="/apps/:appId/content" element={<ProtectedRoute minRole="editor"><DocsPage /></ProtectedRoute>} />

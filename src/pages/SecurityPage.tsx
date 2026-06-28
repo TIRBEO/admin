@@ -38,6 +38,72 @@ const DEFAULT_AUTH: AuthSettings = {
   max_login_attempts: 5,
 };
 
+function AuditTrailSection() {
+  const [failedLogins, setFailedLogins] = useState<number | null>(null);
+  const [apiKeyUsage, setApiKeyUsage] = useState<number | null>(null);
+  const [recentEvents, setRecentEvents] = useState<any[]>([]);
+
+  useEffect(() => {
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    supabase.from("admin_audit_log")
+      .select("*", { count: "exact", head: true })
+      .gte("created_at", yesterday)
+      .eq("action", "login_failed")
+      .then(({ count }) => setFailedLogins(count ?? 0));
+
+    supabase.from("admin_audit_log")
+      .select("*", { count: "exact", head: true })
+      .gte("created_at", weekAgo)
+      .eq("action", "api_key_used")
+      .then(({ count }) => setApiKeyUsage(count ?? 0));
+
+    supabase.from("admin_audit_log")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(5)
+      .then(({ data }) => setRecentEvents(data || []));
+  }, []);
+
+  return (
+    <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 overflow-hidden">
+      <div className="p-5">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-9 h-9 rounded-lg bg-neutral-800 flex items-center justify-center">
+            <Eye className="w-4 h-4 text-neutral-400" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-neutral-200">Audit Trail</h3>
+            <p className="text-xs text-neutral-500">All security-related events are logged</p>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between py-1">
+            <span className="text-xs text-neutral-500">Failed Logins (24h)</span>
+            <span className="text-xs text-neutral-300">{failedLogins !== null ? failedLogins : "..."}</span>
+          </div>
+          <div className="flex items-center justify-between py-1">
+            <span className="text-xs text-neutral-500">API Key Usage (7d)</span>
+            <span className="text-xs text-neutral-300">{apiKeyUsage !== null ? `${apiKeyUsage} requests` : "..."}</span>
+          </div>
+          {recentEvents.length > 0 && (
+            <div className="border-t border-neutral-800 pt-3 mt-3 space-y-1.5">
+              <p className="text-xs text-neutral-500 font-medium">Recent Events</p>
+              {recentEvents.map((ev: any) => (
+                <div key={ev.id} className="flex items-center justify-between text-xs">
+                  <span className="text-neutral-400 truncate max-w-[200px]">{ev.action}</span>
+                  <span className="text-neutral-600">{new Date(ev.created_at).toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SecurityPage() {
   const { appId } = useParams<{ appId: string }>();
   const { currentApp } = useAppStore();
@@ -412,29 +478,7 @@ export default function SecurityPage() {
       </div>
 
       {/* ───── AUDIT TRAIL ───── */}
-      <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 overflow-hidden">
-        <div className="p-5">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-9 h-9 rounded-lg bg-neutral-800 flex items-center justify-center">
-              <Eye className="w-4 h-4 text-neutral-400" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-neutral-200">Audit Trail</h3>
-              <p className="text-xs text-neutral-500">All security-related events are logged</p>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between py-1">
-              <span className="text-xs text-neutral-500">Failed Logins (24h)</span>
-              <span className="text-xs text-neutral-300">0</span>
-            </div>
-            <div className="flex items-center justify-between py-1">
-              <span className="text-xs text-neutral-500">API Key Usage (7d)</span>
-              <span className="text-xs text-neutral-300">0 requests</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <AuditTrailSection />
     </div>
   );
 }

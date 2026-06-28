@@ -2,6 +2,16 @@ import { useState, useEffect } from "react";
 import { HardDrive, Download, Trash2, AlertTriangle, Plus, RefreshCw, Loader2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
+const BACKUP_TABLES = [
+  "site_config", "pages", "nav_links", "footer_config", "team_members",
+  "faq_items", "doc_categories", "doc_articles", "timeline_events",
+  "testimonials", "pricing_plans", "pricing_features", "admin_users",
+  "audit_logs", "app_configs", "api_keys", "auth_settings",
+  "announcements", "notifications", "content_approvals",
+  "backups", "exports", "admin_audit_log", "blog_posts",
+  "user_profiles",
+];
+
 interface Backup {
   id: string;
   name: string;
@@ -23,6 +33,7 @@ export default function BackupManager() {
   const [backups, setBackups] = useState<Backup[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [progress, setProgress] = useState("");
 
   const fetchBackups = async () => {
     setLoading(true);
@@ -35,21 +46,51 @@ export default function BackupManager() {
 
   useEffect(() => { fetchBackups(); }, []);
 
+  const collectTableData = async (table: string): Promise<{ table: string; count: number; error?: string }> => {
+    try {
+      const { data, error } = await supabase.from(table).select("*");
+      if (error) return { table, count: 0, error: error.message };
+      return { table, count: data?.length || 0, ...(data ? { records: data } : {}) };
+    } catch (e: any) {
+      return { table, count: 0, error: e.message };
+    }
+  };
+
   const createBackup = async (type: "full" | "incremental") => {
     setCreating(true);
+    setProgress("Scanning tables...");
     const dateStr = new Date().toISOString().slice(0, 10);
     const name = `${type === "full" ? "Full" : "Incremental"} Backup - ${dateStr}`;
-    const backupData = JSON.stringify({ name, type, created_at: new Date().toISOString(), data: "backup snapshot" }, null, 2);
-    const fileUrl = `data:application/json,${encodeURIComponent(backupData)}`;
+
+    const backupData: any = {
+      name,
+      type,
+      created_at: new Date().toISOString(),
+      tables: {},
+    };
+
+    for (const table of BACKUP_TABLES) {
+      setProgress(`Exporting ${table}...`);
+      const result = await collectTableData(table);
+      backupData.tables[table] = result;
+    }
+
+    setProgress("Creating backup record...");
+    const jsonStr = JSON.stringify(backupData, null, 2);
+    const blob = new Blob([jsonStr], { type: "application/json" });
+    const fileUrl = URL.createObjectURL(blob);
+
     const { data } = await supabase.from("backups").insert({
       name,
       type,
       status: "completed",
-      size_bytes: new Blob([backupData]).size,
+      size_bytes: blob.size,
       file_url: fileUrl,
     }).select().single();
+
     if (data) setBackups(prev => [data, ...prev]);
     setCreating(false);
+    setProgress("");
   };
 
   const deleteBackup = async (id: string) => {
@@ -120,6 +161,12 @@ export default function BackupManager() {
           </button>
         </div>
       </div>
+
+      {creating && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-blue-500/20 bg-blue-500/10 px-4 py-3 text-sm text-blue-400">
+          <Loader2 className="h-4 w-4 animate-spin" /> {progress}
+        </div>
+      )}
 
       <div className="space-y-2">
         {loading ? (

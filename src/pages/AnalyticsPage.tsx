@@ -24,8 +24,8 @@ export default function AnalyticsPage() {
   useEffect(() => {
     if (!app) return;
     Promise.all([
-      supabase.from("audit_logs").select("*", { count: "exact", head: true }),
-      supabase.from("audit_logs").select("*", { count: "exact", head: true }).gte("created_at", new Date(Date.now() - 7 * 86400000).toISOString()),
+      supabase.from("admin_audit_log").select("*", { count: "exact", head: true }),
+      supabase.from("admin_audit_log").select("*", { count: "exact", head: true }).gte("created_at", new Date(Date.now() - 7 * 86400000).toISOString()),
       supabase.from("pages").select("*", { count: "exact", head: true }),
     ]).then(([users, recent, pages]) => {
       setStats({
