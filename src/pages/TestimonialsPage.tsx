@@ -31,26 +31,26 @@ export default function TestimonialsPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold tracking-tight">Testimonials</h1>
         <button onClick={() => { setEditing({ quote: "", author: "", sort_order: items.length, is_active: true }); setShowForm(true); }}
-          className="flex items-center gap-2 rounded-lg bg-neutral-100 px-4 py-2 text-sm font-medium text-neutral-900 hover:bg-neutral-200">
+          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
           <Plus className="h-4 w-4" /> Add Testimonial
         </button>
       </div>
       {showForm && (
-        <div className="mb-6 rounded-xl border border-neutral-800 bg-neutral-900/50 p-4 space-y-3">
-          <textarea placeholder="Quote" rows={3} value={editing.quote ?? ""} onChange={(e) => setEditing({ ...editing, quote: e.target.value })} className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm" />
-          <input placeholder="Author" value={editing.author ?? ""} onChange={(e) => setEditing({ ...editing, author: e.target.value })} className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm" />
-          <input placeholder="Role" value={editing.role ?? ""} onChange={(e) => setEditing({ ...editing, role: e.target.value })} className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm" />
+        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 space-y-3">
+          <textarea placeholder="Quote" rows={3} value={editing.quote ?? ""} onChange={(e) => setEditing({ ...editing, quote: e.target.value })} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400" />
+          <input placeholder="Author" value={editing.author ?? ""} onChange={(e) => setEditing({ ...editing, author: e.target.value })} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400" />
+          <input placeholder="Role" value={editing.role ?? ""} onChange={(e) => setEditing({ ...editing, role: e.target.value })} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400" />
           <div className="flex gap-2">
-            <button onClick={save} className="rounded-lg bg-neutral-100 px-4 py-2 text-sm font-medium text-neutral-900">Save</button>
-            <button onClick={() => { setShowForm(false); setEditing({}); }} className="rounded-lg border border-neutral-800 px-4 py-2 text-sm text-neutral-400">Cancel</button>
+            <button onClick={save} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Save</button>
+            <button onClick={() => { setShowForm(false); setEditing({}); }} className="rounded-lg bg-white border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Cancel</button>
           </div>
         </div>
       )}
       <div className="space-y-2">
         {items.map((item) => (
-          <div key={item.id} className="rounded-lg border border-neutral-800 bg-neutral-900/30 px-4 py-3 text-sm">
-            <p className="text-neutral-300 italic mb-2">"{item.quote}"</p>
-            <p className="text-xs text-neutral-500">— {item.author}{item.role ? `, ${item.role}` : ""}</p>
+          <div key={item.id} className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm">
+            <p className="text-gray-700 italic mb-2">"{item.quote}"</p>
+            <p className="text-xs text-gray-500">— {item.author}{item.role ? `, ${item.role}` : ""}</p>
           </div>
         ))}
       </div>

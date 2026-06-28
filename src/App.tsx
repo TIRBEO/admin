@@ -37,8 +37,8 @@ function ProtectedRoute({ children, minRole = "viewer" }: { children: React.Reac
   const { session, admin, loading } = useAuth();
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-neutral-950">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-neutral-600 border-t-neutral-200" />
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
       </div>
     );
   }
@@ -46,13 +46,13 @@ function ProtectedRoute({ children, minRole = "viewer" }: { children: React.Reac
   const sessionRole = admin?.role || session?.admin?.role;
   if (sessionRole && !hasMinRole(sessionRole, minRole)) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-neutral-950 p-6">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
         <div className="text-center max-w-sm">
-          <h2 className="text-lg font-semibold text-neutral-200 mb-2">Access Denied</h2>
-          <p className="text-sm text-neutral-500">
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Access Denied</h2>
+          <p className="text-sm text-gray-500">
             Your role ({sessionRole}) does not have permission to access this page.
           </p>
-          <a href="/" className="mt-4 inline-block text-sm text-neutral-400 hover:text-neutral-200 underline">
+          <a href="/" className="mt-4 inline-block text-sm text-blue-600 hover:text-blue-700 underline">
             Back to Dashboard
           </a>
         </div>
@@ -67,6 +67,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/impersonate" element={<ImpersonateHandler />} />
         <Route path="/" element={<ProtectedRoute minRole="viewer"><Dashboard /></ProtectedRoute>} />
         <Route path="/site-config" element={<ProtectedRoute minRole="admin"><SiteConfigPage /></ProtectedRoute>} />
         <Route path="/pages" element={<ProtectedRoute minRole="editor"><PagesList /></ProtectedRoute>} />
@@ -78,18 +79,15 @@ export default function App() {
         <Route path="/timeline" element={<ProtectedRoute minRole="editor"><TimelinePage /></ProtectedRoute>} />
         <Route path="/testimonials" element={<ProtectedRoute minRole="editor"><TestimonialsPage /></ProtectedRoute>} />
         <Route path="/pricing" element={<ProtectedRoute minRole="editor"><PricingPage /></ProtectedRoute>} />
-        <Route path="/admins" element={<ProtectedRoute minRole="admin"><AdminsPage /></ProtectedRoute>} />
-        <Route path="/audit-log" element={<ProtectedRoute minRole="admin"><AuditLogPage /></ProtectedRoute>} />
-        <Route path="/admin/system-status" element={<ProtectedRoute minRole="manager"><SystemStatus /></ProtectedRoute>} />
-        <Route path="/admin/notifications" element={<ProtectedRoute minRole="editor"><NotificationsPage /></ProtectedRoute>} />
         <Route path="/admin/admins" element={<ProtectedRoute minRole="admin"><AdminsPage /></ProtectedRoute>} />
         <Route path="/admin/audit" element={<ProtectedRoute minRole="admin"><AuditLogPage /></ProtectedRoute>} />
+        <Route path="/admin/system-status" element={<ProtectedRoute minRole="manager"><SystemStatus /></ProtectedRoute>} />
+        <Route path="/admin/notifications" element={<ProtectedRoute minRole="editor"><NotificationsPage /></ProtectedRoute>} />
         <Route path="/admin/content-approval" element={<ProtectedRoute minRole="manager"><ContentApproval /></ProtectedRoute>} />
         <Route path="/admin/backups" element={<ProtectedRoute minRole="admin"><BackupManager /></ProtectedRoute>} />
         <Route path="/admin/announcements" element={<ProtectedRoute minRole="manager"><AnnouncementManager /></ProtectedRoute>} />
         <Route path="/admin/exports" element={<ProtectedRoute minRole="editor"><ExportManager /></ProtectedRoute>} />
         <Route path="/admin/impersonation" element={<ProtectedRoute minRole="super_admin"><UserImpersonation /></ProtectedRoute>} />
-        <Route path="/impersonate" element={<ImpersonateHandler />} />
         <Route path="/admin/blog" element={<ProtectedRoute minRole="editor"><BlogPage /></ProtectedRoute>} />
         <Route path="/apps/:appId/overview" element={<ProtectedRoute minRole="viewer"><Dashboard /></ProtectedRoute>} />
         <Route path="/apps/:appId/settings" element={<ProtectedRoute minRole="editor"><SettingsPage /></ProtectedRoute>} />

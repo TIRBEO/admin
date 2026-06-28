@@ -1,6 +1,6 @@
 import {
   MessageSquare, Building2, MessageCircle, BookOpen,
-  ClipboardList, Calendar, FileText, Shield,
+  ClipboardList, Calendar, FileText,
   type LucideIcon,
 } from "lucide-react";
 
@@ -181,33 +181,7 @@ export const APPS: Record<string, AppConfig> = {
     routes: {},
     settingsSchema: {},
   },
-  identity: {
-    id: "identity",
-    name: "Tirbeo Identity",
-    icon: Shield,
-    slug: "identity",
-    description: "Central authentication and identity management",
-    version: "1.0.0",
-    isActive: true,
-    routes: {
-      overview: "/apps/identity/overview",
-      settings: "/apps/identity/settings",
-      users: "/apps/identity/users",
-      analytics: "/apps/identity/analytics",
-      security: "/apps/identity/security",
-    },
-    settingsSchema: {
-      general: {
-        label: "Auth Settings",
-        fields: [
-          { key: "allow_registration", type: "toggle", label: "Allow Registration", default: true },
-          { key: "require_email_verification", type: "toggle", label: "Require Email Verification", default: true },
-          { key: "session_duration", type: "number", label: "Session Duration (hours)", default: 24 },
-          { key: "mfa_required", type: "toggle", label: "Require MFA for Admins", default: false },
-        ],
-      },
-    },
-  },
+
 };
 
 export const ACTIVE_APPS = Object.values(APPS).filter(app => app.isActive);

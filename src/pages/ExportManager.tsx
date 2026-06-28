@@ -99,15 +99,15 @@ export default function ExportManager() {
     <div className="max-w-4xl">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight">Export & Reporting</h1>
-        <p className="text-sm text-neutral-500 mt-1">Generate and schedule data exports</p>
+        <p className="text-sm text-gray-500 mt-1">Generate and schedule data exports</p>
       </div>
 
-      <div className="rounded-xl border border-neutral-800 bg-neutral-900/30 p-6 mb-6">
-        <h3 className="text-lg font-semibold text-white mb-4">Generate Export</h3>
+      <div className="rounded-xl border border-gray-200 bg-white p-6 mb-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Generate Export</h3>
         <div className="grid grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm text-neutral-400 mb-1.5">Data Type</label>
-            <select value={exportType} onChange={(e) => setExportType(e.target.value)} className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-white">
+            <label className="block text-sm text-gray-500 mb-1.5">Data Type</label>
+            <select value={exportType} onChange={(e) => setExportType(e.target.value)} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900">
               <option value="users">Users</option>
               <option value="communities">Communities</option>
               <option value="analytics">Analytics</option>
@@ -115,8 +115,8 @@ export default function ExportManager() {
             </select>
           </div>
           <div>
-            <label className="block text-sm text-neutral-400 mb-1.5">Format</label>
-            <select value={format} onChange={(e) => setFormat(e.target.value)} className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-white">
+            <label className="block text-sm text-gray-500 mb-1.5">Format</label>
+            <select value={format} onChange={(e) => setFormat(e.target.value)} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900">
               <option value="csv">CSV</option>
               <option value="json">JSON</option>
               <option value="excel">Excel</option>
@@ -124,8 +124,8 @@ export default function ExportManager() {
             </select>
           </div>
           <div>
-            <label className="block text-sm text-neutral-400 mb-1.5">Schedule</label>
-            <select value={schedule} onChange={(e) => setSchedule(e.target.value)} className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-white">
+            <label className="block text-sm text-gray-500 mb-1.5">Schedule</label>
+            <select value={schedule} onChange={(e) => setSchedule(e.target.value)} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900">
               <option value="one-time">One-time</option>
               <option value="daily">Daily</option>
               <option value="weekly">Weekly</option>
@@ -133,50 +133,50 @@ export default function ExportManager() {
             </select>
           </div>
           <div className="flex items-end">
-            <button onClick={generateExport} disabled={generating} className="flex items-center gap-2 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg text-white text-sm transition-colors">
+            <button onClick={generateExport} disabled={generating} className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg text-white text-sm transition-colors">
               {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Generate Export
             </button>
           </div>
         </div>
       </div>
 
-      <div className="rounded-xl border border-neutral-800 bg-neutral-900/30 p-6">
+      <div className="rounded-xl border border-gray-200 bg-white p-6">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-medium text-neutral-400">Recent Exports</h3>
-          <button onClick={fetchExports} className="flex items-center gap-2 text-xs text-neutral-500 hover:text-neutral-300 transition-colors">
+          <h3 className="text-sm font-medium text-gray-500">Recent Exports</h3>
+          <button onClick={fetchExports} className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-700 transition-colors">
             <RefreshCw className="h-3 w-3" /> Refresh
           </button>
         </div>
         <div className="space-y-2">
           {loading ? (
-            <div className="text-center py-8 text-sm text-neutral-500">Loading exports...</div>
+            <div className="text-center py-8 text-sm text-gray-500">Loading exports...</div>
           ) : exports.length === 0 ? (
-            <div className="text-center py-8 text-sm text-neutral-500">No exports yet. Generate one above.</div>
+            <div className="text-center py-8 text-sm text-gray-500">No exports yet. Generate one above.</div>
           ) : exports.map((exp) => {
             const Icon = formatIcons[exp.format] || FileText;
             const StatusIcon = getStatusIcon(exp.status);
             return (
-              <div key={exp.id} className="flex items-center justify-between rounded-lg bg-neutral-900/50 p-3">
+              <div key={exp.id} className="flex items-center justify-between rounded-lg bg-white p-3">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-neutral-800"><Icon className="h-4 w-4 text-neutral-400" /></div>
+                  <div className="p-2 rounded-lg bg-gray-50"><Icon className="h-4 w-4 text-gray-500" /></div>
                   <div>
-                    <div className="text-sm text-white capitalize">{exp.data_type} Export</div>
-                    <div className="text-xs text-neutral-500 flex items-center gap-2">
+                    <div className="text-sm text-gray-900 capitalize">{exp.data_type} Export</div>
+                    <div className="text-xs text-gray-500 flex items-center gap-2">
                       <Calendar className="h-3 w-3" />{new Date(exp.created_at).toLocaleString()} &middot; {exp.format.toUpperCase()}
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   {exp.status === "processing" ? (
-                    <Loader2 className="h-4 w-4 text-blue-400 animate-spin" />
+                    <Loader2 className="h-4 w-4 text-blue-700 animate-spin" />
                   ) : (
                     <>
                       {exp.file_url && (
-                        <button onClick={() => downloadExport(exp)} className="text-neutral-400 hover:text-white transition-colors" title="Download">
+                        <button onClick={() => downloadExport(exp)} className="text-gray-500 hover:text-gray-900 transition-colors" title="Download">
                           <Download className="h-4 w-4" />
                         </button>
                       )}
-                      <span className={`text-xs ${exp.status === "completed" ? "text-emerald-400" : "text-red-400"}`}>{exp.status}</span>
+                      <span className={`text-xs ${exp.status === "completed" ? "text-emerald-700" : "text-red-700"}`}>{exp.status}</span>
                     </>
                   )}
                 </div>

@@ -149,18 +149,18 @@ export default function ReportsPage() {
   };
 
   if (!app) {
-    return <div className="p-6 text-center text-neutral-500">App not found</div>;
+    return <div className="p-6 text-center text-gray-500">App not found</div>;
   }
 
   return (
     <div className="p-6 max-w-3xl">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
-          {AppIcon && <AppIcon className="w-6 h-6 text-neutral-400" />}
-          <FileBarChart className="w-6 h-6 text-neutral-400" />
+          {AppIcon && <AppIcon className="w-6 h-6 text-gray-500" />}
+          <FileBarChart className="w-6 h-6 text-gray-500" />
           <h1 className="text-2xl font-semibold tracking-tight">{app.name} Reports</h1>
         </div>
-        <button onClick={fetchReports} className="flex items-center gap-2 rounded-lg border border-neutral-800 px-3 py-2 text-sm text-neutral-400 hover:text-white transition-colors">
+        <button onClick={fetchReports} className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-500 hover:text-gray-900 transition-colors">
           <RefreshCw className="h-4 w-4" />
         </button>
       </div>
@@ -172,41 +172,41 @@ export default function ReportsPage() {
           { label: "Schedule Report", icon: Calendar, type: "scheduled", format: "pdf", desc: "Recurring delivery" },
         ].map(action => (
           <button key={action.label} onClick={() => generateReport(action.type, action.format)} disabled={generating === action.type + action.format}
-            className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-4 text-left hover:bg-neutral-800/50 transition-colors disabled:opacity-50">
-            <div className="w-9 h-9 rounded-lg bg-neutral-800 flex items-center justify-center mb-3">
+            className="rounded-xl border border-gray-200 bg-white p-4 text-left hover:bg-gray-50 transition-colors disabled:opacity-50">
+            <div className="w-9 h-9 rounded-lg bg-gray-50 flex items-center justify-center mb-3">
               {generating === action.type + action.format
-                ? <Loader2 className="w-4 h-4 text-neutral-400 animate-spin" />
-                : <action.icon className="w-4 h-4 text-neutral-400" />
+                ? <Loader2 className="w-4 h-4 text-gray-500 animate-spin" />
+                : <action.icon className="w-4 h-4 text-gray-500" />
               }
             </div>
-            <h3 className="text-sm font-medium text-neutral-200 mb-1">{action.label}</h3>
-            <p className="text-xs text-neutral-500">{action.desc}</p>
+            <h3 className="text-sm font-medium text-gray-800 mb-1">{action.label}</h3>
+            <p className="text-xs text-gray-500">{action.desc}</p>
           </button>
         ))}
       </div>
 
-      <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 overflow-hidden">
-        <div className="px-5 py-3 border-b border-neutral-800">
-          <h2 className="text-sm font-semibold text-neutral-200">Recent Reports</h2>
+      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+        <div className="px-5 py-3 border-b border-gray-200">
+          <h2 className="text-sm font-semibold text-gray-800">Recent Reports</h2>
         </div>
         {loading ? (
-          <div className="px-5 py-6 text-center text-sm text-neutral-500">Loading reports...</div>
+          <div className="px-5 py-6 text-center text-sm text-gray-500">Loading reports...</div>
         ) : reports.length === 0 ? (
-          <div className="px-5 py-6 text-center text-sm text-neutral-500">No reports yet. Generate one above.</div>
+          <div className="px-5 py-6 text-center text-sm text-gray-500">No reports yet. Generate one above.</div>
         ) : (
-          <div className="divide-y divide-neutral-800">
+          <div className="divide-y divide-gray-200">
             {reports.map(report => (
               <div key={report.id} className="flex items-center justify-between px-5 py-3">
                 <div className="flex items-center gap-3">
-                  <FileText className="w-4 h-4 text-neutral-600" />
+                  <FileText className="w-4 h-4 text-gray-400" />
                   <div>
-                    <p className="text-sm text-neutral-200">{report.title}</p>
-                    <p className="text-xs text-neutral-500">{new Date(report.generated_at).toLocaleDateString()} &middot; {report.format.toUpperCase()}</p>
+                    <p className="text-sm text-gray-800">{report.title}</p>
+                    <p className="text-xs text-gray-500">{new Date(report.generated_at).toLocaleDateString()} &middot; {report.format.toUpperCase()}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-xs px-2 py-0.5 rounded bg-neutral-800 text-neutral-400">{report.format.toUpperCase()}</span>
-                  <button onClick={() => handleDownload(report)} className="text-neutral-500 hover:text-neutral-300 transition-colors">
+                  <span className="text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-500">{report.format.toUpperCase()}</span>
+                  <button onClick={() => handleDownload(report)} className="text-gray-500 hover:text-gray-700 transition-colors">
                     <Download className="w-4 h-4" />
                   </button>
                 </div>

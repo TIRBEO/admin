@@ -11,10 +11,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-neutral-400 mx-auto mb-4" />
-          <p className="text-neutral-500 text-sm">Loading admin panel...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent mx-auto mb-3" />
+          <p className="text-gray-500 text-sm">Loading admin panel...</p>
         </div>
       </div>
     );
@@ -33,11 +33,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white flex">
+    <div className="min-h-screen bg-gray-50 text-gray-900 flex">
       <Sidebar currentApp={currentApp} />
       <div className="flex-1 min-w-0 flex flex-col">
         <Header currentApp={currentApp} onAppChange={handleAppChange} onLogout={handleLogout} />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto p-8">{children}</main>
       </div>
     </div>
   );

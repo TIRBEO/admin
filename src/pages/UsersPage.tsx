@@ -25,11 +25,11 @@ interface AdminUser {
 }
 
 const ROLE_OPTIONS = [
-  { value: "super_admin", label: "Super Admin", color: "text-amber-400", bg: "bg-amber-500/10" },
-  { value: "admin", label: "Admin", color: "text-red-400", bg: "bg-red-500/10" },
-  { value: "manager", label: "Manager", color: "text-blue-400", bg: "bg-blue-500/10" },
-  { value: "editor", label: "Editor", color: "text-green-400", bg: "bg-green-500/10" },
-  { value: "viewer", label: "Viewer", color: "text-neutral-400", bg: "bg-neutral-800" },
+  { value: "super_admin", label: "Super Admin", color: "text-amber-700", bg: "bg-amber-50" },
+  { value: "admin", label: "Admin", color: "text-red-700", bg: "bg-red-50" },
+  { value: "manager", label: "Manager", color: "text-blue-700", bg: "bg-blue-50" },
+  { value: "editor", label: "Editor", color: "text-green-700", bg: "bg-green-50" },
+  { value: "viewer", label: "Viewer", color: "text-gray-500", bg: "bg-gray-100" },
 ];
 
 export default function UsersPage() {
@@ -56,10 +56,16 @@ export default function UsersPage() {
   const load = async () => {
     setLoading(true);
     setError("");
-    let authUsersResult: any = { data: null };
+    let authUsersResult: { data: any } | null = null;
     try {
       authUsersResult = await supabase.rpc("list_all_users");
-    } catch {}
+    } catch {
+      // fallback: try user_profiles table
+      try {
+        const { data } = await supabase.from("user_profiles").select("*");
+        if (data) authUsersResult = { data };
+      } catch {}
+    }
     const [adminRes] = await Promise.all([
       supabase.from("admin_users").select("*").order("created_at", { ascending: true }),
     ]);
@@ -126,28 +132,28 @@ export default function UsersPage() {
   const isAdmin = currentRole === "admin" || isSuperAdmin;
 
   if (!app) {
-    return <div className="p-6 text-center text-neutral-500">App not found</div>;
+    return <div className="p-6 text-center text-gray-500">App not found</div>;
   }
 
   return (
     <div className="p-6 max-w-5xl">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          {AppIcon && <AppIcon className="w-6 h-6 text-neutral-400" />}
-          <Users className="w-6 h-6 text-neutral-400" />
+          {AppIcon && <AppIcon className="w-6 h-6 text-gray-500" />}
+          <Users className="w-6 h-6 text-gray-500" />
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">{app.name} Users</h1>
-            <p className="text-sm text-neutral-500 mt-1">All registered users and admin roles</p>
+            <p className="text-sm text-gray-500 mt-1">All registered users and admin roles</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={load} className="flex items-center gap-2 rounded-lg border border-neutral-800 px-3 py-2 text-sm text-neutral-400 hover:text-white transition-colors">
+          <button onClick={load} className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors">
             <RefreshCw className="h-4 w-4" />
           </button>
-          <div className="text-xs text-neutral-500 px-3 py-2 bg-neutral-900/50 rounded-lg">{authUsers.length} users</div>
+          <div className="text-xs text-gray-500 px-3 py-2 bg-gray-50 rounded-lg">{authUsers.length} users</div>
           {isAdmin && (
             <button onClick={() => setShowAddForm(!showAddForm)}
-              className="flex items-center gap-2 rounded-lg bg-neutral-100 px-4 py-2 text-sm font-medium text-neutral-900 hover:bg-neutral-200">
+              className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
               <UserPlus className="h-4 w-4" /> Add Admin
             </button>
           )}
@@ -155,21 +161,21 @@ export default function UsersPage() {
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-400">{error}</div>
+        <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
       )}
 
       {showAddForm && (
-        <div className="mb-6 rounded-xl border border-neutral-800 bg-neutral-900/50 p-4 space-y-3">
+        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 space-y-3">
           <input placeholder="Email address" type="email" value={newEmail}
             onChange={(e) => setNewEmail(e.target.value)}
-            className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100" />
+            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900" />
           <input placeholder="Display name (optional)" value={newDisplayName}
             onChange={(e) => setNewDisplayName(e.target.value)}
-            className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100" />
+            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900" />
           <div>
-            <label className="block text-xs text-neutral-500 mb-1">Role</label>
+            <label className="block text-xs text-gray-500 mb-1">Role</label>
             <select value={newRole} onChange={(e) => setNewRole(e.target.value)}
-              className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100">
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900">
               {ROLE_OPTIONS.filter((o) => o.value !== "super_admin" || isSuperAdmin).map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
@@ -177,98 +183,98 @@ export default function UsersPage() {
           </div>
           <div className="flex gap-2">
             <button onClick={addAdmin} disabled={adding}
-              className="flex items-center gap-2 rounded-lg bg-neutral-100 px-4 py-2 text-sm font-medium text-neutral-900 hover:bg-neutral-200 disabled:opacity-50">
+              className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
               {adding && <Loader2 className="h-4 w-4 animate-spin" />} Add User
             </button>
             <button onClick={() => { setShowAddForm(false); setError(""); }}
-              className="rounded-lg border border-neutral-800 px-4 py-2 text-sm text-neutral-400 hover:text-neutral-200">Cancel</button>
+              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Cancel</button>
           </div>
         </div>
       )}
 
       {/* Search */}
       <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
         <input type="text" placeholder="Search users by email..." value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-3 py-2 rounded-lg border border-neutral-800 bg-neutral-950 text-sm text-white placeholder-neutral-500 outline-none focus:border-indigo-500 transition-colors" />
+          className="w-full pl-10 pr-3 py-2 rounded-lg border border-gray-300 bg-white text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" />
       </div>
 
       {/* Users table */}
-      <div className="rounded-xl border border-neutral-800 bg-neutral-900/30 overflow-hidden">
+      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-neutral-900/50">
-                <th className="text-left px-4 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">User</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">Email</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">Role</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">Joined</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">Last Active</th>
-                <th className="text-right px-4 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">Actions</th>
+              <tr className="bg-gray-50">
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Last Active</th>
+                <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-800">
+            <tbody className="divide-y divide-gray-200">
               {loading ? (
-                <tr><td colSpan={6} className="px-4 py-12 text-center text-sm text-neutral-500">Loading users...</td></tr>
+                <tr><td colSpan={6} className="px-4 py-12 text-center text-sm text-gray-500">Loading users...</td></tr>
               ) : filteredUsers.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-12 text-center text-sm text-neutral-500">No users found</td></tr>
+                <tr><td colSpan={6} className="px-4 py-12 text-center text-sm text-gray-500">No users found</td></tr>
               ) : filteredUsers.map((u) => {
                 const adminUser = adminUsers.find((a) => a.user_id === u.id);
                 const roleMeta = ROLE_OPTIONS.find((r) => r.value === adminUser?.role);
                 const isSelf = session?.admin?.user_id === u.id;
 
                 return (
-                  <tr key={u.id} className="hover:bg-neutral-900/20 transition-colors">
+                  <tr key={u.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-neutral-800 flex items-center justify-center text-xs font-semibold text-neutral-300">
+                        <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-semibold text-white">
                           {adminUser?.display_name?.charAt(0)?.toUpperCase() || u.email.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <span className="text-neutral-200">{adminUser?.display_name || "—"}</span>
-                          {isSelf && <span className="ml-2 text-[10px] text-neutral-500">(you)</span>}
+                          <span className="text-gray-800">{adminUser?.display_name || "—"}</span>
+                          {isSelf && <span className="ml-2 text-[10px] text-gray-500">(you)</span>}
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-neutral-400 font-mono text-xs">{u.email}</td>
+                    <td className="px-4 py-3 text-gray-500 font-mono text-xs">{u.email}</td>
                     <td className="px-4 py-3">
                       {adminUser ? (
                         editingRole?.id === adminUser.id ? (
                           <div className="flex items-center gap-1">
                             <select value={editingRole.role}
                               onChange={(e) => setEditingRole({ ...editingRole, role: e.target.value })}
-                              className="rounded border border-neutral-700 bg-neutral-950 px-2 py-1 text-xs text-neutral-100">
+                              className="rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-900">
                               {ROLE_OPTIONS.filter((o) => o.value !== "super_admin" || isSuperAdmin).map((opt) => (
                                 <option key={opt.value} value={opt.value}>{opt.label}</option>
                               ))}
                             </select>
-                            <button onClick={() => updateRole(adminUser.id, editingRole.role)} className="p-1 text-green-400 hover:text-green-300"><Check className="h-3.5 w-3.5" /></button>
-                            <button onClick={() => setEditingRole(null)} className="p-1 text-neutral-500 hover:text-neutral-300"><X className="h-3.5 w-3.5" /></button>
+                            <button onClick={() => updateRole(adminUser.id, editingRole.role)} className="p-1 text-green-600 hover:text-green-700"><Check className="h-3.5 w-3.5" /></button>
+                            <button onClick={() => setEditingRole(null)} className="p-1 text-gray-500 hover:text-gray-700"><X className="h-3.5 w-3.5" /></button>
                           </div>
                         ) : (
-                          <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${roleMeta?.bg || "bg-neutral-800"} ${roleMeta?.color || "text-neutral-400"}`}>
+                          <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${roleMeta?.bg || "bg-gray-100"} ${roleMeta?.color || "text-gray-500"}`}>
                             {roleMeta?.label || adminUser.role.replace("_", " ")}
                           </span>
                         )
                       ) : (
-                        <span className="text-xs text-neutral-500">—</span>
+                        <span className="text-xs text-gray-500">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-xs text-neutral-500">
+                    <td className="px-4 py-3 text-xs text-gray-500">
                       <div className="flex items-center gap-1.5">
                         <Calendar className="h-3 w-3" />
                         {new Date(u.created_at).toLocaleDateString()}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-xs text-neutral-500">
+                    <td className="px-4 py-3 text-xs text-gray-500">
                       {u.last_sign_in_at ? (
                         <div className="flex items-center gap-1.5">
                           <Clock className="h-3 w-3" />
                           {new Date(u.last_sign_in_at).toLocaleDateString()}
                         </div>
                       ) : (
-                        <span className="text-neutral-600">Never</span>
+                        <span className="text-gray-400">Never</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -277,11 +283,11 @@ export default function UsersPage() {
                           <>
                             {isAdmin && editingRole?.id !== adminUser.id && (
                               <button onClick={() => setEditingRole({ id: adminUser.id, role: adminUser.role })}
-                                className="p-1 text-neutral-500 hover:text-neutral-200" title="Change role"><Pencil className="h-3.5 w-3.5" /></button>
+                                className="p-1 text-gray-500 hover:text-gray-700" title="Change role"><Pencil className="h-3.5 w-3.5" /></button>
                             )}
                             {isSuperAdmin && (
                               <button onClick={() => removeAdmin(adminUser.id)}
-                                className="p-1 text-neutral-500 hover:text-red-400" title="Remove"><Trash2 className="h-3.5 w-3.5" /></button>
+                                className="p-1 text-gray-500 hover:text-red-500" title="Remove"><Trash2 className="h-3.5 w-3.5" /></button>
                             )}
                           </>
                         )}
@@ -289,7 +295,7 @@ export default function UsersPage() {
                           <button onClick={() => {
                             setNewEmail(u.email);
                             setShowAddForm(true);
-                          }} className="flex items-center gap-1 px-2 py-1 text-xs text-neutral-500 hover:text-neutral-200">
+                          }} className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700">
                             <UserPlus className="h-3 w-3" /> Add
                           </button>
                         )}

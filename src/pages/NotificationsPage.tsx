@@ -13,10 +13,10 @@ interface Notification {
 
 const typeIcons = { warning: AlertTriangle, success: CheckCircle, error: XCircle, info: Info };
 const typeColors: Record<string, string> = {
-  warning: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  success: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-  error: "bg-red-500/10 text-red-400 border-red-500/20",
-  info: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  warning: "bg-amber-50 text-amber-700 border-amber-200",
+  success: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  error: "bg-red-50 text-red-700 border-red-200",
+  info: "bg-blue-50 text-blue-700 border-blue-200",
 };
 
 export default function NotificationsPage() {
@@ -53,30 +53,30 @@ export default function NotificationsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Notifications</h1>
-          <p className="text-sm text-neutral-500 mt-1">System alerts and updates</p>
+          <p className="text-sm text-gray-500 mt-1">System alerts and updates</p>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={fetchNotifications} className="flex items-center gap-2 rounded-lg border border-neutral-800 px-3 py-2 text-sm text-neutral-400 hover:text-white transition-colors">
+          <button onClick={fetchNotifications} className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-500 hover:text-gray-900 transition-colors">
             <RefreshCw className="h-4 w-4" />
           </button>
           {unreadCount > 0 && (
-            <button onClick={markAllRead} className="flex items-center gap-2 rounded-lg border border-neutral-800 px-4 py-2 text-sm text-neutral-400 hover:text-white transition-colors">
+            <button onClick={markAllRead} className="flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-500 hover:text-gray-900 transition-colors">
               <CheckCheck className="h-4 w-4" /> Mark all read
             </button>
           )}
-          <div className="flex items-center gap-2 rounded-lg bg-neutral-900 border border-neutral-800 px-4 py-2 text-sm">
-            <Bell className="h-4 w-4 text-neutral-400" />
-            <span className="text-white font-medium">{unreadCount}</span>
-            <span className="text-neutral-500">unread</span>
+          <div className="flex items-center gap-2 rounded-lg bg-gray-50 border border-gray-200 px-4 py-2 text-sm">
+            <Bell className="h-4 w-4 text-gray-500" />
+            <span className="text-gray-900 font-medium">{unreadCount}</span>
+            <span className="text-gray-500">unread</span>
           </div>
         </div>
       </div>
 
       <div className="space-y-2">
         {loading ? (
-          <div className="text-center py-12 text-neutral-500 text-sm">Loading notifications...</div>
+          <div className="text-center py-12 text-gray-500 text-sm">Loading notifications...</div>
         ) : notifications.length === 0 ? (
-          <div className="text-center py-12 text-neutral-500 text-sm">No notifications</div>
+          <div className="text-center py-12 text-gray-500 text-sm">No notifications</div>
         ) : notifications.map((n) => {
           const Icon = typeIcons[n.type] || Info;
           return (
@@ -84,7 +84,7 @@ export default function NotificationsPage() {
               key={n.id}
               onClick={() => toggleRead(n.id, n.is_read)}
               className={`flex items-start gap-4 rounded-xl border p-4 cursor-pointer transition-colors ${
-                n.is_read ? "border-neutral-800 bg-neutral-900/20" : "border-neutral-700 bg-neutral-900/60"
+                n.is_read ? "border-gray-200 bg-white" : "border-gray-300 bg-gray-50"
               }`}
             >
               <div className={`p-2 rounded-lg border ${typeColors[n.type] || typeColors.info}`}>
@@ -92,13 +92,13 @@ export default function NotificationsPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className={`text-sm font-medium ${n.is_read ? "text-neutral-400" : "text-white"}`}>{n.title}</span>
-                  {!n.is_read && <div className="h-2 w-2 rounded-full bg-blue-400" />}
+                  <span className={`text-sm font-medium ${n.is_read ? "text-gray-500" : "text-gray-900"}`}>{n.title}</span>
+                  {!n.is_read && <div className="h-2 w-2 rounded-full bg-blue-500" />}
                 </div>
-                <p className="text-xs text-neutral-500 mt-0.5">{n.message}</p>
-                <span className="text-[10px] text-neutral-600 mt-1 block">{new Date(n.created_at).toLocaleString()}</span>
+                <p className="text-xs text-gray-500 mt-0.5">{n.message}</p>
+                <span className="text-[10px] text-gray-400 mt-1 block">{new Date(n.created_at).toLocaleString()}</span>
               </div>
-              <ExternalLink className="h-4 w-4 text-neutral-600 mt-1" />
+              <ExternalLink className="h-4 w-4 text-gray-400 mt-1" />
             </div>
           );
         })}

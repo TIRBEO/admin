@@ -8,10 +8,27 @@ import {
   Activity, Bell, FileCheck, HardDrive, Megaphone, Download, Eye,
 } from "lucide-react";
 
+function SidebarItem({ icon: Icon, label, path, active }: {
+  icon: any; label: string; path: string; active: boolean;
+}) {
+  return (
+    <NavLink
+      to={path}
+      className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-150 border-l-3 ${
+        active
+          ? "border-blue-600 bg-blue-50 text-blue-700 font-medium"
+          : "border-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+      }`}
+    >
+      <Icon className="h-5 w-5 shrink-0" />
+      <span>{label}</span>
+    </NavLink>
+  );
+}
+
 export function Sidebar({ currentApp }: { currentApp: string }) {
   const { role, admin } = useAuth();
   const app = APPS[currentApp];
-  const AppIcon = app?.icon;
 
   const navItems = [
     { icon: LayoutDashboard, label: "Overview", path: `/apps/${currentApp}/overview`, key: "overview" },
@@ -42,64 +59,33 @@ export function Sidebar({ currentApp }: { currentApp: string }) {
   const visibleAdminItems = adminItems.filter(item => role && canViewSidebarItem(role, item.key));
 
   return (
-    <aside className="w-64 bg-neutral-950 border-r border-white/5 flex flex-col h-screen sticky top-0">
-      <div className="p-4 border-b border-white/5">
-        <div className="flex items-center gap-3">
-          {AppIcon && <AppIcon className="w-6 h-6 text-neutral-300" />}
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-semibold text-white truncate">{app?.name || "Select App"}</div>
-            <div className="text-xs text-neutral-500">v{app?.version || "1.0.0"}</div>
-          </div>
-        </div>
-      </div>
-      <nav className="flex-1 overflow-y-auto p-3 space-y-1">
+    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0">
+      <nav className="flex-1 overflow-y-auto py-4 space-y-0.5">
         {visibleNavItems.map((item) => (
-          <NavLink
-            key={item.key}
-            to={item.path}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
-                isActive
-                  ? "bg-neutral-800 text-white"
-                  : "text-neutral-400 hover:text-white hover:bg-neutral-800/50"
-              }`
-            }
-          >
-            <item.icon className="w-4 h-4" />
-            <span className="text-sm">{item.label}</span>
-          </NavLink>
+          <SidebarItem key={item.key} icon={item.icon} label={item.label} path={item.path}
+            active={location.pathname === item.path} />
         ))}
         {visibleAdminItems.length > 0 && (
           <>
-            <div className="h-px bg-white/5 my-3" />
-            <div className="px-3 py-1 text-xs text-neutral-500 uppercase tracking-wider">Administration</div>
+            <div className="my-4 px-4">
+              <div className="h-px bg-gray-200" />
+            </div>
+            <div className="px-4 pb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Administration</div>
             {visibleAdminItems.map((item) => (
-              <NavLink
-                key={item.key}
-                to={item.path}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
-                    isActive
-                      ? "bg-neutral-800 text-white"
-                      : "text-neutral-400 hover:text-white hover:bg-neutral-800/50"
-                  }`
-                }
-              >
-                <item.icon className="w-4 h-4" />
-                <span className="text-sm">{item.label}</span>
-              </NavLink>
+              <SidebarItem key={item.key} icon={item.icon} label={item.label} path={item.path}
+                active={location.pathname === item.path} />
             ))}
           </>
         )}
       </nav>
-      <div className="p-4 border-t border-white/5">
+      <div className="p-4 border-t border-gray-200">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-neutral-800 flex items-center justify-center text-neutral-300 font-semibold text-sm">
+          <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-semibold">
             {admin?.display_name?.charAt(0)?.toUpperCase() || "?"}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm text-white truncate">{admin?.display_name || "Unknown"}</div>
-            <div className="text-xs text-neutral-500 truncate">{admin?.email || ""}</div>
+            <div className="text-sm font-medium text-gray-900 truncate">{admin?.display_name || "Unknown"}</div>
+            <div className="text-xs text-gray-500 truncate">{admin?.email || ""}</div>
           </div>
         </div>
       </div>

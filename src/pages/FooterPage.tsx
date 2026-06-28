@@ -46,21 +46,21 @@ export default function FooterPage() {
     <div className="max-w-3xl">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold tracking-tight">Footer</h1>
-        <button onClick={addSection} className="flex items-center gap-2 rounded-lg bg-neutral-100 px-4 py-2 text-sm font-medium text-neutral-900 hover:bg-neutral-200">
+        <button onClick={addSection} className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
           <Plus className="h-4 w-4" /> Add Section
         </button>
       </div>
       <div className="space-y-4">
         {sections.map((sec) => (
-          <div key={sec.id} className="rounded-lg border border-neutral-800 bg-neutral-900/30 p-4">
+          <div key={sec.id} className="rounded-lg border border-gray-200 bg-white p-4">
             <div className="flex items-center gap-3 mb-3">
               <span className="font-medium text-sm">{sec.title}</span>
-              <button onClick={() => addLink(sec.id)} className="text-xs text-neutral-500 hover:text-neutral-200 ml-auto"><Plus className="h-3 w-3 inline" /> Add Link</button>
-              <button onClick={() => removeSection(sec.id)} className="p-1 text-neutral-500 hover:text-red-400"><Trash2 className="h-3.5 w-3.5" /></button>
+              <button onClick={() => addLink(sec.id)} className="text-xs text-gray-500 hover:text-gray-700 ml-auto"><Plus className="h-3 w-3 inline" /> Add Link</button>
+              <button onClick={() => removeSection(sec.id)} className="p-1 text-gray-500 hover:text-red-600"><Trash2 className="h-3.5 w-3.5" /></button>
             </div>
             <div className="space-y-1">
               {sec.links.map((link) => (
-                <div key={link.id} className="flex items-center gap-3 rounded bg-neutral-950/50 px-3 py-2 text-xs text-neutral-400">
+                <div key={link.id} className="flex items-center gap-3 rounded bg-gray-50 px-3 py-2 text-xs text-gray-500">
                   <span className="flex-1">{link.label}</span>
                   <span>{link.href}</span>
                   <button onClick={() => removeLink(link.id)} className="p-1 hover:text-red-400"><Trash2 className="h-3 w-3" /></button>

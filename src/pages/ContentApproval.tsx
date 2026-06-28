@@ -14,9 +14,9 @@ interface ApprovalItem {
 }
 
 const priorityColors: Record<string, string> = {
-  high: "bg-red-500/10 text-red-400 border-red-500/20",
-  medium: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  low: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  high: "bg-red-50 text-red-700 border-red-200",
+  medium: "bg-amber-50 text-amber-700 border-amber-200",
+  low: "bg-blue-50 text-blue-700 border-blue-200",
 };
 
 export default function ContentApproval() {
@@ -52,36 +52,36 @@ export default function ContentApproval() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Content Approval</h1>
-          <p className="text-sm text-neutral-500 mt-1">Review and moderate user-submitted content</p>
+          <p className="text-sm text-gray-500 mt-1">Review and moderate user-submitted content</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={fetchQueue} className="flex items-center gap-2 rounded-lg border border-neutral-800 px-3 py-2 text-sm text-neutral-400 hover:text-white transition-colors">
+          <button onClick={fetchQueue} className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-500 hover:text-gray-900 transition-colors">
             <RefreshCw className="h-4 w-4" />
           </button>
-          <div className="flex items-center gap-2 rounded-lg bg-neutral-900 border border-amber-500/20 px-4 py-2 text-sm">
-            <Clock className="h-4 w-4 text-amber-400" />
-            <span className="text-amber-400 font-medium">{queue.length}</span>
-            <span className="text-neutral-500">pending</span>
+          <div className="flex items-center gap-2 rounded-lg bg-white border border-amber-200 px-4 py-2 text-sm">
+            <Clock className="h-4 w-4 text-amber-700" />
+            <span className="text-amber-700 font-medium">{queue.length}</span>
+            <span className="text-gray-500">pending</span>
           </div>
         </div>
       </div>
 
       <div className="space-y-3">
         {loading ? (
-          <div className="text-center py-12 text-neutral-500 text-sm">Loading approvals...</div>
+          <div className="text-center py-12 text-gray-500 text-sm">Loading approvals...</div>
         ) : queue.length === 0 ? (
-          <div className="text-center py-12 text-neutral-500 text-sm">No pending content to approve</div>
+          <div className="text-center py-12 text-gray-500 text-sm">No pending content to approve</div>
         ) : queue.map((item) => (
-          <div key={item.id} className="rounded-xl border border-neutral-800 bg-neutral-900/30 p-4">
+          <div key={item.id} className="rounded-xl border border-gray-200 bg-white p-4">
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <span className={`text-xs px-2 py-0.5 rounded-full border ${priorityColors[item.priority] || priorityColors.low}`}>{item.priority || "low"}</span>
-                  <span className="text-xs text-neutral-500 flex items-center gap-1"><FileText className="h-3 w-3" />{item.content_type}</span>
+                  <span className="text-xs text-gray-500 flex items-center gap-1"><FileText className="h-3 w-3" />{item.content_type}</span>
                 </div>
-                <h4 className="text-white font-medium">{item.title}</h4>
-                <p className="text-neutral-400 text-sm mt-1">{item.content}</p>
-                <div className="flex items-center gap-4 mt-2 text-xs text-neutral-500">
+                <h4 className="text-gray-900 font-medium">{item.title}</h4>
+                <p className="text-gray-500 text-sm mt-1">{item.content}</p>
+                <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
                   {item.submitted_by && <span>By: {item.submitted_by}</span>}
                   <span>Submitted: {new Date(item.created_at).toLocaleString()}</span>
                 </div>
