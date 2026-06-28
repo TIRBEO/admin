@@ -18,7 +18,7 @@ const ROLE_OPTIONS: { value: AdminRole; label: string; color: string }[] = [
   { value: "admin", label: "Admin", color: "text-red-600" },
   { value: "manager", label: "Manager", color: "text-blue-600" },
   { value: "editor", label: "Editor", color: "text-green-600" },
-  { value: "viewer", label: "Viewer", color: "text-gray-500" },
+  { value: "viewer", label: "Viewer", color: "text-neutral-400" },
 ];
 
 export default function AdminsPage() {
@@ -107,8 +107,8 @@ export default function AdminsPage() {
     <div className="max-w-2xl">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Admin Users</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage who has access to the admin panel</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-white">Admin Users</h1>
+          <p className="text-sm text-neutral-400 mt-1">Manage who has access to the admin panel</p>
         </div>
         {hasPermission("admins", "add") && (
           <button
@@ -127,26 +127,26 @@ export default function AdminsPage() {
       )}
 
       {showAddForm && (
-        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 space-y-3">
+        <div className="mb-6 rounded-xl border border-neutral-800 bg-neutral-900 p-4 space-y-3">
           <input
             placeholder="Email address"
             type="email"
             value={newEmail}
             onChange={(e) => setNewEmail(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400"
+            className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-white placeholder-neutral-600"
           />
           <input
             placeholder="Display name (optional)"
             value={newDisplayName}
             onChange={(e) => setNewDisplayName(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400"
+            className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-white placeholder-neutral-600"
           />
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Role</label>
+            <label className="block text-xs text-neutral-400 mb-1">Role</label>
             <select
               value={newRole}
               onChange={(e) => setNewRole(e.target.value as AdminRole)}
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+              className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-white"
             >
               {ROLE_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value} disabled={opt.value === "super_admin" || (currentSession?.admin.role !== "super_admin" && opt.value === "admin")}>
@@ -159,7 +159,7 @@ export default function AdminsPage() {
             <button onClick={addAdmin} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
               Add User
             </button>
-            <button onClick={() => { setShowAddForm(false); setError(""); }} className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+            <button onClick={() => { setShowAddForm(false); setError(""); }} className="rounded-lg border border-neutral-700 bg-neutral-950 px-4 py-2 text-sm text-neutral-300 hover:bg-neutral-800">
               Cancel
             </button>
           </div>
@@ -167,28 +167,28 @@ export default function AdminsPage() {
       )}
 
       {loading ? (
-        <p className="text-sm text-gray-500">Loading...</p>
+        <p className="text-sm text-neutral-400">Loading...</p>
       ) : (
         <div className="space-y-1">
           {admins.length === 0 && (
-            <p className="text-sm text-gray-500 py-8 text-center">No admin users yet.</p>
+            <p className="text-sm text-neutral-400 py-8 text-center">No admin users yet.</p>
           )}
           {admins.map((a) => {
             const isSelf = currentSession?.admin.id === a.id;
             const roleMeta = ROLE_OPTIONS.find((r) => r.value === a.role);
 
             return (
-              <div key={a.id} className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm">
+              <div key={a.id} className="flex items-center gap-3 rounded-lg border border-neutral-800 bg-neutral-900 px-4 py-3 text-sm">
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">
                   {a.display_name?.charAt(0)?.toUpperCase() || a.email?.charAt(0).toUpperCase() || "?"}
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">
+                  <p className="font-medium text-white truncate">
                     {a.display_name || a.email}
-                    {isSelf && <span className="ml-2 text-[10px] text-gray-500">(you)</span>}
+                    {isSelf && <span className="ml-2 text-[10px] text-neutral-400">(you)</span>}
                   </p>
-                  <p className="text-xs text-gray-500 truncate">{a.email}</p>
+                  <p className="text-xs text-neutral-400 truncate">{a.email}</p>
                 </div>
 
                 {editingRole?.id === a.id ? (
@@ -196,7 +196,7 @@ export default function AdminsPage() {
                     <select
                       value={editingRole.role}
                       onChange={(e) => setEditingRole({ ...editingRole, role: e.target.value as AdminRole })}
-                      className="rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-900"
+                      className="rounded border border-neutral-700 bg-neutral-950 px-2 py-1 text-xs text-white"
                       autoFocus
                     >
                       {ROLE_OPTIONS.filter((opt) => canChangeRole(opt.value)).map((opt) => (
@@ -206,12 +206,12 @@ export default function AdminsPage() {
                     <button onClick={() => updateRole(a.id, editingRole.role)} className="p-1 text-green-600 hover:text-green-700">
                       <Check className="h-3.5 w-3.5" />
                     </button>
-                    <button onClick={() => setEditingRole(null)} className="p-1 text-gray-500 hover:text-gray-700">
+                    <button onClick={() => setEditingRole(null)} className="p-1 text-neutral-400 hover:text-neutral-300">
                       <X className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 ) : (
-                  <span className={`text-xs uppercase tracking-wider font-medium ${roleMeta?.color || "text-gray-500"}`}>
+                  <span className={`text-xs uppercase tracking-wider font-medium ${roleMeta?.color || "text-neutral-400"}`}>
                     {roleMeta?.label || a.role.replace("_", " ")}
                   </span>
                 )}
@@ -219,7 +219,7 @@ export default function AdminsPage() {
                 {hasPermission("admins", "changeRole") && editingRole?.id !== a.id && !isSelf && (
                   <button
                     onClick={() => setEditingRole({ id: a.id, role: a.role })}
-                    className="p-1 text-gray-500 hover:text-gray-700"
+                    className="p-1 text-neutral-400 hover:text-neutral-300"
                     title="Change role"
                   >
                     <Pencil className="h-3.5 w-3.5" />
@@ -229,7 +229,7 @@ export default function AdminsPage() {
                 {canDelete && !isSelf && (
                   <button
                     onClick={() => removeAdmin(a.id, a.role)}
-                    className="p-1 text-gray-500 hover:text-red-600"
+                    className="p-1 text-neutral-400 hover:text-red-600"
                     title="Remove admin"
                   >
                     <Trash2 className="h-3.5 w-3.5" />

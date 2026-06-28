@@ -184,7 +184,7 @@ export default function DocsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Documentation</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage doc categories and articles</p>
+          <p className="text-sm text-neutral-500 mt-1">Manage doc categories and articles</p>
         </div>
         {canWrite && (
           <button onClick={addCategory} className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
@@ -194,33 +194,33 @@ export default function DocsPage() {
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+        <div className="mb-4 rounded-lg border border-red-800 bg-red-500/10 px-4 py-3 text-sm text-red-400">{error}</div>
       )}
 
       <div className="space-y-2">
         {categories.map((cat) => (
-          <div key={cat.id} className="rounded-lg border border-gray-200 bg-white">
+          <div key={cat.id} className="rounded-lg border border-neutral-800 bg-neutral-900">
             <div className="flex items-center gap-3 px-4 py-3">
               <button onClick={() => setExpanded(expanded === cat.id ? null : cat.id)}
                 className="flex items-center gap-2 flex-1 text-left text-sm">
-                {expanded === cat.id ? <ChevronDown className="h-4 w-4 text-gray-500" /> : <ChevronRight className="h-4 w-4 text-gray-500" />}
+                {expanded === cat.id ? <ChevronDown className="h-4 w-4 text-neutral-500" /> : <ChevronRight className="h-4 w-4 text-neutral-500" />}
                 {editingCategory === cat.id ? (
                   <div className="flex items-center gap-2 flex-1">
                     <input value={catForm.title} onChange={(e) => setCatForm({ ...catForm, title: e.target.value })}
-                      className="w-48 rounded border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900" />
+                      className="w-48 rounded border border-neutral-700 bg-neutral-950 px-2 py-1 text-sm text-white" />
                     <input value={catForm.slug} onChange={(e) => setCatForm({ ...catForm, slug: e.target.value })}
-                      className="w-36 rounded border border-gray-300 bg-white px-2 py-1 text-sm text-gray-500" />
+                      className="w-36 rounded border border-neutral-700 bg-neutral-950 px-2 py-1 text-sm text-neutral-500" />
                     <input value={catForm.description} onChange={(e) => setCatForm({ ...catForm, description: e.target.value })}
                       placeholder="Description"
-                      className="w-64 rounded border border-gray-300 bg-white px-2 py-1 text-sm text-gray-500" />
+                      className="w-64 rounded border border-neutral-700 bg-neutral-950 px-2 py-1 text-sm text-neutral-500" />
                     <button onClick={() => saveCategory(cat.id)} className="p-1 text-green-400 hover:text-green-300"><Save className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => setEditingCategory(null)} className="p-1 text-gray-500 hover:text-gray-700"><X className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => setEditingCategory(null)} className="p-1 text-neutral-500 hover:text-neutral-300"><X className="h-3.5 w-3.5" /></button>
                   </div>
                 ) : (
                   <>
                     <span className="flex-1 font-medium">{cat.title}</span>
-                    <span className="text-xs text-gray-500">/{cat.slug}</span>
-                    <span className="text-xs text-gray-500">{cat.articles.length} articles</span>
+                    <span className="text-xs text-neutral-500">/{cat.slug}</span>
+                    <span className="text-xs text-neutral-500">{cat.articles.length} articles</span>
                   </>
                 )}
               </button>
@@ -228,37 +228,37 @@ export default function DocsPage() {
               {canWrite && editingCategory !== cat.id && (
                 <div className="flex items-center gap-0.5">
                   <button onClick={() => moveCategory(cat.id, "up")} disabled={reordering}
-                    className="p-1 text-gray-500 hover:text-gray-700 disabled:opacity-30"><ArrowUp className="h-3.5 w-3.5" /></button>
+                    className="p-1 text-neutral-500 hover:text-neutral-300 disabled:opacity-30"><ArrowUp className="h-3.5 w-3.5" /></button>
                   <button onClick={() => moveCategory(cat.id, "down")} disabled={reordering}
-                    className="p-1 text-gray-500 hover:text-gray-700 disabled:opacity-30"><ArrowDown className="h-3.5 w-3.5" /></button>
+                    className="p-1 text-neutral-500 hover:text-neutral-300 disabled:opacity-30"><ArrowDown className="h-3.5 w-3.5" /></button>
                 </div>
               )}
               {canWrite && editingCategory !== cat.id && (
-                <button onClick={() => startEditCategory(cat)} className="p-1 text-gray-500 hover:text-gray-700"><Pencil className="h-3.5 w-3.5" /></button>
+                <button onClick={() => startEditCategory(cat)} className="p-1 text-neutral-500 hover:text-neutral-300"><Pencil className="h-3.5 w-3.5" /></button>
               )}
               {canDelete && editingCategory !== cat.id && (
-                <button onClick={() => deleteCategory(cat.id)} className="p-1 text-gray-500 hover:text-red-500"><Trash2 className="h-3.5 w-3.5" /></button>
+                <button onClick={() => deleteCategory(cat.id)} className="p-1 text-neutral-500 hover:text-red-500"><Trash2 className="h-3.5 w-3.5" /></button>
               )}
             </div>
 
             {expanded === cat.id && (
-              <div className="border-t border-gray-200 px-4 pb-3 space-y-1">
+              <div className="border-t border-neutral-800 px-4 pb-3 space-y-1">
                 {cat.articles.length === 0 && (
-                  <p className="py-4 text-center text-xs text-gray-500">No articles yet</p>
+                  <p className="py-4 text-center text-xs text-neutral-500">No articles yet</p>
                 )}
                 {cat.articles.map((article) => (
                   <div key={article.id}>
                     {editingArticle === article.id ? (
-                      <div className="rounded bg-gray-50 p-3 space-y-2">
+                      <div className="rounded bg-neutral-800 p-3 space-y-2">
                         <div className="flex items-center gap-2">
                           <input value={artForm.title} onChange={(e) => setArtForm({ ...artForm, title: e.target.value })}
-                            className="flex-1 rounded border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900" />
-                          <span className="text-xs text-gray-500">/</span>
+                            className="flex-1 rounded border border-neutral-700 bg-neutral-950 px-2 py-1 text-sm text-white" />
+                          <span className="text-xs text-neutral-500">/</span>
                           <input value={artForm.slug} onChange={(e) => setArtForm({ ...artForm, slug: e.target.value })}
-                            className="w-36 rounded border border-gray-300 bg-white px-2 py-1 text-sm text-gray-500" />
+                            className="w-36 rounded border border-neutral-700 bg-neutral-950 px-2 py-1 text-sm text-neutral-500" />
                           {canPublish && (
                             <button onClick={() => setArtForm({ ...artForm, is_published: !artForm.is_published })}
-                              className={`p-1 ${artForm.is_published ? "text-emerald-600" : "text-gray-500"}`}>
+                              className={`p-1 ${artForm.is_published ? "text-emerald-600" : "text-neutral-500"}`}>
                               {artForm.is_published ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
                             </button>
                           )}
@@ -269,41 +269,41 @@ export default function DocsPage() {
                               {submitting === article.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />} Submit
                             </button>
                           )}
-                          <button onClick={() => setEditingArticle(null)} className="p-1 text-gray-500 hover:text-gray-700"><X className="h-3.5 w-3.5" /></button>
+                          <button onClick={() => setEditingArticle(null)} className="p-1 text-neutral-500 hover:text-neutral-300"><X className="h-3.5 w-3.5" /></button>
                         </div>
                         <textarea value={artForm.content} onChange={(e) => setArtForm({ ...artForm, content: e.target.value })}
                           rows={12}
-                          className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 font-mono" />
+                          className="w-full rounded border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-white font-mono" />
                       </div>
                     ) : (
-                      <div className="flex items-center gap-3 rounded bg-gray-50 px-3 py-2 text-xs">
-                        <FileText className="h-3.5 w-3.5 text-gray-500" />
+                      <div className="flex items-center gap-3 rounded bg-neutral-800 px-3 py-2 text-xs">
+                        <FileText className="h-3.5 w-3.5 text-neutral-500" />
                         {/* Reorder articles */}
                         {canWrite && (
                           <div className="flex items-center gap-0.5">
                             <button onClick={() => moveArticle(cat.id, article.id, "up")} disabled={reordering}
-                              className="p-0.5 text-gray-500 hover:text-gray-700 disabled:opacity-30"><ArrowUp className="h-3 w-3" /></button>
+                              className="p-0.5 text-neutral-500 hover:text-neutral-300 disabled:opacity-30"><ArrowUp className="h-3 w-3" /></button>
                             <button onClick={() => moveArticle(cat.id, article.id, "down")} disabled={reordering}
-                              className="p-0.5 text-gray-500 hover:text-gray-700 disabled:opacity-30"><ArrowDown className="h-3 w-3" /></button>
+                              className="p-0.5 text-neutral-500 hover:text-neutral-300 disabled:opacity-30"><ArrowDown className="h-3 w-3" /></button>
                           </div>
                         )}
                         <span className="flex-1">{article.title}</span>
-                        <span className="text-gray-500">/{article.slug}</span>
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] ${article.is_published ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                        <span className="text-neutral-500">/{article.slug}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] ${article.is_published ? "bg-green-50 text-green-700" : "bg-neutral-700 text-neutral-500"}`}>
                           {article.is_published ? "Published" : "Draft"}
                         </span>
                         {canWrite && (
-                          <button onClick={() => startEditArticle(article)} className="p-1 text-gray-500 hover:text-gray-700"><Pencil className="h-3 w-3" /></button>
+                          <button onClick={() => startEditArticle(article)} className="p-1 text-neutral-500 hover:text-neutral-300"><Pencil className="h-3 w-3" /></button>
                         )}
                         {canDelete && (
-                          <button onClick={() => deleteArticle(article.id)} className="p-1 text-gray-500 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
+                          <button onClick={() => deleteArticle(article.id)} className="p-1 text-neutral-500 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
                         )}
                       </div>
                     )}
                   </div>
                 ))}
                 {canWrite && editingArticle === null && (
-                  <button onClick={() => addArticle(cat.id)} className="text-xs text-gray-500 hover:text-gray-700 mt-1 flex items-center gap-1">
+                  <button onClick={() => addArticle(cat.id)} className="text-xs text-neutral-500 hover:text-neutral-300 mt-1 flex items-center gap-1">
                     <Plus className="h-3 w-3" /> Add Article
                   </button>
                 )}

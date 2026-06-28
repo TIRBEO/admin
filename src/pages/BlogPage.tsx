@@ -77,7 +77,7 @@ export default function BlogPage() {
     <div className="p-6">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
-          <FileText className="w-6 h-6 text-gray-500" />
+          <FileText className="w-6 h-6 text-neutral-500" />
           <h1 className="text-2xl font-semibold tracking-tight">Blog Posts</h1>
         </div>
         <button onClick={createNew} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
@@ -87,36 +87,36 @@ export default function BlogPage() {
 
       {editing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="bg-white rounded-2xl border border-gray-200 w-full max-w-4xl max-h-[90vh] overflow-y-auto m-4">
+          <div className="bg-neutral-900 rounded-2xl border border-neutral-800 w-full max-w-4xl max-h-[90vh] overflow-y-auto m-4">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-gray-800">{editing.id ? "Edit Post" : "New Post"}</h2>
-                <button onClick={() => setEditing(null)} className="text-gray-500 hover:text-gray-700">
+                <h2 className="text-lg font-semibold text-white">{editing.id ? "Edit Post" : "New Post"}</h2>
+                <button onClick={() => setEditing(null)} className="text-neutral-500 hover:text-neutral-300">
                   <X className="w-5 h-5" />
                 </button>
               </div>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm text-gray-500 mb-1">Title</label>
+                    <label className="block text-sm text-neutral-500 mb-1">Title</label>
                     <input value={editing.title} onChange={e => setEditing({ ...editing, title: e.target.value })}
-                      className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900" />
+                      className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-white" />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-500 mb-1">Slug</label>
+                    <label className="block text-sm text-neutral-500 mb-1">Slug</label>
                     <input value={editing.slug} onChange={e => setEditing({ ...editing, slug: e.target.value })}
-                      className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 font-mono" />
+                      className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-white font-mono" />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-500 mb-1">Excerpt</label>
+                  <label className="block text-sm text-neutral-500 mb-1">Excerpt</label>
                   <textarea value={editing.excerpt} onChange={e => setEditing({ ...editing, excerpt: e.target.value })}
-                    rows={2} className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 resize-none" />
+                    rows={2} className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-white resize-none" />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-500 mb-1">Content</label>
+                  <label className="block text-sm text-neutral-500 mb-1">Content</label>
                   {preview ? (
-                    <div className="min-h-[400px] rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-700 prose-custom max-w-none"
+                    <div className="min-h-[400px] rounded-xl border border-neutral-800 bg-neutral-900 p-4 text-sm text-neutral-300 prose-custom max-w-none"
                       dangerouslySetInnerHTML={{ __html: editing.content }} />
                   ) : (
                     <BlogEditor content={editing.content} onChange={(html) => setEditing({ ...editing, content: html })} />
@@ -124,24 +124,24 @@ export default function BlogPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm text-gray-500 mb-1">Author</label>
+                    <label className="block text-sm text-neutral-500 mb-1">Author</label>
                     <input value={editing.author_name} onChange={e => setEditing({ ...editing, author_name: e.target.value })}
-                      className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900" />
+                      className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-white" />
                   </div>
                   <div className="flex items-end gap-2">
                     <button onClick={() => setEditing({ ...editing, published: !editing.published })}
-                      className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${editing.published ? "bg-emerald-600 text-white" : "bg-gray-50 text-gray-500"}`}>
+                      className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${editing.published ? "bg-emerald-600 text-white" : "bg-neutral-800 text-neutral-500"}`}>
                       {editing.published ? "Published" : "Draft"}
                     </button>
                     <button onClick={() => setPreview(!preview)}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-gray-50 text-gray-500 hover:text-gray-700 transition-colors">
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-neutral-800 text-neutral-500 hover:text-neutral-300 transition-colors">
                       <Eye className="w-3.5 h-3.5" />{preview ? "Edit" : "Preview"}
                     </button>
                   </div>
                 </div>
               </div>
-              <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200">
-                <button onClick={() => setEditing(null)} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors">Cancel</button>
+              <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-neutral-800">
+                <button onClick={() => setEditing(null)} className="px-4 py-2 text-sm text-neutral-500 hover:text-neutral-300 transition-colors">Cancel</button>
                 <button onClick={savePost} disabled={saving || !editing.title}
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
                   <Save className="w-4 h-4" />{saving ? "Saving..." : "Save Post"}
@@ -153,11 +153,11 @@ export default function BlogPage() {
       )}
 
       {loading ? (
-        <div className="space-y-3">{[1, 2, 3].map(i => <div key={i} className="h-16 rounded-xl bg-gray-50 border border-gray-200 animate-pulse" />)}</div>
+        <div className="space-y-3">{[1, 2, 3].map(i => <div key={i} className="h-16 rounded-xl bg-neutral-800 border border-neutral-800 animate-pulse" />)}</div>
       ) : posts.length === 0 ? (
-        <div className="rounded-xl border border-gray-200 bg-white p-12 text-center">
-          <FileText className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-          <p className="text-sm text-gray-500 mb-4">No blog posts yet</p>
+        <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-12 text-center">
+          <FileText className="w-12 h-12 mx-auto mb-3 text-neutral-600" />
+          <p className="text-sm text-neutral-500 mb-4">No blog posts yet</p>
           <button onClick={createNew} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
             Create First Post
           </button>
@@ -165,27 +165,27 @@ export default function BlogPage() {
       ) : (
         <div className="space-y-2">
           {posts.map(post => (
-            <div key={post.id} className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-4">
+            <div key={post.id} className="flex items-center justify-between rounded-xl border border-neutral-800 bg-neutral-900 p-4">
               <div className="flex items-center gap-3 flex-1 min-w-0">
-                <FileText className="w-4 h-4 text-gray-400 shrink-0" />
+                <FileText className="w-4 h-4 text-neutral-600 shrink-0" />
                 <div className="min-w-0">
-                  <p className="text-sm text-gray-800 truncate">{post.title}</p>
-                  <p className="text-xs text-gray-500 truncate">
+                  <p className="text-sm text-white truncate">{post.title}</p>
+                  <p className="text-xs text-neutral-500 truncate">
                     {post.slug} &middot; {post.author_name}
-                    {post.content && <span className="ml-2 text-gray-400">{stripHtml(post.content)}...</span>}
+                    {post.content && <span className="ml-2 text-neutral-600">{stripHtml(post.content)}...</span>}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <button onClick={() => togglePublish(post)}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors ${post.published ? "bg-emerald-50 text-emerald-700" : "bg-gray-50 text-gray-500"}`}>
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors ${post.published ? "bg-emerald-50 text-emerald-700" : "bg-neutral-800 text-neutral-500"}`}>
                   {post.published ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
                   {post.published ? "Published" : "Draft"}
                 </button>
-                <button onClick={() => setEditing(post)} className="p-1.5 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                <button onClick={() => setEditing(post)} className="p-1.5 text-neutral-500 hover:text-neutral-300 rounded-lg hover:bg-neutral-800 transition-colors">
                   <Edit2 className="w-3.5 h-3.5" />
                 </button>
-                <button onClick={() => post.id && deletePost(post.id)} className="p-1.5 text-gray-500 hover:text-red-600 rounded-lg hover:bg-gray-100 transition-colors">
+                <button onClick={() => post.id && deletePost(post.id)} className="p-1.5 text-neutral-500 hover:text-red-600 rounded-lg hover:bg-neutral-800 transition-colors">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>

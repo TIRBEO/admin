@@ -50,7 +50,7 @@ export default function SettingsPage() {
 
   if (!app) {
     return (
-      <div className="p-6 text-center text-gray-500">
+      <div className="p-6 text-center text-neutral-400">
         <p>App not found</p>
       </div>
     );
@@ -61,11 +61,11 @@ export default function SettingsPage() {
     return (
       <div className="p-6">
         <div className="flex items-center gap-3 mb-8">
-          <app.icon className="w-6 h-6 text-gray-500" />
-          <h1 className="text-2xl font-semibold tracking-tight">{app.name} Settings</h1>
+          <app.icon className="w-6 h-6 text-neutral-400" />
+          <h1 className="text-2xl font-semibold tracking-tight text-white">{app.name} Settings</h1>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-gray-500">
-          <Settings className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+        <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-6 text-center text-neutral-400">
+          <Settings className="w-12 h-12 mx-auto mb-3 text-neutral-600" />
           <p>Configure settings from the app itself.</p>
         </div>
       </div>
@@ -76,8 +76,8 @@ export default function SettingsPage() {
     <div className="p-6 max-w-3xl">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
-          <app.icon className="w-6 h-6 text-gray-500" />
-          <h1 className="text-2xl font-semibold tracking-tight">{app.name} Settings</h1>
+          <app.icon className="w-6 h-6 text-neutral-400" />
+          <h1 className="text-2xl font-semibold tracking-tight text-white">{app.name} Settings</h1>
         </div>
         <button
           onClick={handleSave}
@@ -93,9 +93,9 @@ export default function SettingsPage() {
         {schemaKeys.map(sectionKey => {
           const section = app.settingsSchema[sectionKey];
           return (
-            <div key={sectionKey} className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-sm font-semibold text-gray-800">{section.label}</h2>
+            <div key={sectionKey} className="rounded-xl border border-neutral-800 bg-neutral-900 overflow-hidden">
+              <div className="px-6 py-4 border-b border-neutral-800">
+                <h2 className="text-sm font-semibold text-white">{section.label}</h2>
               </div>
               <div className="p-6 space-y-5">
                 {section.fields.map(field => (
@@ -119,12 +119,12 @@ function FieldRenderer({ field, value, onChange }: { field: AppSettingField; val
   if (field.type === "toggle") {
     return (
       <div className="flex items-center justify-between">
-        <label className="text-sm text-gray-700">{field.label}</label>
+        <label className="text-sm text-neutral-300">{field.label}</label>
         <button
           onClick={() => onChange(!value)}
-          className={`w-10 h-5 rounded-full transition-colors relative ${value ? "bg-blue-600" : "bg-gray-300"}`}
+          className={`w-10 h-5 rounded-full transition-colors relative ${value ? "bg-blue-600" : "bg-neutral-600"}`}
         >
-          <div className={`w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-transform ${value ? "translate-x-5" : "translate-x-1"}`} />
+          <div className={`w-3.5 h-3.5 rounded-full bg-neutral-200 absolute top-0.5 transition-transform ${value ? "translate-x-5" : "translate-x-1"}`} />
         </button>
       </div>
     );
@@ -132,11 +132,11 @@ function FieldRenderer({ field, value, onChange }: { field: AppSettingField; val
   if (field.type === "select") {
     return (
       <div>
-        <label className="block text-sm text-gray-700 mb-1.5">{field.label}</label>
+        <label className="block text-sm text-neutral-300 mb-1.5">{field.label}</label>
         <select
           value={value || ""}
           onChange={e => onChange(e.target.value)}
-          className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900"
+          className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-white"
         >
           {(field.options || []).map(opt => (
             <option key={opt} value={opt}>{opt}</option>
@@ -148,25 +148,25 @@ function FieldRenderer({ field, value, onChange }: { field: AppSettingField; val
   if (field.type === "textarea") {
     return (
       <div>
-        <label className="block text-sm text-gray-700 mb-1.5">{field.label}</label>
+        <label className="block text-sm text-neutral-300 mb-1.5">{field.label}</label>
         <textarea
           value={value || ""}
           onChange={e => onChange(e.target.value)}
           rows={field.rows || 3}
-          className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 resize-none"
+          className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-white resize-none"
         />
       </div>
     );
   }
   return (
     <div>
-      <label className="block text-sm text-gray-700 mb-1.5">{field.label}</label>
+      <label className="block text-sm text-neutral-300 mb-1.5">{field.label}</label>
       <input
         type={field.type === "number" ? "number" : "text"}
         value={value || ""}
         onChange={e => onChange(field.type === "number" ? Number(e.target.value) : e.target.value)}
         placeholder={field.placeholder}
-        className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900"
+        className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-white"
       />
     </div>
   );

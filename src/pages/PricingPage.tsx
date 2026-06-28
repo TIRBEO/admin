@@ -40,41 +40,41 @@ export default function PricingPage() {
         </button>
       </div>
       {showForm && (
-        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 space-y-3">
-          <input placeholder="Plan Name" value={editing.name ?? ""} onChange={(e) => setEditing({ ...editing, name: e.target.value })} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400" />
-          <input placeholder="Description" value={editing.description ?? ""} onChange={(e) => setEditing({ ...editing, description: e.target.value })} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400" />
+        <div className="mb-6 rounded-xl border border-neutral-800 bg-neutral-900 p-4 space-y-3">
+          <input placeholder="Plan Name" value={editing.name ?? ""} onChange={(e) => setEditing({ ...editing, name: e.target.value })} className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-white placeholder-neutral-600" />
+          <input placeholder="Description" value={editing.description ?? ""} onChange={(e) => setEditing({ ...editing, description: e.target.value })} className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-white placeholder-neutral-600" />
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="text-xs text-gray-500">Monthly Price</label><input type="number" value={editing.price_monthly ?? 0} onChange={(e) => setEditing({ ...editing, price_monthly: Number(e.target.value) })} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 mt-1" /></div>
-            <div><label className="text-xs text-gray-500">Yearly Price</label><input type="number" value={editing.price_yearly ?? 0} onChange={(e) => setEditing({ ...editing, price_yearly: Number(e.target.value) })} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 mt-1" /></div>
+            <div><label className="text-xs text-neutral-500">Monthly Price</label><input type="number" value={editing.price_monthly ?? 0} onChange={(e) => setEditing({ ...editing, price_monthly: Number(e.target.value) })} className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-white placeholder-neutral-600 mt-1" /></div>
+            <div><label className="text-xs text-neutral-500">Yearly Price</label><input type="number" value={editing.price_yearly ?? 0} onChange={(e) => setEditing({ ...editing, price_yearly: Number(e.target.value) })} className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-white placeholder-neutral-600 mt-1" /></div>
           </div>
-          <div><label className="text-xs text-gray-500">Features (one per line)</label>
-            <textarea rows={4} value={Array.isArray(editing.features) ? editing.features.join("\n") : ""} onChange={(e) => setEditing({ ...editing, features: e.target.value.split("\n").map((f) => f.trim()).filter(Boolean) })} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 mt-1" />
+          <div><label className="text-xs text-neutral-500">Features (one per line)</label>
+            <textarea rows={4} value={Array.isArray(editing.features) ? editing.features.join("\n") : ""} onChange={(e) => setEditing({ ...editing, features: e.target.value.split("\n").map((f) => f.trim()).filter(Boolean) })} className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-white placeholder-neutral-600 mt-1" />
           </div>
           <div className="flex items-center gap-3">
             <input type="checkbox" checked={editing.is_popular ?? false} onChange={(e) => setEditing({ ...editing, is_popular: e.target.checked })} className="rounded" />
-            <label className="text-xs text-gray-500">Popular plan</label>
+            <label className="text-xs text-neutral-500">Popular plan</label>
           </div>
           <div className="flex gap-2">
             <button onClick={save} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Save</button>
-            <button onClick={() => { setShowForm(false); setEditing({}); }} className="rounded-lg bg-white border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Cancel</button>
+            <button onClick={() => { setShowForm(false); setEditing({}); }} className="rounded-lg bg-neutral-950 border border-neutral-700 px-4 py-2 text-sm text-neutral-300 hover:bg-neutral-800">Cancel</button>
           </div>
         </div>
       )}
       <div className="grid gap-3 md:grid-cols-3">
         {items.map((item) => (
-          <div key={item.id} className={`rounded-xl border p-4 text-sm ${item.is_popular ? "border-blue-500 bg-blue-50" : "border-gray-200 bg-white"}`}>
+          <div key={item.id} className={`rounded-xl border p-4 text-sm ${item.is_popular ? "border-blue-500 bg-blue-500/10" : "border-neutral-800 bg-neutral-900"}`}>
             <div className="flex items-start justify-between mb-3">
               <div>
                 <p className="font-semibold">{item.name}</p>
                 {item.is_popular && <span className="text-[10px] text-amber-700">Popular</span>}
               </div>
               <div className="flex gap-1">
-                <button onClick={() => { setEditing(item); setShowForm(true); }} className="p-1 text-gray-500 hover:text-gray-800"><Pencil className="h-3 w-3" /></button>
-                <button onClick={() => remove(item.id)} className="p-1 text-gray-500 hover:text-red-400"><Trash2 className="h-3 w-3" /></button>
+                <button onClick={() => { setEditing(item); setShowForm(true); }} className="p-1 text-neutral-500 hover:text-white"><Pencil className="h-3 w-3" /></button>
+                <button onClick={() => remove(item.id)} className="p-1 text-neutral-500 hover:text-red-400"><Trash2 className="h-3 w-3" /></button>
               </div>
             </div>
-            <p className="text-lg font-semibold">${item.price_monthly}<span className="text-xs text-gray-500 font-normal">/mo</span></p>
-            <p className="text-xs text-gray-500 mt-1">{item.description}</p>
+            <p className="text-lg font-semibold">${item.price_monthly}<span className="text-xs text-neutral-500 font-normal">/mo</span></p>
+            <p className="text-xs text-neutral-500 mt-1">{item.description}</p>
           </div>
         ))}
       </div>

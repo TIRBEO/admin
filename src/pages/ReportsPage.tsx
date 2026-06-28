@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+﻿import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAppStore } from "../hooks/useAppStore";
 import { APPS } from "../lib/apps.config";
@@ -30,10 +30,10 @@ function generateCSV(): string {
   const now = new Date();
   const headers = ["Metric,Value,Date Generated"];
   const rows = [
-    `Total Users,0,${now.toISOString()}`,
-    `Active Users (7d),0,${now.toISOString()}`,
-    `Content Items,0,${now.toISOString()}`,
-    `Growth Rate,0%,${now.toISOString()}`,
+    "Total Users,0," + now.toISOString(),
+    "Active Users (7d),0," + now.toISOString(),
+    "Content Items,0," + now.toISOString(),
+    "Growth Rate,0%," + now.toISOString(),
   ];
   return [...headers, ...rows].join("\n");
 }
@@ -41,18 +41,18 @@ function generateCSV(): string {
 function generatePDFContent(title: string): string {
   const now = new Date().toLocaleString();
   return [
-    `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title>`,
-    `<style>body{font-family:Arial,sans-serif;padding:40px;color:#333}h1{color:#111;border-bottom:2px solid #eee;padding-bottom:10px}`,
-    `.stat{margin:20px 0;padding:15px;background:#f5f5f5;border-radius:8px}.stat h3{margin:0 0 5px;font-size:14px;color:#666}`,
-    `.stat p{margin:0;font-size:24px;font-weight:bold;color:#111}.footer{margin-top:40px;font-size:12px;color:#999}</style></head><body>`,
-    `<h1>${title}</h1>`,
-    `<p>Generated: ${now}</p>`,
-    `<div class="stat"><h3>Total Users</h3><p>0</p></div>`,
-    `<div class="stat"><h3>Active Users (7d)</h3><p>0</p></div>`,
-    `<div class="stat"><h3>Content Items</h3><p>0</p></div>`,
-    `<div class="stat"><h3>Growth Rate</h3><p>0%</p></div>`,
-    `<div class="footer">Tirbeo Analytics Report &mdash; Auto-generated</div>`,
-    `</body></html>`,
+    '<!DOCTYPE html><html><head><meta charset="utf-8"><title>' + title + '</title>',
+    '<style>body{font-family:Arial,sans-serif;padding:40px;color:#333}h1{color:#111;border-bottom:2px solid #eee;padding-bottom:10px}',
+    '.stat{margin:20px 0;padding:15px;background:#f5f5f5;border-radius:8px}.stat h3{margin:0 0 5px;font-size:14px;color:#666}',
+    '.stat p{margin:0;font-size:24px;font-weight:bold;color:#111}.footer{margin-top:40px;font-size:12px;color:#999}</style></head><body>',
+    '<h1>' + title + '</h1>',
+    '<p>Generated: ' + now + '</p>',
+    '<div class="stat"><h3>Total Users</h3><p>0</p></div>',
+    '<div class="stat"><h3>Active Users (7d)</h3><p>0</p></div>',
+    '<div class="stat"><h3>Content Items</h3><p>0</p></div>',
+    '<div class="stat"><h3>Growth Rate</h3><p>0%</p></div>',
+    '<div class="footer">Tirbeo Analytics Report - Auto-generated</div>',
+    '</body></html>',
   ].join("");
 }
 
@@ -95,33 +95,33 @@ export default function ReportsPage() {
     setGenerating(type + format);
     await fetchStats();
     const dateStr = new Date().toLocaleDateString().replace(/\//g, "-");
-    const title = `${type} Report - ${dateStr}`;
+    const title = type + " Report - " + dateStr;
     let fileUrl = "";
 
     if (format === "csv") {
-      const csv = `Metric,Value\nTotal Users,${stats.totalUsers}\nActive Users (7d),${stats.activeUsers}\nContent Items,${stats.totalContent}\nGrowth Rate,${stats.growth}%\nGenerated,${new Date().toISOString()}\n`;
+      const csv = "Metric,Value\nTotal Users," + stats.totalUsers + "\nActive Users (7d)," + stats.activeUsers + "\nContent Items," + stats.totalContent + "\nGrowth Rate," + stats.growth + "%\nGenerated," + new Date().toISOString() + "\n";
       const blob = new Blob([csv], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${title}.csv`;
+      a.download = title + ".csv";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      fileUrl = `data:text/csv,${encodeURIComponent(csv)}`;
+      fileUrl = "data:text/csv," + encodeURIComponent(csv);
     } else if (format === "pdf") {
       const html = generatePDFContent(title);
       const blob = new Blob([html], { type: "text/html" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${title}.html`;
+      a.download = title + ".html";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      fileUrl = `data:text/html,${encodeURIComponent(html)}`;
+      fileUrl = "data:text/html," + encodeURIComponent(html);
     }
 
     const { data } = await supabase.from("reports").insert({
@@ -139,7 +139,7 @@ export default function ReportsPage() {
     if (report.file_url) {
       const a = document.createElement("a");
       a.href = report.file_url;
-      a.download = `${report.title}.${report.format}`;
+      a.download = report.title + "." + report.format;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -149,18 +149,18 @@ export default function ReportsPage() {
   };
 
   if (!app) {
-    return <div className="p-6 text-center text-gray-500">App not found</div>;
+    return <div className="p-6 text-center text-neutral-400">App not found</div>;
   }
 
   return (
     <div className="p-6 max-w-3xl">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
-          {AppIcon && <AppIcon className="w-6 h-6 text-gray-500" />}
-          <FileBarChart className="w-6 h-6 text-gray-500" />
-          <h1 className="text-2xl font-semibold tracking-tight">{app.name} Reports</h1>
+          {AppIcon && <AppIcon className="w-6 h-6 text-neutral-400" />}
+          <FileBarChart className="w-6 h-6 text-neutral-400" />
+          <h1 className="text-2xl font-semibold tracking-tight text-white">{app.name} Reports</h1>
         </div>
-        <button onClick={fetchReports} className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-500 hover:text-gray-900 transition-colors">
+        <button onClick={fetchReports} className="flex items-center gap-2 rounded-lg border border-neutral-800 px-3 py-2 text-sm text-neutral-400 hover:text-white transition-colors">
           <RefreshCw className="h-4 w-4" />
         </button>
       </div>
@@ -172,41 +172,41 @@ export default function ReportsPage() {
           { label: "Schedule Report", icon: Calendar, type: "scheduled", format: "pdf", desc: "Recurring delivery" },
         ].map(action => (
           <button key={action.label} onClick={() => generateReport(action.type, action.format)} disabled={generating === action.type + action.format}
-            className="rounded-xl border border-gray-200 bg-white p-4 text-left hover:bg-gray-50 transition-colors disabled:opacity-50">
-            <div className="w-9 h-9 rounded-lg bg-gray-50 flex items-center justify-center mb-3">
+            className="rounded-xl border border-neutral-800 bg-neutral-900 p-4 text-left hover:bg-neutral-800 transition-colors disabled:opacity-50">
+            <div className="w-9 h-9 rounded-lg bg-neutral-800 flex items-center justify-center mb-3">
               {generating === action.type + action.format
-                ? <Loader2 className="w-4 h-4 text-gray-500 animate-spin" />
-                : <action.icon className="w-4 h-4 text-gray-500" />
+                ? <Loader2 className="w-4 h-4 text-neutral-400 animate-spin" />
+                : <action.icon className="w-4 h-4 text-neutral-400" />
               }
             </div>
-            <h3 className="text-sm font-medium text-gray-800 mb-1">{action.label}</h3>
-            <p className="text-xs text-gray-500">{action.desc}</p>
+            <h3 className="text-sm font-medium text-white mb-1">{action.label}</h3>
+            <p className="text-xs text-neutral-400">{action.desc}</p>
           </button>
         ))}
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-        <div className="px-5 py-3 border-b border-gray-200">
-          <h2 className="text-sm font-semibold text-gray-800">Recent Reports</h2>
+      <div className="rounded-xl border border-neutral-800 bg-neutral-900 overflow-hidden">
+        <div className="px-5 py-3 border-b border-neutral-800">
+          <h2 className="text-sm font-semibold text-white">Recent Reports</h2>
         </div>
         {loading ? (
-          <div className="px-5 py-6 text-center text-sm text-gray-500">Loading reports...</div>
+          <div className="px-5 py-6 text-center text-sm text-neutral-400">Loading reports...</div>
         ) : reports.length === 0 ? (
-          <div className="px-5 py-6 text-center text-sm text-gray-500">No reports yet. Generate one above.</div>
+          <div className="px-5 py-6 text-center text-sm text-neutral-400">No reports yet. Generate one above.</div>
         ) : (
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-neutral-800">
             {reports.map(report => (
               <div key={report.id} className="flex items-center justify-between px-5 py-3">
                 <div className="flex items-center gap-3">
-                  <FileText className="w-4 h-4 text-gray-400" />
+                  <FileText className="w-4 h-4 text-neutral-500" />
                   <div>
-                    <p className="text-sm text-gray-800">{report.title}</p>
-                    <p className="text-xs text-gray-500">{new Date(report.generated_at).toLocaleDateString()} &middot; {report.format.toUpperCase()}</p>
+                    <p className="text-sm text-white">{report.title}</p>
+                    <p className="text-xs text-neutral-400">{new Date(report.generated_at).toLocaleDateString()} &middot; {report.format.toUpperCase()}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-500">{report.format.toUpperCase()}</span>
-                  <button onClick={() => handleDownload(report)} className="text-gray-500 hover:text-gray-700 transition-colors">
+                  <span className="text-xs px-2 py-0.5 rounded bg-neutral-800 text-neutral-400">{report.format.toUpperCase()}</span>
+                  <button onClick={() => handleDownload(report)} className="text-neutral-400 hover:text-white transition-colors">
                     <Download className="w-4 h-4" />
                   </button>
                 </div>

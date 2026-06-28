@@ -41,25 +41,25 @@ export default function NavLinksPage() {
       </div>
 
       {showForm && (
-        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 space-y-3">
-          <input placeholder="Label" value={editing.label ?? ""} onChange={(e) => setEditing({ ...editing, label: e.target.value })} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900" />
-          <input placeholder="Href" value={editing.href ?? ""} onChange={(e) => setEditing({ ...editing, href: e.target.value })} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900" />
+        <div className="mb-6 rounded-xl border border-neutral-800 bg-neutral-900 p-4 space-y-3">
+          <input placeholder="Label" value={editing.label ?? ""} onChange={(e) => setEditing({ ...editing, label: e.target.value })} className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-white" />
+          <input placeholder="Href" value={editing.href ?? ""} onChange={(e) => setEditing({ ...editing, href: e.target.value })} className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-white" />
           <div className="flex gap-2">
             <button onClick={save} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Save</button>
-            <button onClick={() => { setShowForm(false); setEditing({}); }} className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Cancel</button>
+            <button onClick={() => { setShowForm(false); setEditing({}); }} className="rounded-lg border border-neutral-700 bg-neutral-950 px-4 py-2 text-sm text-neutral-300 hover:bg-neutral-800">Cancel</button>
           </div>
         </div>
       )}
 
       <div className="space-y-1">
         {items.map((item) => (
-          <div key={item.id} className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm">
-            <GripVertical className="h-4 w-4 text-gray-400 shrink-0" />
+          <div key={item.id} className="flex items-center gap-3 rounded-lg border border-neutral-800 bg-neutral-900 px-4 py-3 text-sm">
+            <GripVertical className="h-4 w-4 text-neutral-600 shrink-0" />
             <span className="flex-1">{item.label}</span>
-            <span className="text-gray-500 text-xs">{item.href}</span>
-            <span className={`text-xs px-2 py-0.5 rounded-full ${item.is_active ? "bg-green-50 text-green-700" : "bg-gray-50 text-gray-500"}`}>{item.is_active ? "Active" : "Inactive"}</span>
-            <button onClick={() => { setEditing(item); setShowForm(true); }} className="p-1 text-gray-500 hover:text-gray-700"><Pencil className="h-3.5 w-3.5" /></button>
-            <button onClick={() => remove(item.id)} className="p-1 text-gray-500 hover:text-red-600"><Trash2 className="h-3.5 w-3.5" /></button>
+            <span className="text-neutral-500 text-xs">{item.href}</span>
+            <span className={`text-xs px-2 py-0.5 rounded-full ${item.is_active ? "bg-green-50 text-green-700" : "bg-neutral-800 text-neutral-500"}`}>{item.is_active ? "Active" : "Inactive"}</span>
+            <button onClick={() => { setEditing(item); setShowForm(true); }} className="p-1 text-neutral-500 hover:text-neutral-300"><Pencil className="h-3.5 w-3.5" /></button>
+            <button onClick={() => remove(item.id)} className="p-1 text-neutral-500 hover:text-red-600"><Trash2 className="h-3.5 w-3.5" /></button>
           </div>
         ))}
       </div>

@@ -47,9 +47,9 @@ export default function SystemStatus() {
     if (data && data.length > 0) {
       const latest = data[0];
       setMetrics(prev => prev.map(m => {
-        if (m.label === "Uptime") return { ...m, value: "99.9%", color: "text-emerald-700" };
-        if (m.label === "Response Time") return { ...m, value: `${latest.response_time_ms || "--"}ms`, color: "text-blue-700" };
-        if (m.label === "API Status") return { ...m, value: latest.status === "operational" ? "Operational" : "Degraded", color: latest.status === "operational" ? "text-emerald-700" : "text-amber-700" };
+        if (m.label === "Uptime") return { ...m, value: "99.9%", color: "text-emerald-400" };
+        if (m.label === "Response Time") return { ...m, value: `${latest.response_time_ms || "--"}ms`, color: "text-blue-400" };
+        if (m.label === "API Status") return { ...m, value: latest.status === "operational" ? "Operational" : "Degraded", color: latest.status === "operational" ? "text-emerald-400" : "text-amber-400" };
         return m;
       }));
       const statuses: Record<string, string> = {};
@@ -64,7 +64,7 @@ export default function SystemStatus() {
       setMetrics(prev => prev.map(m => ({
         ...m,
         value: m.label === "Active Users" ? "0" : m.label === "DB Connections" ? "0" : "No data",
-        color: "text-gray-500",
+        color: "text-neutral-400",
       })));
     }
     setLastChecked(new Date());
@@ -76,56 +76,56 @@ export default function SystemStatus() {
     if (status === "operational") return "bg-emerald-500";
     if (status === "degraded") return "bg-amber-500";
     if (status === "down") return "bg-red-500";
-    return "bg-gray-400";
+    return "bg-neutral-600";
   };
 
   const statusBg = (status: string) => {
-    if (status === "operational") return "bg-emerald-50 text-emerald-700";
-    if (status === "degraded") return "bg-amber-50 text-amber-700";
-    if (status === "down") return "bg-red-50 text-red-700";
-    return "bg-gray-100 text-gray-500";
+    if (status === "operational") return "bg-emerald-500/10 text-emerald-400";
+    if (status === "degraded") return "bg-amber-500/10 text-amber-400";
+    if (status === "down") return "bg-red-500/10 text-red-400";
+    return "bg-neutral-800 text-neutral-400";
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">System Status</h1>
-          <p className="text-sm text-gray-500 mt-1">Real-time monitoring of platform infrastructure</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-white">System Status</h1>
+          <p className="text-sm text-neutral-400 mt-1">Real-time monitoring of platform infrastructure</p>
         </div>
-        <button onClick={fetchHealth} className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-700 transition-colors">
+        <button onClick={fetchHealth} className="flex items-center gap-2 px-4 py-2 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-sm text-neutral-300 transition-colors">
           <RefreshCw className="h-4 w-4" /> Refresh
         </button>
       </div>
 
       <div className="grid grid-cols-4 gap-4">
         {metrics.map((m) => (
-          <div key={m.label} className="rounded-xl border border-gray-200 bg-white p-4">
+          <div key={m.label} className="rounded-xl border border-neutral-800 bg-neutral-900 p-4">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-lg bg-gray-50">
+              <div className="p-2 rounded-lg bg-neutral-800">
                 <m.icon className={`h-4 w-4 ${m.color}`} />
               </div>
             </div>
-            <div className="text-2xl font-semibold text-gray-900">{m.value}</div>
-            <div className="text-xs text-gray-500 mt-1">{m.label}</div>
+            <div className="text-2xl font-semibold text-white">{m.value}</div>
+            <div className="text-xs text-neutral-400 mt-1">{m.label}</div>
           </div>
         ))}
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-6">
+      <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Service Health</h2>
-          {lastChecked && <span className="text-xs text-gray-400">Last checked: {lastChecked.toLocaleTimeString()}</span>}
+          <h2 className="text-lg font-semibold text-white">Service Health</h2>
+          {lastChecked && <span className="text-xs text-neutral-500">Last checked: {lastChecked.toLocaleTimeString()}</span>}
         </div>
         <div className="space-y-3">
           {services.map((s) => (
-            <div key={s.name} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+            <div key={s.name} className="flex items-center justify-between p-3 rounded-lg bg-neutral-800">
               <div className="flex items-center gap-3">
                 <div className={`h-2.5 w-2.5 rounded-full ${statusColor(s.status)}`} />
-                <span className="text-sm text-gray-900">{s.name}</span>
+                <span className="text-sm text-white">{s.name}</span>
               </div>
               <div className="flex items-center gap-4">
-                <span className="text-xs text-gray-500">{s.uptime} uptime</span>
+                <span className="text-xs text-neutral-400">{s.uptime} uptime</span>
                 <span className={`text-xs px-2 py-0.5 rounded-full ${statusBg(s.status)}`}>{s.status}</span>
               </div>
             </div>

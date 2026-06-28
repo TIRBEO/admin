@@ -24,7 +24,7 @@ export default function SiteConfigPage() {
     setSaving(false);
   };
 
-  if (!config) return <p className="text-gray-500">Loading...</p>;
+  if (!config) return <p className="text-neutral-500">Loading...</p>;
 
   const fields = [
     { key: "site_name", label: "Site Name" },
@@ -47,11 +47,11 @@ export default function SiteConfigPage() {
       <div className="space-y-4">
         {fields.map((f) => (
           <div key={f.key}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{f.label}</label>
+            <label className="block text-sm font-medium text-neutral-300 mb-1">{f.label}</label>
             {"rows" in f ? (
-              <textarea value={(config as any)[f.key] ?? ""} onChange={(e) => update(f.key, e.target.value)} rows={f.rows} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500" />
+              <textarea value={(config as any)[f.key] ?? ""} onChange={(e) => update(f.key, e.target.value)} rows={f.rows} className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500" />
             ) : (
-              <input value={(config as any)[f.key] ?? ""} onChange={(e) => update(f.key, e.target.value)} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500" />
+              <input value={(config as any)[f.key] ?? ""} onChange={(e) => update(f.key, e.target.value)} className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500" />
             )}
           </div>
         ))}

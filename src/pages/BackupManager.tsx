@@ -23,10 +23,10 @@ interface Backup {
 }
 
 const statusColors: Record<string, string> = {
-  completed: "bg-emerald-50 text-emerald-700",
-  failed: "bg-red-50 text-red-700",
-  pending: "bg-blue-50 text-blue-700",
-  running: "bg-amber-50 text-amber-700",
+  completed: "bg-emerald-500/10 text-emerald-400",
+  failed: "bg-red-500/10 text-red-400",
+  pending: "bg-blue-500/10 text-blue-400",
+  running: "bg-amber-500/10 text-amber-400",
 };
 
 export default function BackupManager() {
@@ -147,10 +147,10 @@ export default function BackupManager() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Backup Manager</h1>
-          <p className="text-sm text-gray-500 mt-1">Database backup and restore management</p>
+          <p className="text-sm text-neutral-500 mt-1">Database backup and restore management</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={fetchBackups} className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-500 hover:text-gray-900 transition-colors">
+          <button onClick={fetchBackups} className="flex items-center gap-2 rounded-lg border border-neutral-800 px-3 py-2 text-sm text-neutral-500 hover:text-white transition-colors">
             <RefreshCw className="h-4 w-4" />
           </button>
           <button onClick={() => createBackup("full")} disabled={creating} className="flex items-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 px-4 py-2 text-sm text-white transition-colors">
@@ -163,42 +163,42 @@ export default function BackupManager() {
       </div>
 
       {creating && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-blue-800 bg-blue-500/10 px-4 py-3 text-sm text-blue-400">
           <Loader2 className="h-4 w-4 animate-spin" /> {progress}
         </div>
       )}
 
       <div className="space-y-2">
         {loading ? (
-          <div className="text-center py-12 text-gray-500 text-sm">Loading backups...</div>
+          <div className="text-center py-12 text-neutral-500 text-sm">Loading backups...</div>
         ) : backups.length === 0 ? (
-          <div className="text-center py-12 text-gray-500 text-sm">No backups yet. Create one above.</div>
+          <div className="text-center py-12 text-neutral-500 text-sm">No backups yet. Create one above.</div>
         ) : backups.map((backup) => (
-          <div key={backup.id} className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4">
+          <div key={backup.id} className="flex items-center justify-between rounded-lg border border-neutral-800 bg-neutral-900 p-4">
             <div className="flex items-center gap-4">
-              <div className="p-2 rounded-lg bg-gray-50">
-                <HardDrive className="h-4 w-4 text-gray-500" />
+              <div className="p-2 rounded-lg bg-neutral-800">
+                <HardDrive className="h-4 w-4 text-neutral-500" />
               </div>
               <div>
-                <div className="text-gray-900 font-medium text-sm">{backup.name}</div>
-                <div className="text-xs text-gray-500">{formatSize(backup.size_bytes)} &middot; {new Date(backup.created_at).toLocaleString()}</div>
+                <div className="text-white font-medium text-sm">{backup.name}</div>
+                <div className="text-xs text-neutral-500">{formatSize(backup.size_bytes)} &middot; {new Date(backup.created_at).toLocaleString()}</div>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <span className={`text-xs px-2 py-0.5 rounded-full ${statusColors[backup.status]}`}>{backup.status}</span>
-              <button onClick={() => downloadBackup(backup)} className="text-gray-500 hover:text-gray-900 transition-colors"><Download className="h-4 w-4" /></button>
-              <button onClick={() => deleteBackup(backup.id)} className="text-gray-500 hover:text-red-500 transition-colors"><Trash2 className="h-4 w-4" /></button>
+              <button onClick={() => downloadBackup(backup)} className="text-neutral-500 hover:text-white transition-colors"><Download className="h-4 w-4" /></button>
+              <button onClick={() => deleteBackup(backup.id)} className="text-neutral-500 hover:text-red-500 transition-colors"><Trash2 className="h-4 w-4" /></button>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+      <div className="mt-6 rounded-xl border border-amber-800 bg-amber-500/10 p-4">
         <div className="flex items-start gap-3">
           <AlertTriangle className="h-5 w-5 text-amber-700 mt-0.5" />
           <div>
             <h4 className="text-amber-700 font-medium">Restore Database</h4>
-            <p className="text-sm text-gray-500 mt-1">Restoring will overwrite current data. This action cannot be undone.</p>
+            <p className="text-sm text-neutral-500 mt-1">Restoring will overwrite current data. This action cannot be undone.</p>
             <button onClick={restoreBackup} className="mt-3 flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 rounded-lg text-white text-sm transition-colors">
               Restore from Backup
             </button>

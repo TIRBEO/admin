@@ -16,7 +16,6 @@ import TestimonialsPage from "@/pages/TestimonialsPage";
 import PricingPage from "@/pages/PricingPage";
 import AdminsPage from "@/pages/AdminsPage";
 import AuditLogPage from "@/pages/AuditLogPage";
-import SettingsPage from "@/pages/Settings";
 import SystemStatus from "@/pages/SystemStatus";
 import NotificationsPage from "@/pages/NotificationsPage";
 import ContentApproval from "@/pages/ContentApproval";
@@ -32,6 +31,8 @@ import ReportsPage from "@/pages/ReportsPage";
 import TrashPage from "@/pages/TrashPage";
 import BlogPage from "@/pages/BlogPage";
 import ImpersonateHandler from "@/pages/ImpersonateHandler";
+import { ChatSettings } from "@/settings/ChatSettings";
+import { CompanySettings } from "@/settings/CompanySettings";
 
 function ProtectedRoute({ children, minRole = "viewer" }: { children: React.ReactNode; minRole?: AdminRole }) {
   const { session, admin, loading } = useAuth();
@@ -90,7 +91,8 @@ export default function App() {
         <Route path="/admin/impersonation" element={<ProtectedRoute minRole="super_admin"><UserImpersonation /></ProtectedRoute>} />
         <Route path="/admin/blog" element={<ProtectedRoute minRole="editor"><BlogPage /></ProtectedRoute>} />
         <Route path="/apps/:appId/overview" element={<ProtectedRoute minRole="viewer"><Dashboard /></ProtectedRoute>} />
-        <Route path="/apps/:appId/settings" element={<ProtectedRoute minRole="editor"><SettingsPage /></ProtectedRoute>} />
+        <Route path="/apps/chat/settings" element={<ProtectedRoute minRole="editor"><ChatSettings /></ProtectedRoute>} />
+        <Route path="/apps/company/settings" element={<ProtectedRoute minRole="editor"><CompanySettings /></ProtectedRoute>} />
         <Route path="/apps/:appId/users" element={<ProtectedRoute minRole="editor"><UsersPage /></ProtectedRoute>} />
         <Route path="/apps/:appId/analytics" element={<ProtectedRoute minRole="viewer"><AnalyticsPage /></ProtectedRoute>} />
         <Route path="/apps/:appId/security" element={<ProtectedRoute minRole="editor"><SecurityPage /></ProtectedRoute>} />

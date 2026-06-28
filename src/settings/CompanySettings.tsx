@@ -6,7 +6,7 @@ import { APPS } from "../lib/apps.config";
 import { Save, RefreshCw } from "lucide-react";
 import type { AppSettingField } from "../lib/apps.config";
 
-export function ChatSettings() {
+export function CompanySettings() {
   const { admin } = useAuth();
   const { getAppSettings, updateAppSettings } = useAppStore();
   const [settings, setSettings] = useState<Record<string, any>>({});
@@ -14,7 +14,7 @@ export function ChatSettings() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    setSettings(getAppSettings("chat"));
+    setSettings(getAppSettings("company"));
   }, []);
 
   const handleChange = (key: string, value: any) => {
@@ -23,13 +23,13 @@ export function ChatSettings() {
 
   const handleSave = async () => {
     setSaving(true);
-    updateAppSettings("chat", settings);
+    updateAppSettings("company", settings);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
     setSaving(false);
   };
 
-  const app = APPS.chat;
+  const app = APPS.company;
 
   return (
     <div>
@@ -37,9 +37,9 @@ export function ChatSettings() {
         <div>
           <div className="flex items-center gap-3">
             <app.icon className="w-6 h-6 text-neutral-400" />
-            <h1 className="text-2xl font-semibold tracking-tight">{app.name} Settings</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">Company Settings</h1>
           </div>
-          <p className="text-sm text-neutral-500 mt-1">Configure {app.name} for your community</p>
+          <p className="text-sm text-neutral-500 mt-1">Configure company info, branding, and contact details</p>
         </div>
         <div className="flex items-center gap-3">
           {saved && <span className="text-emerald-400 text-sm">✓ Saved</span>}

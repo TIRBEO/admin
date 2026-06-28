@@ -2,11 +2,11 @@ import type { AdminRole } from "../../lib/roles";
 import { ROLE_LABELS, ROLE_COLORS, ROLE_ICONS } from "../../lib/roles";
 
 const colorClasses: Record<string, string> = {
-  amber: "bg-amber-50 text-amber-700 border-amber-200",
-  red: "bg-red-50 text-red-700 border-red-200",
-  blue: "bg-blue-50 text-blue-700 border-blue-200",
-  green: "bg-green-50 text-green-700 border-green-200",
-  neutral: "bg-gray-50 text-gray-600 border-gray-200",
+  amber: "bg-amber-500/10 text-amber-400 border-amber-800",
+  red: "bg-red-500/10 text-red-400 border-red-800",
+  blue: "bg-blue-500/10 text-blue-400 border-blue-800",
+  green: "bg-green-500/10 text-green-400 border-green-800",
+  neutral: "bg-neutral-800 text-neutral-300 border-neutral-700",
 };
 
 export function RoleBadge({ role, size = "md", showIcon = true, showLabel = true }: {

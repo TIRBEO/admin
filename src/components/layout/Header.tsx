@@ -11,37 +11,37 @@ export function Header({ currentApp, onAppChange, onLogout }: {
   const { admin } = useAuth();
 
   return (
-    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 sticky top-0 z-30">
+    <header className="h-16 bg-neutral-900 border-b border-neutral-800 flex items-center justify-between px-6 sticky top-0 z-30">
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white">T</span>
-          <span className="font-semibold text-gray-900">Tirbeo Admin</span>
+          <span className="font-semibold text-white">Tirbeo Admin</span>
         </div>
         <AppSelector currentApp={currentApp} onAppChange={onAppChange} />
       </div>
       <div className="flex items-center gap-3">
         <div className="relative hidden sm:block">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" />
           <input
             type="text" placeholder="Search settings..."
-            className="w-64 rounded-lg border border-gray-200 bg-gray-50 pl-9 pr-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            className="w-64 rounded-lg border border-neutral-800 bg-neutral-950 pl-9 pr-3 py-2 text-sm text-white placeholder-neutral-600 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           />
         </div>
-        <button className="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors">
+        <button className="p-2 rounded-full hover:bg-neutral-800 text-neutral-500 transition-colors">
           <Bell className="h-5 w-5" />
         </button>
         {admin?.role && <RoleBadge role={admin.role as any} size="sm" />}
-        <div className="flex items-center gap-3 pl-3 border-l border-gray-200">
+        <div className="flex items-center gap-3 pl-3 border-l border-neutral-800">
           <div className="text-right hidden sm:block">
-            <div className="text-sm font-medium text-gray-900">{admin?.display_name || "Admin"}</div>
-            <div className="text-xs text-gray-500">{admin?.email || ""}</div>
+            <div className="text-sm font-medium text-white">{admin?.display_name || "Admin"}</div>
+            <div className="text-xs text-neutral-500">{admin?.email || ""}</div>
           </div>
           <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-semibold">
             {admin?.display_name?.charAt(0)?.toUpperCase() || "A"}
           </div>
           <button
             onClick={onLogout}
-            className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            className="p-2 rounded-lg text-neutral-500 hover:text-white hover:bg-neutral-800 transition-colors"
             title="Sign Out"
           >
             <LogOut className="h-4 w-4" />

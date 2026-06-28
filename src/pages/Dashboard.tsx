@@ -36,21 +36,21 @@ export default function Dashboard() {
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-neutral-500 mt-1">
           Welcome back, {session?.admin.display_name || session?.user.email}
-          <span className="ml-2 text-xs uppercase tracking-wider text-gray-400">
+          <span className="ml-2 text-xs uppercase tracking-wider text-neutral-600">
             ({role?.replace("_", " ")})
           </span>
         </p>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {cards.map((c) => (
-          <div key={c.table} className="rounded-xl border border-gray-200 bg-white p-5">
+          <div key={c.table} className="rounded-xl border border-neutral-800 bg-neutral-900 p-5">
             <div className={`mb-3 inline-flex rounded-lg p-2.5 ${c.color}`}>
               <c.icon className="h-5 w-5" />
             </div>
             <p className="text-2xl font-semibold">{counts[c.table] ?? "..."}</p>
-            <p className="text-sm text-gray-500 mt-1">{c.label}</p>
+            <p className="text-sm text-neutral-500 mt-1">{c.label}</p>
           </div>
         ))}
       </div>
