@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../../lib/useAuth";
 import { canViewSidebarItem } from "../../lib/permissions";
 import { APPS } from "../../lib/apps.config";
@@ -7,6 +7,7 @@ import {
   FileText, Plug, FileBarChart, Trash2, UserCog, ScrollText,
   Activity, Bell, FileCheck, HardDrive, Megaphone, Download, Eye,
 } from "lucide-react";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 function SidebarItem({ icon: Icon, label, path, active }: {
   icon: any; label: string; path: string; active: boolean;
@@ -17,7 +18,7 @@ function SidebarItem({ icon: Icon, label, path, active }: {
       className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-150 border-l-3 ${
         active
           ? "border-blue-600 bg-blue-600/10 text-blue-400 font-medium"
-          : "border-transparent text-neutral-400 hover:bg-neutral-800 hover:text-white"
+          : "border-transparent text-ink-soft hover:bg-secondary hover:text-foreground"
       }`}
     >
       <Icon className="h-5 w-5 shrink-0" />
@@ -58,7 +59,7 @@ export function Sidebar({ currentApp }: { currentApp: string }) {
   const visibleAdminItems = adminItems.filter(item => role && canViewSidebarItem(role, item.key));
 
   return (
-    <aside className="w-64 bg-neutral-900 border-r border-neutral-800 flex flex-col h-screen sticky top-0">
+    <aside className="w-64 bg-card border-r border-border flex flex-col h-screen sticky top-0">
       <nav className="flex-1 overflow-y-auto py-4 space-y-0.5">
         {visibleNavItems.map((item) => (
           <SidebarItem key={item.key} icon={item.icon} label={item.label} path={item.path}
@@ -67,9 +68,9 @@ export function Sidebar({ currentApp }: { currentApp: string }) {
         {visibleAdminItems.length > 0 && (
           <>
             <div className="my-4 px-4">
-              <div className="h-px bg-neutral-800" />
+              <div className="h-px bg-border" />
             </div>
-            <div className="px-4 pb-2 text-xs font-semibold uppercase tracking-wider text-neutral-500">Administration</div>
+            <div className="px-4 pb-2 text-xs font-semibold uppercase tracking-wider text-ink-soft">Administration</div>
             {visibleAdminItems.map((item) => (
               <SidebarItem key={item.key} icon={item.icon} label={item.label} path={item.path}
                 active={location.pathname === item.path} />
@@ -77,14 +78,14 @@ export function Sidebar({ currentApp }: { currentApp: string }) {
           </>
         )}
       </nav>
-      <div className="p-4 border-t border-neutral-800">
+      <div className="p-4 border-t border-border">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-semibold">
+          <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-foreground text-sm font-semibold">
             {admin?.display_name?.charAt(0)?.toUpperCase() || "?"}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-white truncate">{admin?.display_name || "Unknown"}</div>
-            <div className="text-xs text-neutral-500 truncate">{admin?.email || ""}</div>
+            <div className="text-sm font-medium text-foreground truncate">{admin?.display_name || "Unknown"}</div>
+            <div className="text-xs text-ink-soft truncate">{admin?.email || ""}</div>
           </div>
         </div>
       </div>

@@ -44,14 +44,14 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-neutral-950 p-6">
+    <div className="flex min-h-screen items-center justify-center bg-background p-6">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <div className="flex justify-center mb-4">
-            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-xl font-bold text-white">T</span>
+            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-xl font-bold text-foreground">T</span>
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-white">Tirbeo Admin</h1>
-          <p className="text-sm text-neutral-500 mt-1">Sign in to manage your site</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Tirbeo Admin</h1>
+          <p className="text-sm text-ink-soft mt-1">Sign in to manage your site</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -63,19 +63,19 @@ export default function Login() {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-neutral-300 mb-1.5">Email</label>
+            <label className="block text-sm font-medium text-foreground/80 mb-1.5">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               autoComplete="email"
-              className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2.5 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-ink-soft/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-neutral-300 mb-1.5">Password</label>
+            <label className="block text-sm font-medium text-foreground/80 mb-1.5">Password</label>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -83,12 +83,12 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 autoComplete="current-password"
-                className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2.5 pr-10 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2.5 pr-10 text-sm text-foreground placeholder:text-ink-soft/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-600 hover:text-neutral-300"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-soft hover:text-foreground"
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
