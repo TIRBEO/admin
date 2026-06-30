@@ -119,12 +119,14 @@ export default function PagesList() {
                 {showSectionForm && (
                   <div className="mt-3 rounded-lg border border-neutral-800 bg-neutral-900 p-3 space-y-2">
                     <select value={editingSection.type ?? "hero"} onChange={(e) => setEditingSection({ ...editingSection, type: e.target.value })} className="w-full rounded border border-neutral-700 bg-neutral-950 px-2 py-1 text-xs text-white">
-                      {["hero", "features", "how-it-works", "testimonials", "faq", "pricing", "cta", "stats", "story", "values", "timeline", "team"].map((t) => (
+                      {["hero", "about", "manifesto", "team", "banner", "faq", "contact", "features", "how-it-works", "testimonials", "pricing", "cta", "stats", "story", "values", "timeline"].map((t) => (
                         <option key={t} value={t}>{t}</option>
                       ))}
                     </select>
                     <input placeholder="Title" value={editingSection.title ?? ""} onChange={(e) => setEditingSection({ ...editingSection, title: e.target.value })} className="w-full rounded border border-neutral-700 bg-neutral-950 px-2 py-1 text-xs text-white" />
                     <input placeholder="Subtitle" value={editingSection.subtitle ?? ""} onChange={(e) => setEditingSection({ ...editingSection, subtitle: e.target.value })} className="w-full rounded border border-neutral-700 bg-neutral-950 px-2 py-1 text-xs text-white" />
+                    <textarea placeholder="Body" rows={4} value={editingSection.body ?? ""} onChange={(e) => setEditingSection({ ...editingSection, body: e.target.value })} className="w-full rounded border border-neutral-700 bg-neutral-950 px-2 py-1 text-xs text-white" />
+                    <textarea placeholder="Metadata (JSON)" rows={3} value={JSON.stringify(editingSection.metadata ?? {}, null, 2)} onChange={(e) => { try { setEditingSection({ ...editingSection, metadata: JSON.parse(e.target.value) }); } catch { } }} className="w-full rounded border border-neutral-700 bg-neutral-950 px-2 py-1 text-xs text-white font-mono" />
                     <div className="flex gap-2">
                       <button onClick={saveSection} className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white">Save</button>
                       <button onClick={() => { setShowSectionForm(false); setEditingSection({}); }} className="rounded border border-neutral-700 px-3 py-1 text-xs text-neutral-300">Cancel</button>

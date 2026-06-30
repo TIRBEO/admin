@@ -55,6 +55,8 @@ export interface SiteConfig {
   seo_description: string;
   seo_keywords: string | null;
   social_links: Record<string, string>;
+  site_url?: string;
+  nav?: Record<string, unknown>[];
   updated_at: string;
 }
 

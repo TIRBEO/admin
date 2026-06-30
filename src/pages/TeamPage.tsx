@@ -45,7 +45,9 @@ export default function TeamPage() {
           <input placeholder="Name" value={editing.name ?? ""} onChange={(e) => setEditing({ ...editing, name: e.target.value })} className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-white" />
           <input placeholder="Role" value={editing.role ?? ""} onChange={(e) => setEditing({ ...editing, role: e.target.value })} className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-white" />
           <textarea placeholder="Bio" rows={3} value={editing.bio ?? ""} onChange={(e) => setEditing({ ...editing, bio: e.target.value })} className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-white" />
-          <input placeholder="Color" value={editing.color ?? "#6366f1"} onChange={(e) => setEditing({ ...editing, color: e.target.value })} className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-white" />
+          <input placeholder="Avatar URL" value={editing.avatar_url ?? ""} onChange={(e) => setEditing({ ...editing, avatar_url: e.target.value })} className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-white" />
+          <input placeholder="Color (hex)" value={editing.color ?? "#6366f1"} onChange={(e) => setEditing({ ...editing, color: e.target.value })} className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-white" />
+          <input placeholder={'Social links (JSON, e.g. {"github":"...","linkedin":"..."})'} value={JSON.stringify(editing.social_links ?? {})} onChange={(e) => { try { setEditing({ ...editing, social_links: JSON.parse(e.target.value) }); } catch { } }} className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-white font-mono" />
           <div className="flex gap-2">
             <button onClick={save} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Save</button>
             <button onClick={() => { setShowForm(false); setEditing({}); }} className="rounded-lg border border-neutral-700 bg-neutral-950 px-4 py-2 text-sm text-neutral-300 hover:bg-neutral-800">Cancel</button>
@@ -56,8 +58,8 @@ export default function TeamPage() {
       <div className="grid gap-3">
         {members.map((m) => (
           <div key={m.id} className="flex items-center gap-4 rounded-lg border border-neutral-800 bg-neutral-900 px-4 py-3 text-sm">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full text-xs font-semibold text-white" style={{ background: m.color || "#6366f1" }}>
-              {m.name.charAt(0)}
+            <div className="flex h-10 w-10 items-center justify-center rounded-full text-xs font-semibold text-white overflow-hidden" style={{ background: m.color || "#6366f1" }}>
+              {m.avatar_url ? <img src={m.avatar_url} alt="" className="h-full w-full object-cover" /> : m.name.charAt(0)}
             </div>
             <div className="flex-1">
               <p className="font-medium">{m.name}</p>
