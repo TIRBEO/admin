@@ -93,7 +93,8 @@ export default function AdminUsersPage() {
                   <select name="adminRole" defaultValue={editing.adminRole || 'none'}>
                     <option value="none">None (regular user)</option>
                     <option value="super_admin">Super Admin</option>
-                    <option value="moderator">Moderator</option>
+                    <option value="admin">Admin</option>
+                    <option value="manager">Manager</option>
                     <option value="editor">Editor</option>
                   </select>
                   <div className="flex gap-2 mt-4"><button type="submit" className="btn btn-primary">Save</button><button type="button" className="btn btn-outline" onClick={() => setEditing(null)}>Cancel</button></div>

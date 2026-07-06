@@ -146,7 +146,8 @@ tr:hover td { background: rgba(255,255,255,0.03); }
 }
 
 .badge-super_admin { background: rgba(79,122,255,0.15); color: #7a9aff; border: 1px solid rgba(79,122,255,0.25); }
-.badge-moderator { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.25); }
+.badge-admin { background: rgba(99,102,241,0.15); color: #818cf8; border: 1px solid rgba(99,102,241,0.25); }
+.badge-manager { background: rgba(168,85,247,0.15); color: #a78bfa; border: 1px solid rgba(168,85,247,0.25); }
 .badge-editor { background: rgba(250,204,21,0.15); color: #facc15; border: 1px solid rgba(250,204,21,0.25); }
 .badge-member { background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid var(--border-subtle); }
 .badge-enabled { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.25); }
