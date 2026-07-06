@@ -25,7 +25,7 @@ export default function AdminUsersPage() {
   };
 
   useEffect(() => { loadUsers(page, search); }, [page]);
-  useEffect(() => { apiFetch('/api/admin/stats').then(r => r.json()).then(d => { if (d.session?.adminRole) setMyRole(d.session.adminRole); }).catch(() => {}); }, []);
+  useEffect(() => { apiFetch('/api/admin/me').then(r => r.ok ? r.json() : null).then(d => { if (d?.adminRole) setMyRole(d.adminRole); }).catch(() => {}); }, []);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); setPage(1); loadUsers(1, search); };
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {

@@ -3,7 +3,8 @@ import React, { useEffect, useState } from 'react';
 import AdminSidebar from './sidebar';
 import { apiFetch } from './lib';
 
-interface Stats { counts: { users: number; workspaces: number; routes: number; logs: number; blocked: number }; adminUsers: Array<{ id: string; email: string; name: string; adminRole: string }>; session: { userId: string; email: string; adminRole: string }; }
+interface Stats { counts: { users: number; workspaces: number; routes: number; logs: number; blocked: number }; adminUsers: Array<{ id: string; email: string; name: string; adminRole: string }>; }
+interface Me { id: string; email: string; name: string | null; adminRole: string; }
 
 function UsersIcon() { return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>; }
 function WsIcon() { return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>; }
@@ -15,6 +16,7 @@ function SettingsIcon() { return <svg width="20" height="20" viewBox="0 0 24 24"
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
+  const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -22,12 +24,15 @@ export default function AdminDashboard() {
       if (!r.ok) { setError('Failed to load stats'); return; }
       setStats(await r.json());
     }).catch(() => setError('Network error'));
+    apiFetch('/api/admin/me').then(async r => {
+      if (r.ok) setMe(await r.json());
+    }).catch(() => {});
   }, []);
 
   if (error) return <div className="admin-layout"><AdminSidebar /><div className="main"><p className="error">{error}</p></div></div>;
   if (!stats) return <div className="admin-layout"><AdminSidebar /><div className="main"><p className="loading">Loading dashboard…</p></div></div>;
 
-  const { counts, adminUsers, session } = stats;
+  const { counts, adminUsers } = stats;
 
   return (
     <div className="admin-layout">
@@ -35,7 +40,7 @@ export default function AdminDashboard() {
       <div className="main">
         <div className="flex-between">
           <div><h2>Dashboard</h2><p className="desc">System overview and management</p></div>
-          <span className={`badge badge-${session.adminRole}`}>{session.adminRole}</span>
+          {me && <span className={`badge badge-${me.adminRole}`}>{me.adminRole}</span>}
         </div>
         <div className="stats-grid">
           <div className="stat-card"><div className="num" style={{ color: '#7a9aff' }}>{counts.users}</div><div className="label"><UsersIcon /> Users</div></div>

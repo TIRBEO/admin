@@ -42,8 +42,8 @@ export default function AdminSidebar() {
   const current = typeof window !== 'undefined' ? window.location.pathname : '';
 
   useEffect(() => {
-    apiFetch('/api/admin/stats').then(r => r.json()).then(d => {
-      if (d.session?.adminRole) setRole(d.session.adminRole);
+    apiFetch('/api/admin/me').then(r => r.ok ? r.json() : null).then(d => {
+      if (d?.adminRole) setRole(d.adminRole);
     }).catch(() => {});
   }, []);
 
