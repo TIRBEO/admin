@@ -33,8 +33,8 @@ export default function AdminLoginPage() {
         body: JSON.stringify({ email, password }),
       });
       window.location.href = '/';
-    } catch {
-      setError('Invalid email or password');
+    } catch (err) {
+      setError(err instanceof TypeError ? 'Cannot connect to server' : 'Invalid email or password');
     } finally {
       setLoading(false);
     }
@@ -54,8 +54,9 @@ export default function AdminLoginPage() {
         body: JSON.stringify({ email, adminRole: 'super_admin' }),
       });
       window.location.href = '/';
-    } catch {
-      setError('Setup failed. Try again.');
+    } catch (err) {
+      const msg = err instanceof TypeError ? 'Cannot connect to server' : 'Setup failed. Email may already be registered.';
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -78,7 +79,7 @@ export default function AdminLoginPage() {
         <div className="login-header">
           <div className="logo">Tirbeo</div>
           <h1>{mode === 'setup' ? 'Setup Admin' : 'Admin Panel'}</h1>
-          <p>{mode === 'setup' ? 'Create the first admin account' : 'Sign in to manage the platform'}</p>
+          <p>{mode === 'setup' ? 'Create an admin account' : 'Sign in to manage the platform'}</p>
         </div>
         <div className="glass-card">
           <div>
@@ -109,6 +110,17 @@ export default function AdminLoginPage() {
               </button>
             </form>
           </div>
+        </div>
+        <div className="login-footer">
+          {mode === 'login' ? (
+            <a href="#" onClick={(e) => { e.preventDefault(); setMode('setup'); setError(''); }}>
+              Create admin account
+            </a>
+          ) : (
+            <a href="#" onClick={(e) => { e.preventDefault(); setMode('login'); setError(''); }}>
+              Already have an account? Sign in
+            </a>
+          )}
         </div>
       </div>
     </div>
