@@ -1,0 +1,25 @@
+
+> @tirbeo/admin@0.0.1 build C:\Users\gwbis\Downloads\Tirbeo-All\apps\admin
+> next build
+
+   ▲ Next.js 15.5.19
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (106kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (250kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+ ⚠ Compiled with warnings in 4.8s
+
+../../node_modules/.pnpm/@supabase+supabase-js@2.110.0/node_modules/@supabase/supabase-js/dist/index.mjs
+A Node.js API is used (process.version at line: 27) which is not supported in the Edge Runtime.
+Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+
+Import trace for requested module:
+../../node_modules/.pnpm/@supabase+supabase-js@2.110.0/node_modules/@supabase/supabase-js/dist/index.mjs
+../../node_modules/.pnpm/@supabase+ssr@0.5.2_@supabase+supabase-js@2.110.0/node_modules/@supabase/ssr/dist/module/createBrowserClient.js
+../../node_modules/.pnpm/@supabase+ssr@0.5.2_@supabase+supabase-js@2.110.0/node_modules/@supabase/ssr/dist/module/index.js
+../../packages/database/dist/chunk-6K52ARED.mjs
+../../packages/database/dist/middleware-client.mjs
+
+ ✓ Compiled successfully in 24.7s
+   Linting and checking validity of types ...
