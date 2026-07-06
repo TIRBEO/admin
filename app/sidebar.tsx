@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { apiFetch } from './lib';
 
 function DashIcon() { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>; }
@@ -9,16 +9,45 @@ function UsersIcon() { return <svg width="16" height="16" viewBox="0 0 24 24" fi
 function WsIcon() { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>; }
 function LogoutIcon() { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>; }
 
-const navItems = [
-  { href: '/', label: 'Dashboard', icon: DashIcon },
-  { href: '/routes', label: 'Routes', icon: RouteIcon },
-  { href: '/monitor', label: 'Monitor', icon: MonitorIcon },
-  { href: '/users', label: 'Users', icon: UsersIcon },
-  { href: '/workspaces', label: 'Workspaces', icon: WsIcon },
-];
+const NAV_BY_ROLE: Record<string, Array<{ href: string; label: string; icon: React.ComponentType }>> = {
+  super_admin: [
+    { href: '/', label: 'Dashboard', icon: DashIcon },
+    { href: '/routes', label: 'Routes', icon: RouteIcon },
+    { href: '/monitor', label: 'Monitor', icon: MonitorIcon },
+    { href: '/users', label: 'Users', icon: UsersIcon },
+    { href: '/workspaces', label: 'Workspaces', icon: WsIcon },
+  ],
+  admin: [
+    { href: '/', label: 'Dashboard', icon: DashIcon },
+    { href: '/routes', label: 'Routes', icon: RouteIcon },
+    { href: '/monitor', label: 'Monitor', icon: MonitorIcon },
+    { href: '/users', label: 'Users', icon: UsersIcon },
+    { href: '/workspaces', label: 'Workspaces', icon: WsIcon },
+  ],
+  manager: [
+    { href: '/', label: 'Dashboard', icon: DashIcon },
+    { href: '/routes', label: 'Routes', icon: RouteIcon },
+    { href: '/monitor', label: 'Monitor', icon: MonitorIcon },
+    { href: '/users', label: 'Users', icon: UsersIcon },
+  ],
+  editor: [
+    { href: '/', label: 'Dashboard', icon: DashIcon },
+    { href: '/routes', label: 'Routes', icon: RouteIcon },
+    { href: '/monitor', label: 'Monitor', icon: MonitorIcon },
+  ],
+};
 
 export default function AdminSidebar() {
+  const [role, setRole] = useState<string | null>(null);
   const current = typeof window !== 'undefined' ? window.location.pathname : '';
+
+  useEffect(() => {
+    apiFetch('/api/admin/stats').then(r => r.json()).then(d => {
+      if (d.session?.adminRole) setRole(d.session.adminRole);
+    }).catch(() => {});
+  }, []);
+
+  const navItems = NAV_BY_ROLE[role || 'editor'] || NAV_BY_ROLE.editor;
 
   const handleLogout = async () => {
     await apiFetch('/api/auth/logout', { method: 'POST' });

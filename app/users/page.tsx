@@ -12,7 +12,8 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState('');
   const [error, setError] = useState('');
   const [editing, setEditing] = useState<User | null>(null);
-  const limit = 20;
+  const [myRole, setMyRole] = useState<string>('');
+  const limit = 100;
 
   const loadUsers = async (p: number, s: string) => {
     const params = new URLSearchParams({ page: String(p), limit: String(limit) });
@@ -24,6 +25,7 @@ export default function AdminUsersPage() {
   };
 
   useEffect(() => { loadUsers(page, search); }, [page]);
+  useEffect(() => { apiFetch('/api/admin/stats').then(r => r.json()).then(d => { if (d.session?.adminRole) setMyRole(d.session.adminRole); }).catch(() => {}); }, []);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); setPage(1); loadUsers(1, search); };
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -69,7 +71,7 @@ export default function AdminUsersPage() {
                     <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{u.phoneNumber || '—'}</td>
                     <td style={{ fontSize: 12 }}>{u.occupation || '—'}</td>
                     <td style={{ fontSize: 11, color: 'var(--text-muted)' }}>{new Date(u.createdAt).toLocaleDateString()}</td>
-                    <td><div className="flex gap-2"><button className="btn btn-sm btn-outline" onClick={() => setEditing(u)}>Edit</button><button className="btn btn-sm btn-danger" onClick={() => handleDelete(u.id)}>Delete</button></div></td>
+                    <td><div className="flex gap-2"><button className="btn btn-sm btn-outline" onClick={() => setEditing(u)}>Edit</button>{myRole === 'super_admin' && <button className="btn btn-sm btn-danger" onClick={() => handleDelete(u.id)}>Delete</button>}</div></td>
                   </tr>
                 ))}
                 {users.length === 0 && <tr><td colSpan={7}><div className="empty-state">No users found</div></td></tr>}
@@ -92,7 +94,7 @@ export default function AdminUsersPage() {
                   <label>Admin Role</label>
                   <select name="adminRole" defaultValue={editing.adminRole || 'none'}>
                     <option value="none">None (regular user)</option>
-                    <option value="super_admin">Super Admin</option>
+                    {myRole === 'super_admin' && <option value="super_admin">Super Admin</option>}
                     <option value="admin">Admin</option>
                     <option value="manager">Manager</option>
                     <option value="editor">Editor</option>
