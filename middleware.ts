@@ -1,36 +1,26 @@
-import { type NextRequest, NextResponse } from "next/server";
-import { createMiddlewareClient } from "@tirbeo/database/middleware-client";
+import { NextResponse, NextRequest } from 'next/server';
 
-const LOGIN_PATH = "/login";
-const UNAUTHORIZED_PATH = "/unauthorized";
+const LOGIN_PATH = '/login';
+const UNAUTHORIZED_PATH = '/unauthorized';
+const PUBLIC_PATHS = ['/login', '/unauthorized', '/_next/static', '/_next/image', '/favicon.ico'];
 
 export async function middleware(request: NextRequest) {
-  const { supabase, response } = createMiddlewareClient(request);
-  const nextResponse = new NextResponse(response.body, response);
+  const { pathname } = request.nextUrl;
 
-  const { data: { user } } = await supabase.auth.getUser();
+  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
+    return NextResponse.next();
+  }
 
-  if (!user) {
+  const session = request.cookies.get('__session')?.value;
+
+  if (!session) {
     const loginUrl = new URL(LOGIN_PATH, request.url);
     return NextResponse.redirect(loginUrl);
   }
 
-  const { data: adminUser } = await supabase
-    .from("admin_users")
-    .select("role")
-    .eq("user_id", user.id)
-    .single();
-
-  if (!adminUser) {
-    const unauthorizedUrl = new URL(UNAUTHORIZED_PATH, request.url);
-    return NextResponse.redirect(unauthorizedUrl);
-  }
-
-  return nextResponse;
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|login|unauthorized).*)",
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|login|unauthorized).*)'],
 };
