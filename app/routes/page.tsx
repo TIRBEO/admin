@@ -18,6 +18,31 @@ export default function AdminRoutesPage() {
 
   useEffect(() => { loadRoutes(); }, []);
 
+const ALL_ROLES = ['guest', 'member', 'editor', 'manager', 'admin', 'super_admin'];
+
+function RoleCheckboxes({ name, defaultValues = ['member'] }: { name: string; defaultValues?: string[] }) {
+  const [selected, setSelected] = React.useState<string[]>(defaultValues);
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
+      <input type="hidden" name={name} value={selected.join(',')} />
+      {ALL_ROLES.map(role => (
+        <label key={role} style={{
+          display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px',
+          borderRadius: 8, fontSize: 12, cursor: 'pointer',
+          background: selected.includes(role) ? 'rgba(79,122,255,0.15)' : 'rgba(255,255,255,0.04)',
+          border: selected.includes(role) ? '1px solid rgba(79,122,255,0.3)' : '1px solid rgba(255,255,255,0.06)',
+          color: selected.includes(role) ? '#7a9aff' : 'var(--text-muted)',
+        }}>
+          <input type="checkbox" checked={selected.includes(role)} onChange={() => {
+            setSelected(prev => prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]);
+          }} style={{ display: 'none' }} />
+          {role}
+        </label>
+      ))}
+    </div>
+  );
+}
+
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
@@ -91,7 +116,7 @@ export default function AdminRoutesPage() {
                   <label>Path</label><input name="path" required placeholder="e.g. users/me" />
                   <label>Method</label><select name="method"><option value="GET">GET</option><option value="POST">POST</option><option value="PUT">PUT</option><option value="PATCH">PATCH</option><option value="DELETE">DELETE</option></select>
                   <label>Target</label><input name="target" placeholder="https://upstream.example.com/api" />
-                  <label>Allowed Roles</label><input name="allowedRoles" defaultValue="member" />
+                  <label>Allowed Roles</label><RoleCheckboxes name="allowedRoles" />
                   <div className="flex gap-2"><div style={{ flex: 1 }}><label>Internal</label><select name="internal"><option value="false">No</option><option value="true">Yes</option></select></div><div style={{ flex: 1 }}><label>Enabled</label><select name="enabled"><option value="true">Yes</option><option value="false">No</option></select></div></div>
                   <div className="flex gap-2 mt-4"><button type="submit" className="btn btn-primary">Create</button><button type="button" className="btn btn-outline" onClick={() => setShowCreate(false)}>Cancel</button></div>
                 </form>
@@ -107,7 +132,7 @@ export default function AdminRoutesPage() {
                   <label>Path</label><input name="path" defaultValue={editing.path} required />
                   <label>Method</label><select name="method" defaultValue={editing.method}><option value="GET">GET</option><option value="POST">POST</option><option value="PUT">PUT</option><option value="PATCH">PATCH</option><option value="DELETE">DELETE</option></select>
                   <label>Target</label><input name="target" defaultValue={editing.target || ''} />
-                  <label>Allowed Roles</label><input name="allowedRoles" defaultValue={editing.allowedRoles.join(', ')} />
+                  <label>Allowed Roles</label><RoleCheckboxes name="allowedRoles" defaultValues={editing.allowedRoles} />
                   <div className="flex gap-2"><div style={{ flex: 1 }}><label>Internal</label><select name="internal" defaultValue={String(editing.internal)}><option value="false">No</option><option value="true">Yes</option></select></div><div style={{ flex: 1 }}><label>Enabled</label><select name="enabled" defaultValue={String(editing.enabled)}><option value="true">Yes</option><option value="false">No</option></select></div></div>
                   <div className="flex gap-2 mt-4"><button type="submit" className="btn btn-primary">Save</button><button type="button" className="btn btn-outline" onClick={() => setEditing(null)}>Cancel</button></div>
                 </form>
