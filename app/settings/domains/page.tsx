@@ -1,7 +1,5 @@
 'use client';
-
 import { useState } from 'react';
-import Sidebar from '../../sidebar';
 
 const SUBDOMAINS = [
   { key: 'www', label: 'Main Site', description: 'Company landing page' },
@@ -23,9 +21,7 @@ export default function DomainSettingsPage() {
   };
 
   return (
-    <div className="admin-layout">
-      <Sidebar />
-      <main className="main" style={{ maxWidth: '900px', width: '100%' }}>
+    <div style={{ maxWidth: '900px', width: '100%' }}>
         <h2>Domain Settings</h2>
         <p className="desc">
           Manage your domain and subdomain routing. Apply changes via the <code style={{ background: 'rgba(255,255,255,0.08)', padding: '1px 6px', borderRadius: 4, fontSize: 11 }}>NEXT_PUBLIC_APP_DOMAIN</code> env variable.
@@ -85,7 +81,6 @@ export default function DomainSettingsPage() {
             {dnsConfig(mainDomain)}
           </pre>
         </div>
-      </main>
     </div>
   );
 }
