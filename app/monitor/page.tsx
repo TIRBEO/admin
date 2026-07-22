@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import React, { useEffect, useState } from 'react';
 import AdminSidebar from '../sidebar';
 import { apiFetch } from '../lib';
@@ -12,14 +12,17 @@ export default function AdminMonitorPage() {
   const [blocked, setBlocked] = useState<Blocked[]>([]);
   const [error, setError] = useState('');
   const [showAddBlock, setShowAddBlock] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
+    setLoading(true);
     const [logsRes, blockedRes] = await Promise.all([
       apiFetch('/api/admin/monitor/logs?limit=200'),
       apiFetch('/api/admin/monitor/blocked'),
     ]);
     if (logsRes.ok) setLogs(await logsRes.json());
     if (blockedRes.ok) setBlocked(await blockedRes.json());
+    setLoading(false);
   };
 
   useEffect(() => { loadData(); }, []);
@@ -46,6 +49,10 @@ export default function AdminMonitorPage() {
         <h2>Monitor</h2>
         <p className="desc">Request logs and blocklist management</p>
         {error && <p className="error">{error}</p>}
+        {loading ? (
+          <div className="loading" style={{ padding: 60, textAlign: 'center', color: 'var(--text-muted)' }}>Loading monitor data…</div>
+        ) : (
+        <>
         <div className="tabs">
           <button className={`tab-btn ${tab === 'logs' ? 'active' : ''}`} onClick={() => setTab('logs')}>Logs</button>
           <button className={`tab-btn ${tab === 'blocked' ? 'active' : ''}`} onClick={() => setTab('blocked')}>Blocklist ({blocked.length})</button>
@@ -62,8 +69,8 @@ export default function AdminMonitorPage() {
                       <td><span className={`badge badge-${l.method.toLowerCase()}`}>{l.method}</span></td>
                       <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{l.path}</td>
                       <td><span className={`badge ${(l.status || 0) < 300 ? 'badge-enabled' : (l.status || 0) < 500 ? 'badge-get' : 'badge-disabled'}`}>{l.status}</span></td>
-                      <td style={{ fontSize: 12 }}>{l.ip || '—'}</td>
-                      <td style={{ fontSize: 11, color: 'var(--text-muted)' }}>{l.userId ? l.userId.substring(0, 8) + '…' : '—'}</td>
+                      <td style={{ fontSize: 12 }}>{l.ip || '\u2014'}</td>
+                      <td style={{ fontSize: 11, color: 'var(--text-muted)' }}>{l.userId ? l.userId.substring(0, 8) + '\u2026' : '\u2014'}</td>
                     </tr>
                   ))}
                   {logs.length === 0 && <tr><td colSpan={6}><div className="empty-state">No logs yet</div></td></tr>}
@@ -82,9 +89,9 @@ export default function AdminMonitorPage() {
                   <tbody>
                     {blocked.map(b => (
                       <tr key={b.id}>
-                        <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{b.ip || '—'}</td>
-                        <td style={{ fontSize: 12 }}>{b.userId ? b.userId.substring(0, 12) + '…' : '—'}</td>
-                        <td style={{ fontSize: 12 }}>{b.reason || '—'}</td>
+                        <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{b.ip || '\u2014'}</td>
+                        <td style={{ fontSize: 12 }}>{b.userId ? b.userId.substring(0, 12) + '\u2026' : '\u2014'}</td>
+                        <td style={{ fontSize: 12 }}>{b.reason || '\u2014'}</td>
                         <td style={{ fontSize: 11, color: 'var(--text-muted)' }}>{new Date(b.createdAt).toLocaleDateString()}</td>
                         <td><button className="btn btn-sm btn-danger" onClick={() => handleRemoveBlock(b.id)}>Remove</button></td>
                       </tr>
@@ -110,7 +117,10 @@ export default function AdminMonitorPage() {
             )}
           </>
         )}
+        </>
+        )}
       </div>
     </div>
   );
 }
+

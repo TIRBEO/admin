@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import React, { useEffect, useState } from 'react';
 import AdminSidebar from '../sidebar';
 import { apiFetch } from '../lib';
@@ -9,11 +9,14 @@ export default function AdminRoutesPage() {
   const [routes, setRoutes] = useState<Route[]>([]);
   const [error, setError] = useState('');
   const [editing, setEditing] = useState<Route | null>(null);
+  const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
 
   const loadRoutes = async () => {
+    setLoading(true);
     const res = await apiFetch('/api/admin/routes');
     if (res.ok) setRoutes(await res.json());
+    setLoading(false);
   };
 
   useEffect(() => { loadRoutes(); }, []);
@@ -35,7 +38,7 @@ function RoleCheckboxes({ name, defaultValues = ['member'] }: { name: string; de
         }}>
           <input type="checkbox" checked={selected.includes(role)} onChange={() => {
             setSelected(prev => prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]);
-          }} style={{ display: 'none' }} />
+          }} style={{ position: 'absolute', opacity: 0, width: 0, height: 0, margin: 0, pointerEvents: 'none' }} />
           {role}
         </label>
       ))}
@@ -87,6 +90,9 @@ function RoleCheckboxes({ name, defaultValues = ['member'] }: { name: string; de
           <button className="btn btn-primary" onClick={() => setShowCreate(true)}>+ New Route</button>
         </div>
         {error && <p className="error">{error}</p>}
+        {loading ? (
+          <div className="loading" style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Loading routes…</div>
+        ) : (
         <div className="card">
           <div className="table-wrapper">
             <table>
@@ -107,7 +113,7 @@ function RoleCheckboxes({ name, defaultValues = ['member'] }: { name: string; de
             </table>
           </div>
         </div>
-
+        )}
         {showCreate && (
           <div className="modal-overlay" onClick={() => setShowCreate(false)}>
             <div className="modal" onClick={e => e.stopPropagation()}>
@@ -144,3 +150,6 @@ function RoleCheckboxes({ name, defaultValues = ['member'] }: { name: string; de
     </div>
   );
 }
+
+
+

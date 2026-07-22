@@ -1,28 +1,27 @@
 import { NextResponse, NextRequest } from 'next/server';
 
-const LOGIN_PATH = '/login';
-const PUBLIC_PATHS = ['/login', '/unauthorized', '/_next/static', '/_next/image', '/favicon.ico'];
-
 export async function middleware(request: NextRequest) {
+  // Only protect page routes, not static assets
   const { pathname } = request.nextUrl;
-
-  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
+  if (pathname.startsWith('/_next') || pathname.startsWith('/favicon')) {
     return NextResponse.next();
   }
 
-  if (pathname.startsWith('/api/')) {
+  // Allow login page and unauthorized page without session
+  if (pathname === '/login' || pathname === '/unauthorized') {
     return NextResponse.next();
   }
 
-  const session = request.cookies.get('__session')?.value;
-
+  // Check for session cookie
+  const session = request.cookies.get('__session');
   if (!session) {
-    return NextResponse.redirect(new URL(LOGIN_PATH, request.url));
+    const loginUrl = new URL('/login', request.url);
+    return NextResponse.redirect(loginUrl);
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|login|unauthorized).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };

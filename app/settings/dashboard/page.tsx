@@ -1,30 +1,34 @@
 'use client';
 import React, { useEffect, useState, useCallback } from 'react';
 import { apiFetch } from '../../lib';
+import { SettingsPage, SectionCard, Field, Input, Toggle, Select, Toast } from '../shared';
 
-interface DashboardConfig {
-  defaultHome: string;
-  itemsPerPage: number;
-}
-
-const DEFAULTS: DashboardConfig = {
+const DEFAULTS = {
   defaultHome: 'overview',
   itemsPerPage: 25,
+  showActivityFeed: true,
+  showQuickActions: true,
+  showStats: true,
+  enableNotifications: true,
+  enableDarkMode: true,
+  allowCustomTheme: true,
+  sidebarCollapsedByDefault: false,
+  showOnlineUsers: true,
+  maxUploadSizeMb: 5,
+  allowedFileTypes: 'jpg, png, gif, pdf, doc',
 };
 
+type Config = typeof DEFAULTS;
+
 export default function DashboardSettingsPage() {
-  const [cfg, setCfg] = useState<DashboardConfig>(DEFAULTS);
+  const [cfg, setCfg] = useState<Config>(DEFAULTS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const load = useCallback(async () => {
-    setLoading(true);
     const res = await apiFetch('/api/admin/site-config?app=dashboard');
-    if (res.ok) {
-      const data = await res.json();
-      if (data?.config) setCfg({ ...DEFAULTS, ...data.config });
-    }
+    if (res.ok) { const d = await res.json(); if (d?.config) setCfg({ ...DEFAULTS, ...d.config }); }
     setLoading(false);
   }, []);
 
@@ -33,41 +37,69 @@ export default function DashboardSettingsPage() {
   const save = async () => {
     setSaving(true); setMsg(null);
     const full = await apiFetch('/api/admin/site-config?app=dashboard').then(r => r.ok ? r.json() : { config: {} });
-    const merged = { ...(full.config || {}), ...cfg };
     const res = await apiFetch('/api/admin/site-config?app=dashboard', {
-      method: 'PUT', body: JSON.stringify({ config: merged }),
+      method: 'PUT', body: JSON.stringify({ config: { ...(full.config || {}), ...cfg } }),
     });
-    if (res.ok) setMsg({ type: 'success', text: 'Saved!' });
-    else setMsg({ type: 'error', text: 'Failed to save' });
-    setSaving(false);
-    setTimeout(() => setMsg(null), 3000);
+    if (res.ok) setMsg({ type: 'success', text: 'Dashboard settings saved' }); else setMsg({ type: 'error', text: 'Failed to save' });
+    setSaving(false); setTimeout(() => setMsg(null), 3000);
   };
+
+  const upd = <K extends keyof Config>(k: K, v: Config[K]) => setCfg(p => ({ ...p, [k]: v }));
 
   if (loading) return <div className="loading">Loading…</div>;
 
   return (
-    <div>
-      <div className="flex-between mb-4">
-        <div>
-          <h2>Dashboard Settings</h2>
-          <p className="desc">Configure dashboard.tirbeo.app defaults</p>
-        </div>
-        <button className="btn btn-primary" onClick={save} disabled={saving}>
-          {saving ? 'Saving…' : 'Save Changes'}
-        </button>
-      </div>
-      {msg && <div className={msg.type}>{msg.text}</div>}
-      <div className="card">
-        <h3>General</h3>
-        <label>Default Home View</label>
-        <select value={cfg.defaultHome} onChange={e => setCfg(prev => ({ ...prev, defaultHome: e.target.value }))}>
-          <option value="overview">Overview</option>
-          <option value="activity">Activity Feed</option>
-          <option value="messages">Messages</option>
-        </select>
-        <label>Items Per Page</label>
-        <input type="number" min={10} max={100} value={cfg.itemsPerPage} onChange={e => setCfg(prev => ({ ...prev, itemsPerPage: Number(e.target.value) }))} />
-      </div>
-    </div>
+    <SettingsPage title="Dashboard Settings" desc="Configure dashboard.tirbeo.app" onSave={save} saving={saving}>
+      <Toast msg={msg} onClose={() => setMsg(null)} />
+
+      <SectionCard title="Layout" desc="Default dashboard appearance">
+        <Field label="Default Home View">
+          <Select value={cfg.defaultHome} onChange={e => upd('defaultHome', e.target.value)}>
+            <option value="overview">Overview</option>
+            <option value="activity">Activity Feed</option>
+            <option value="messages">Messages</option>
+          </Select>
+        </Field>
+        <Field label="Items Per Page">
+          <Input type="number" min={5} max={100} value={cfg.itemsPerPage} onChange={e => upd('itemsPerPage', Number(e.target.value))} />
+        </Field>
+        <Field label="Show Stats Cards" horizontal>
+          <Toggle checked={cfg.showStats} onChange={v => upd('showStats', v)} />
+        </Field>
+        <Field label="Show Quick Actions" horizontal>
+          <Toggle checked={cfg.showQuickActions} onChange={v => upd('showQuickActions', v)} />
+        </Field>
+        <Field label="Show Activity Feed" horizontal>
+          <Toggle checked={cfg.showActivityFeed} onChange={v => upd('showActivityFeed', v)} />
+        </Field>
+        <Field label="Show Online Users" horizontal>
+          <Toggle checked={cfg.showOnlineUsers} onChange={v => upd('showOnlineUsers', v)} />
+        </Field>
+      </SectionCard>
+
+      <SectionCard title="Preferences" desc="User experience settings">
+        <Field label="Enable Notifications" horizontal>
+          <Toggle checked={cfg.enableNotifications} onChange={v => upd('enableNotifications', v)} />
+        </Field>
+        <Field label="Allow Dark Mode" horizontal>
+          <Toggle checked={cfg.enableDarkMode} onChange={v => upd('enableDarkMode', v)} />
+        </Field>
+        <Field label="Allow Custom Theme" horizontal>
+          <Toggle checked={cfg.allowCustomTheme} onChange={v => upd('allowCustomTheme', v)} />
+        </Field>
+        <Field label="Sidebar Collapsed by Default" horizontal>
+          <Toggle checked={cfg.sidebarCollapsedByDefault} onChange={v => upd('sidebarCollapsedByDefault', v)} />
+        </Field>
+      </SectionCard>
+
+      <SectionCard title="Uploads" desc="File upload limits">
+        <Field label="Max Upload Size" desc="Megabytes">
+          <Input type="number" min={1} max={50} value={cfg.maxUploadSizeMb} onChange={e => upd('maxUploadSizeMb', Number(e.target.value))} />
+        </Field>
+        <Field label="Allowed File Types" desc="Comma-separated">
+          <Input value={cfg.allowedFileTypes} onChange={e => upd('allowedFileTypes', e.target.value)} />
+        </Field>
+      </SectionCard>
+    </SettingsPage>
   );
 }

@@ -1,7 +1,8 @@
-'use client';
-import React from 'react';
+﻿'use client';
+import React, { useState, useEffect, useCallback } from 'react';
+import { apiFetch } from '../lib';
 
-/* ─── Reusable Settings Components ─── */
+/* â”€â”€â”€ Reusable Settings Components â”€â”€â”€ */
 
 export function SettingsPage({ title, desc, children, onSave, saving }: {
   title: string; desc: string; children: React.ReactNode;
@@ -16,7 +17,7 @@ export function SettingsPage({ title, desc, children, onSave, saving }: {
         </div>
         {onSave && (
           <button className="btn btn-primary" onClick={onSave} disabled={saving}>
-            {saving ? 'Saving…' : 'Save Changes'}
+            {saving ? 'Savingâ€¦' : 'Save Changes'}
           </button>
         )}
       </div>
@@ -98,7 +99,7 @@ export function NestedCard({ children, onRemove }: {
     <div className="nested-card">
       {children}
       {onRemove && (
-        <button className="btn btn-icon btn-danger" onClick={onRemove} title="Remove">×</button>
+        <button className="btn btn-icon btn-danger" onClick={onRemove} title="Remove">Ã—</button>
       )}
     </div>
   );
@@ -128,7 +129,7 @@ export function Toast({ msg, onClose }: {
   return (
     <div className={`toast toast-${msg.type}`}>
       <span>{msg.text}</span>
-      <button className="toast-close" onClick={onClose}>×</button>
+      <button className="toast-close" onClick={onClose}>Ã—</button>
     </div>
   );
 }
@@ -178,3 +179,73 @@ export const FAQ_TEMPLATE = [
   { question: 'How do I join?', answer: 'Enter your email to get early access updates.' },
   { question: 'How is my data handled?', answer: 'Your data stays private. We never sell it to third parties.' },
 ];
+
+
+/* ─── Site Config Hook (reduces boilerplate in settings pages) ─── */
+
+export function useSiteConfig<T extends Record<string, any>>(
+  app: string,
+  section: string | undefined,
+  defaults: T,
+): {
+  cfg: T;
+  setCfg: React.Dispatch<React.SetStateAction<T>>;
+  loading: boolean;
+  saving: boolean;
+  msg: { type: 'success' | 'error'; text: string } | null;
+  setMsg: React.Dispatch<React.SetStateAction<{ type: 'success' | 'error'; text: string } | null>>;
+  save: () => Promise<void>;
+  update: (patch: Partial<T>) => void;
+  load: () => Promise<void>;
+} {
+  const [cfg, setCfg] = useState<T>(defaults);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const res = await apiFetch('/api/admin/site-config?app=' + app);
+    if (res.ok) {
+      const data = await res.json();
+      let stored: any;
+      if (section) {
+        stored = data?.config?.[section] || {};
+      } else {
+        stored = data?.config || {};
+      }
+      setCfg({ ...defaults, ...stored });
+    }
+    setLoading(false);
+  }, [app, section]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const save = async () => {
+    setSaving(true);
+    setMsg(null);
+    const full = await apiFetch('/api/admin/site-config?app=' + app).then(
+      (r) => (r.ok ? r.json() : { config: {} }),
+    );
+    let merged: any;
+    if (section) {
+      merged = { ...(full.config || {}), [section]: cfg };
+    } else {
+      merged = { ...(full.config || {}), ...cfg };
+    }
+    const res = await apiFetch('/api/admin/site-config?app=' + app, {
+      method: 'PUT',
+      body: JSON.stringify({ config: merged }),
+    });
+    if (res.ok) setMsg({ type: 'success', text: 'Saved!' });
+    else setMsg({ type: 'error', text: 'Failed to save' });
+    setSaving(false);
+    setTimeout(() => setMsg(null), 3000);
+  };
+
+  const update = (patch: Partial<T>) => setCfg((prev) => ({ ...prev, ...patch }));
+
+  return { cfg, setCfg, loading, saving, msg, setMsg, save, update, load };
+}
+
+

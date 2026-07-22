@@ -1,290 +1,431 @@
-'use client';
-import React, { useEffect, useState, useCallback } from 'react';
-import { apiFetch } from '../../lib';
+"use client";
 
-interface Role {
-  id: string; name: string; description: string | null;
-  color: string; icon: string; isSystem: boolean;
-  permissions: Record<string, boolean>;
-  _count: { assignments: number };
-}
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Search, Plus, Trash2, Edit2, X, ChevronDown, ChevronRight, Shield, Users, Check, Minus } from "lucide-react";
 
-const DEFAULT_PERMS: Record<string, boolean> = {};
-const PERM_GROUPS = [
-  { label: 'Access', keys: [{ key: 'access.dashboard', label: 'Dashboard overview' }] },
-  { label: 'System Management', keys: [
-    { key: 'system.routes', label: 'View & manage routes' },
-    { key: 'system.monitor', label: 'View monitor & logs' },
-    { key: 'system.users', label: 'View users' },
-    { key: 'system.users.manage', label: 'Edit / update users' },
-    { key: 'system.users.delete', label: 'Delete users' },
-    { key: 'system.workspaces', label: 'View workspaces' },
-    { key: 'system.workspaces.delete', label: 'Delete workspaces' },
+const API = process.env.NEXT_PUBLIC_API_URL || "https://api.tirbeo.app";
+
+type Role = {
+  id: string; name: string; description: string | null; color: string; icon: string;
+  isSystem: boolean; permissions: Record<string, boolean>;
+  _count?: { assignments: number };
+  createdAt: string;
+};
+
+type PermLevel = "none" | "view" | "read_write" | "custom";
+
+const MODULES = [
+  { group: "Employee Management", modules: [
+    { key: "emp.view", label: "View Employees", desc: "View employee directory and profiles" },
+    { key: "emp.create", label: "Add Employees", desc: "Create new employee accounts" },
+    { key: "emp.edit", label: "Edit Employees", desc: "Modify employee information" },
+    { key: "emp.delete", label: "Delete Employees", desc: "Remove employee accounts" },
+    { key: "emp.export", label: "Export Employee Data", desc: "Download employee data as CSV/Excel" },
   ]},
-  { label: 'Landing Settings', keys: [
-    { key: 'landing.view', label: 'View landing settings' },
-    { key: 'landing.edit', label: 'Edit landing settings' },
+  { group: "Payroll", modules: [
+    { key: "payroll.view", label: "View Payroll", desc: "View salary and payment records" },
+    { key: "payroll.edit", label: "Edit Payroll", desc: "Modify salary and payment details" },
+    { key: "payroll.approve", label: "Approve Payroll", desc: "Approve payroll runs before processing" },
+    { key: "payroll.export", label: "Export Payroll", desc: "Download payroll reports" },
   ]},
-  { label: 'Accounts Settings', keys: [
-    { key: 'accounts.view', label: 'View accounts settings' },
-    { key: 'accounts.edit', label: 'Edit accounts settings' },
+  { group: "Attendance & Leave", modules: [
+    { key: "attendance.view", label: "View Attendance", desc: "View attendance records" },
+    { key: "attendance.manage", label: "Manage Attendance", desc: "Edit attendance records" },
+    { key: "leave.view", label: "View Leave Requests", desc: "View leave applications" },
+    { key: "leave.approve", label: "Approve Leave", desc: "Approve or reject leave requests" },
   ]},
-  { label: 'Dashboard Settings', keys: [
-    { key: 'settings.dashboard.view', label: 'View dashboard settings' },
-    { key: 'settings.dashboard.edit', label: 'Edit dashboard settings' },
+  { group: "Recruitment", modules: [
+    { key: "recruit.view", label: "View Openings", desc: "View job postings and applicants" },
+    { key: "recruit.create", label: "Create Openings", desc: "Post new job openings" },
+    { key: "recruit.edit", label: "Manage Applicants", desc: "Move applicants through pipeline" },
+    { key: "recruit.delete", label: "Close/Delete Openings", desc: "Remove job postings" },
   ]},
-  { label: 'Admin Settings', keys: [
-    { key: 'settings.admin.view', label: 'View admin settings' },
-    { key: 'settings.admin.edit', label: 'Edit admin settings' },
+  { group: "Projects", modules: [
+    { key: "projects.view", label: "View Projects", desc: "View project list and details" },
+    { key: "projects.create", label: "Create Projects", desc: "Create new projects" },
+    { key: "projects.edit", label: "Edit Projects", desc: "Modify project settings and details" },
+    { key: "projects.delete", label: "Delete Projects", desc: "Archive or delete projects" },
   ]},
-  { label: 'API Settings', keys: [
-    { key: 'settings.api.view', label: 'View API settings' },
-    { key: 'settings.api.edit', label: 'Edit API settings' },
+  { group: "Clients", modules: [
+    { key: "clients.view", label: "View Clients", desc: "View client directory" },
+    { key: "clients.create", label: "Add Clients", desc: "Create new client accounts" },
+    { key: "clients.edit", label: "Edit Clients", desc: "Update client information" },
+    { key: "clients.delete", label: "Delete Clients", desc: "Remove client accounts" },
   ]},
-  { label: 'Role Management', keys: [
-    { key: 'roles.view', label: 'View roles' },
-    { key: 'roles.create', label: 'Create roles' },
-    { key: 'roles.edit', label: 'Edit roles' },
-    { key: 'roles.delete', label: 'Delete roles' },
+  { group: "Sales", modules: [
+    { key: "sales.view", label: "View Sales", desc: "View sales data and pipeline" },
+    { key: "sales.create", label: "Create Deals", desc: "Create new deals and opportunities" },
+    { key: "sales.edit", label: "Edit Deals", desc: "Modify deal details and stages" },
+    { key: "sales.approve", label: "Approve Discounts", desc: "Approve special pricing or discounts" },
+    { key: "sales.export", label: "Export Sales", desc: "Download sales reports" },
   ]},
-  { label: 'Domain Settings', keys: [
-    { key: 'domains.view', label: 'View domain settings' },
+  { group: "Inventory", modules: [
+    { key: "inventory.view", label: "View Inventory", desc: "View stock levels and items" },
+    { key: "inventory.create", label: "Add Items", desc: "Add new inventory items" },
+    { key: "inventory.edit", label: "Edit Items", desc: "Update stock quantities and details" },
+    { key: "inventory.delete", label: "Remove Items", desc: "Delete inventory items" },
+  ]},
+  { group: "Finance", modules: [
+    { key: "finance.view", label: "View Finance", desc: "View financial summaries and reports" },
+    { key: "finance.edit", label: "Edit Transactions", desc: "Create or modify financial entries" },
+    { key: "finance.approve", label: "Approve Transactions", desc: "Approve expenses and invoices" },
+    { key: "finance.export", label: "Export Finance", desc: "Download financial reports" },
+  ]},
+  { group: "Reports & Analytics", modules: [
+    { key: "reports.view", label: "View Reports", desc: "Access dashboards and reports" },
+    { key: "reports.create", label: "Create Reports", desc: "Build custom reports" },
+    { key: "reports.export", label: "Export Reports", desc: "Download report data" },
+  ]},
+  { group: "System Settings", modules: [
+    { key: "settings.view", label: "View Settings", desc: "View system configuration" },
+    { key: "settings.edit", label: "Edit Settings", desc: "Modify system configuration" },
+  ]},
+  { group: "User Management", modules: [
+    { key: "users.view", label: "View Users", desc: "View user list and profiles" },
+    { key: "users.edit", label: "Edit Users", desc: "Modify user accounts" },
+    { key: "users.delete", label: "Delete Users", desc: "Delete user accounts" },
+    { key: "users.assign_roles", label: "Assign Roles", desc: "Manage user role assignments" },
+  ]},
+  { group: "API & Security", modules: [
+    { key: "api.view", label: "View API Keys", desc: "View API key inventory" },
+    { key: "api.create", label: "Create API Keys", desc: "Generate new API keys" },
+    { key: "api.revoke", label: "Revoke API Keys", desc: "Revoke compromised keys" },
+    { key: "audit.view", label: "View Audit Logs", desc: "Access security audit trail" },
   ]},
 ];
 
-const ICON_OPTIONS = [
-  { value: 'shield', label: '🛡️ Shield' },
-  { value: 'star', label: '⭐ Star' },
-  { value: 'crown', label: '👑 Crown' },
-  { value: 'bolt', label: '⚡ Bolt' },
-  { value: 'heart', label: '❤️ Heart' },
-  { value: 'eye', label: '👁️ Eye' },
-  { value: 'gear', label: '⚙️ Gear' },
-  { value: 'key', label: '🔑 Key' },
-  { value: 'lock', label: '🔒 Lock' },
-  { value: 'pencil', label: '✏️ Pencil' },
-  { value: 'wrench', label: '🔧 Wrench' },
-  { value: 'flag', label: '🚩 Flag' },
-  { value: 'book', label: '📖 Book' },
-  { value: 'bell', label: '🔔 Bell' },
-  { value: 'tag', label: '🏷️ Tag' },
-  { value: 'user-cog', label: '👤 Cog' },
-  { value: 'users', label: '👥 Users' },
-  { value: 'globe', label: '🌐 Globe' },
-  { value: 'chat', label: '💬 Chat' },
-  { value: 'code', label: '💻 Code' },
-];
+const ALL_PERM_KEYS = MODULES.flatMap(g => g.modules.map(m => m.key));
 
-function RoleIcon({ icon }: { icon: string }) {
-  const emoji = ICON_OPTIONS.find(o => o.value === icon)?.label.split(' ')[0] || '🛡️';
-  return <span style={{ fontSize: 18 }}>{emoji}</span>;
+function getPermLevel(perms: Record<string, boolean>, groupKeys: string[]): PermLevel {
+  const enabled = groupKeys.filter(k => perms[k]);
+  if (enabled.length === 0) return "none";
+  if (enabled.length === groupKeys.length) return "read_write";
+  if (enabled.length <= 2 && groupKeys.every(k => !perms[k] || k.endsWith(".view"))) return "view";
+  return "custom";
 }
 
-export default function RolesSettingsPage() {
+function RoleIcon({ name, color, size = 16 }: { name: string; color: string; size?: number }) {
+  const icons: Record<string, React.ReactNode> = {
+    shield: <path strokeLinecap="round" strokeLinejoin="round" d="M12 2l7 4v5c0 5.25-3.5 9.74-7 11-3.5-1.26-7-5.75-7-11V6l7-4z" />,
+    star: <path strokeLinecap="round" strokeLinejoin="round" d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l7.1-1.01L12 2z" />,
+    users: <><path strokeLinecap="round" strokeLinejoin="round" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /></>,
+    key: <path strokeLinecap="round" strokeLinejoin="round" d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />,
+    lock: <><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path strokeLinecap="round" strokeLinejoin="round" d="M7 11V7a5 5 0 0110 0v4" /></>,
+    gear: <><circle cx="12" cy="12" r="3" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" /></>,
+    crown: <><path strokeLinecap="round" strokeLinejoin="round" d="M2 20h20M4 17l2-12 6 4 6-4 2 12H4z" /></>,
+    eye: <><path strokeLinecap="round" strokeLinejoin="round" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></>,
+    bolt: <path strokeLinecap="round" strokeLinejoin="round" d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />,
+    flag: <><path strokeLinecap="round" strokeLinejoin="round" d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><line x1="4" y1="22" x2="4" y2="15" /></>,
+  };
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      {icons[name] || icons.shield}
+    </svg>
+  );
+}
+
+export default function RolesPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Role | null>(null);
-  const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ name: '', description: '', color: '#4f7aff', icon: 'shield', permissions: { ...DEFAULT_PERMS } });
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [saveLoading, setSaveLoading] = useState(false);
+
+  const [formName, setFormName] = useState("");
+  const [formDesc, setFormDesc] = useState("");
+  const [formColor, setFormColor] = useState("#4f7aff");
+  const [formIcon, setFormIcon] = useState("shield");
+  const [formPerms, setFormPerms] = useState<Record<string, boolean>>({});
 
   const loadRoles = useCallback(async () => {
     try {
-      const res = await apiFetch('/api/admin/roles');
-      if (!res.ok) throw new Error('Failed to load');
-      const data = await res.json();
-      setRoles(data.roles);
-    } catch { setError('Failed to load roles'); }
-    finally { setLoading(false); }
+      const res = await fetch(`${API}/api/admin/roles`, { credentials: "include" });
+      if (res.ok) { const d = await res.json(); setRoles(d.roles || []); }
+    } catch {}
+    setLoading(false);
   }, []);
 
   useEffect(() => { loadRoles(); }, [loadRoles]);
 
-  const resetForm = () => setForm({ name: '', description: '', color: '#4f7aff', icon: 'shield', permissions: {} });
-
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true); setMsg(null);
-    try {
-      const res = await apiFetch('/api/admin/roles', {
-        method: 'POST',
-        body: JSON.stringify(form),
-      });
-      if (!res.ok) { const t = await res.text(); throw new Error(t); }
-      setMsg({ type: 'success', text: 'Role created' });
-      setShowCreate(false); resetForm(); loadRoles();
-    } catch (err: any) { setMsg({ type: 'error', text: err.message }); }
-    finally { setSaving(false); }
-  };
-
-  const handleUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editing) return;
-    setSaving(true); setMsg(null);
-    try {
-      const res = await apiFetch(`/api/admin/roles/${editing.id}`, {
-        method: 'PUT',
-        body: JSON.stringify(form),
-      });
-      if (!res.ok) { const t = await res.text(); throw new Error(t); }
-      setMsg({ type: 'success', text: 'Role updated' });
-      setEditing(null); loadRoles();
-    } catch (err: any) { setMsg({ type: 'error', text: err.message }); }
-    finally { setSaving(false); }
-  };
-
-  const handleDelete = async (role: Role) => {
-    if (!confirm(`Delete role "${role.name}"? This cannot be undone.`)) return;
-    try {
-      const res = await apiFetch(`/api/admin/roles/${role.id}`, { method: 'DELETE' });
-      if (!res.ok) { const t = await res.text(); throw new Error(t); }
-      setMsg({ type: 'success', text: 'Role deleted' });
-      loadRoles();
-    } catch (err: any) { setMsg({ type: 'error', text: err.message }); }
+  const openCreate = () => {
+    setIsCreating(true); setEditing(null);
+    setFormName(""); setFormDesc(""); setFormColor("#4f7aff"); setFormIcon("shield"); setFormPerms({});
+    setExpandedGroups(new Set(MODULES.map(m => m.group)));
   };
 
   const openEdit = (role: Role) => {
-    setEditing(role);
-    setForm({ name: role.name, description: role.description || '', color: role.color, icon: role.icon, permissions: { ...role.permissions } });
+    setEditing(role); setIsCreating(false);
+    setFormName(role.name); setFormDesc(role.description || ""); setFormColor(role.color); setFormIcon(role.icon);
+    setFormPerms({ ...role.permissions });
+    setExpandedGroups(new Set(MODULES.map(m => m.group)));
+  };
+
+  const toggleGroup = (group: string) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      next.has(group) ? next.delete(group) : next.add(group);
+      return next;
+    });
   };
 
   const togglePerm = (key: string) => {
-    setForm(f => ({ ...f, permissions: { ...f.permissions, [key]: !f.permissions[key] } }));
+    setFormPerms(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const countActivePerms = (perms: Record<string, boolean>) =>
-    Object.values(perms).filter(Boolean).length;
+  const toggleAllInGroup = (keys: string[], enabled: boolean) => {
+    setFormPerms(prev => {
+      const next = { ...prev };
+      keys.forEach(k => { next[k] = enabled; });
+      return next;
+    });
+  };
 
-  if (loading) return <div className="settings-page"><p className="loading">Loading roles…</p></div>;
+  const toggleAllModules = (enabled: boolean) => {
+    setFormPerms(prev => {
+      const next: Record<string, boolean> = {};
+      ALL_PERM_KEYS.forEach(k => { next[k] = enabled; });
+      return next;
+    });
+  };
+
+  const save = async () => {
+    if (!formName.trim()) { setToast("Role name is required"); return; }
+    setSaveLoading(true);
+    try {
+      const body = { name: formName.trim(), description: formDesc.trim() || undefined, color: formColor, icon: formIcon, permissions: formPerms };
+      const url = editing ? `${API}/api/admin/roles/${editing.id}` : `${API}/api/admin/roles`;
+      const method = editing ? "PUT" : "POST";
+      const res = await fetch(url, {
+        method, credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        setToast(editing ? "Role updated" : "Role created");
+        setIsCreating(false); setEditing(null);
+        loadRoles();
+      } else {
+        const msg = await res.text();
+        setToast(msg || "Failed to save role");
+      }
+    } catch { setToast("Connection error"); }
+    setSaveLoading(false);
+  };
+
+  const deleteRole = async (id: string) => {
+    if (!confirm("Delete this role? Users with this role will lose its permissions.")) return;
+    try {
+      const res = await fetch(`${API}/api/admin/roles/${id}`, { method: "DELETE", credentials: "include" });
+      if (res.ok) { setToast("Role deleted"); loadRoles(); }
+      else { const msg = await res.text(); setToast(msg || "Failed to delete"); }
+    } catch { setToast("Connection error"); }
+  };
+
+  const filtered = roles.filter(r => r.name.toLowerCase().includes(search.toLowerCase()));
+  const isFormOpen = isCreating || !!editing;
+  const totalEnabledPerms = Object.values(formPerms).filter(Boolean).length;
 
   return (
-    <div className="settings-page">
-      <div className="settings-page-header">
+    <div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <div>
-          <h2>Roles & Permissions</h2>
-          <p className="desc">Create and manage custom roles with granular permissions</p>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: "#e6edf3" }}>Roles & Permissions</h1>
+          <p style={{ fontSize: 14, color: "#7d8590", marginTop: 4 }}>Define roles and assign granular module permissions</p>
         </div>
-        <button className="btn btn-primary" onClick={() => { resetForm(); setShowCreate(true); }}>+ New Role</button>
+        <button onClick={openCreate} className="btn btn-primary"><Plus size={16} /> Create Role</button>
       </div>
-      {msg && <div className={`toast toast-${msg.type}`}>{msg.text}<button className="toast-close" onClick={() => setMsg(null)}>×</button></div>}
-      {error && <p className="error">{error}</p>}
 
-      {/* Roles Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
-        {roles.map(role => (
-          <div key={role.id} className="section-card" style={{ marginBottom: 0 }}>
-            <div className="section-card-inner">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-                <div style={{
-                  width: 44, height: 44, borderRadius: 10, background: role.color + '18',
-                  border: `2px solid ${role.color}33`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 20, flexShrink: 0,
-                }}>
-                  <RoleIcon icon={role.icon} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 14, color: '#fff', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    {role.name}
-                    {role.isSystem && <span className="badge badge-super_admin" style={{ fontSize: 9 }}>SYSTEM</span>}
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{role.description || 'No description'}</div>
-                </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+        <div className="search-form" style={{ flex: 1, maxWidth: 360 }}>
+          <Search size={14} style={{ color: "#7d8590" }} />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search roles..." />
+        </div>
+        <span style={{ fontSize: 13, color: "#7d8590" }}>{roles.length} roles</span>
+      </div>
+
+      {isFormOpen && (
+        <div className="box" style={{ marginBottom: 24, padding: 24, border: "1px solid rgba(79,122,255,0.2)", background: "rgba(79,122,255,0.04)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: "#e6edf3" }}>{editing ? "Edit Role" : "Create Role"}</h3>
+            <button onClick={() => { setIsCreating(false); setEditing(null); }} style={{ background: "none", border: "none", color: "#7d8590", cursor: "pointer" }}>
+              <X size={18} />
+            </button>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+            <div className="field">
+              <label>Role Name *</label>
+              <input value={formName} onChange={e => setFormName(e.target.value)} placeholder="e.g. Payroll Manager" className="input" />
+            </div>
+            <div className="field">
+              <label>Description</label>
+              <input value={formDesc} onChange={e => setFormDesc(e.target.value)} placeholder="Brief description" className="input" />
+            </div>
+            <div className="field">
+              <label>Color</label>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <input type="color" value={formColor} onChange={e => setFormColor(e.target.value)} style={{ width: 40, height: 34, border: "1px solid #30363d", borderRadius: 6, background: "transparent", cursor: "pointer" }} />
+                <input value={formColor} onChange={e => setFormColor(e.target.value)} className="input" style={{ flex: 1 }} />
               </div>
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center', fontSize: 12, color: 'var(--text-secondary)', marginBottom: 12 }}>
-                <span>{role._count.assignments} user{role._count.assignments !== 1 ? 's' : ''}</span>
-                <span>·</span>
-                <span>{countActivePerms(role.permissions)} permissions</span>
+            </div>
+            <div className="field">
+              <label>Icon</label>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {["shield", "star", "users", "key", "lock", "gear", "crown", "eye", "bolt", "flag"].map(icon => (
+                  <button key={icon} onClick={() => setFormIcon(icon)} style={{
+                    width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center",
+                    borderRadius: 8, border: `1px solid ${formIcon === icon ? formColor : "#30363d"}`,
+                    background: formIcon === icon ? `${formColor}20` : "transparent",
+                    cursor: "pointer", transition: "all 0.15s",
+                  }}>
+                    <RoleIcon name={icon} color={formIcon === icon ? formColor : "#7d8590"} size={16} />
+                  </button>
+                ))}
               </div>
-              {!role.isSystem && (
-                <div className="flex gap-2">
-                  <button className="btn btn-sm btn-outline" onClick={() => openEdit(role)}>Edit</button>
-                  <button className="btn btn-sm btn-danger" onClick={() => handleDelete(role)}>Delete</button>
-                </div>
-              )}
             </div>
           </div>
-        ))}
-      </div>
 
-      {/* Create Modal */}
-      {(showCreate || editing) && (
-        <div className="modal-overlay" onClick={() => { setShowCreate(false); setEditing(null); }}>
-          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 600 }}>
-            <div>
-              <h3>{editing ? 'Edit Role' : 'Create Role'}</h3>
-              <p className="modal-desc">{editing ? 'Update role name, color, icon, and permissions' : 'Create a new role with custom permissions'}</p>
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <h4 style={{ fontSize: 14, fontWeight: 600, color: "#e6edf3" }}>Module Permissions</h4>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 12, color: "#7d8590" }}>{totalEnabledPerms} of {ALL_PERM_KEYS.length} permissions enabled</span>
+                <button onClick={() => toggleAllModules(true)} style={{ fontSize: 11, padding: "4px 10px", background: "rgba(35,134,54,0.15)", color: "#3fb950", border: "1px solid rgba(35,134,54,0.3)", borderRadius: 6, cursor: "pointer" }}>Select All</button>
+                <button onClick={() => toggleAllModules(false)} style={{ fontSize: 11, padding: "4px 10px", background: "rgba(218,54,51,0.15)", color: "#f85149", border: "1px solid rgba(218,54,51,0.3)", borderRadius: 6, cursor: "pointer" }}>Clear All</button>
+              </div>
+            </div>
 
-              <form onSubmit={editing ? handleUpdate : handleCreate}>
-                {/* Basic fields */}
-                <div className="field">
-                  <div className="field-label">Role Name</div>
-                  <input className="input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required placeholder="e.g. Content Editor" />
-                </div>
-                <div className="field">
-                  <div className="field-label">Description</div>
-                  <input className="input" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="What can this role do?" />
-                </div>
-                <div style={{ display: 'flex', gap: 12 }}>
-                  <div className="field" style={{ flex: 1 }}>
-                    <div className="field-label">Color</div>
-                    <div className="color-input-group">
-                      <input type="color" value={form.color} onChange={e => setForm(f => ({ ...f, color: e.target.value }))} className="color-swatch" />
-                      <input className="input" value={form.color} onChange={e => setForm(f => ({ ...f, color: e.target.value }))} />
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {MODULES.map(group => {
+                const groupKeys = group.modules.map(m => m.key);
+                const enabled = groupKeys.filter(k => formPerms[k]).length;
+                const allEnabled = enabled === groupKeys.length;
+                const someEnabled = enabled > 0 && !allEnabled;
+                const expanded = expandedGroups.has(group.group);
+
+                return (
+                  <div key={group.group} style={{ border: "1px solid #21262d", borderRadius: 8, overflow: "hidden" }}>
+                    <div onClick={() => toggleGroup(group.group)} style={{
+                      display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
+                      background: "#161b22", cursor: "pointer", userSelect: "none",
+                    }}>
+                      <button onClick={e => { e.stopPropagation(); toggleAllInGroup(groupKeys, !allEnabled); }} style={{
+                        width: 18, height: 18, borderRadius: 4, border: `1.5px solid ${allEnabled ? "#3fb950" : someEnabled ? "#d29922" : "#30363d"}`,
+                        background: allEnabled ? "#3fb950" : someEnabled ? "#d29922" : "transparent",
+                        display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0,
+                      }}>
+                        {(allEnabled || someEnabled) && <Check size={12} color="#fff" strokeWidth={3} />}
+                      </button>
+                      {expanded ? <ChevronDown size={14} style={{ color: "#7d8590", flexShrink: 0 }} /> : <ChevronRight size={14} style={{ color: "#7d8590", flexShrink: 0 }} />}
+                      <span style={{ fontSize: 14, fontWeight: 500, color: "#e6edf3", flex: 1 }}>{group.group}</span>
+                      <span style={{ fontSize: 12, color: "#7d8590" }}>{enabled}/{groupKeys.length}</span>
                     </div>
-                  </div>
-                  <div className="field" style={{ flex: 1 }}>
-                    <div className="field-label">Icon</div>
-                    <select className="select" value={form.icon} onChange={e => setForm(f => ({ ...f, icon: e.target.value }))}>
-                      {ICON_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Permissions */}
-                <div className="sub-section" style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border-subtle)' }}>
-                  <h4 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>Permissions</h4>
-                  <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 12 }}>Toggle permissions for this role</p>
-
-                  {PERM_GROUPS.map(group => (
-                    <div key={group.label} style={{ marginBottom: 14 }}>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>
-                        {group.label}
-                      </div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                        {group.keys.map(k => (
-                          <label key={k.key} style={{
-                            display: 'flex', alignItems: 'center', gap: 6,
-                            padding: '5px 10px', borderRadius: 6,
-                            background: form.permissions[k.key] ? 'var(--accent-subtle)' : 'var(--bg-surface)',
-                            border: `1px solid ${form.permissions[k.key] ? 'var(--accent)' : 'var(--border-subtle)'}`,
-                            cursor: 'pointer', fontSize: 12, color: form.permissions[k.key] ? 'var(--accent)' : 'var(--text-secondary)',
-                            transition: 'all 0.1s',
-                          }}>
-                            <input type="checkbox" checked={!!form.permissions[k.key]}
-                              onChange={() => togglePerm(k.key)}
-                              style={{ accentColor: 'var(--accent)' }} />
-                            {k.label}
-                          </label>
+                    {expanded && (
+                      <div style={{ padding: "4px 0", background: "var(--bg-inset)" }}>
+                        {group.modules.map(m => (
+                          <div key={m.key} style={{
+                            display: "flex", alignItems: "center", gap: 10, padding: "10px 16px 10px 42px",
+                            borderBottom: "1px solid var(--border-muted)",
+                          }} title={m.desc}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 500 }}>{m.label}</div>
+                              <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 1 }}>{m.desc}</div>
+                            </div>
+                            <button onClick={() => togglePerm(m.key)} style={{
+                              width: 36, height: 20, borderRadius: 10, border: `1.5px solid ${formPerms[m.key] ? "#3fb950" : "var(--border-elevated)"}`,
+                              background: formPerms[m.key] ? "#3fb950" : "var(--bg-hover)",
+                              display: "flex", alignItems: formPerms[m.key] ? "center" : "center", justifyContent: formPerms[m.key] ? "flex-end" : "flex-start",
+                              cursor: "pointer", flexShrink: 0, padding: formPerms[m.key] ? "0 2px 0 0" : "0 0 0 2px",
+                              transition: "all 0.15s",
+                            }}>
+                              <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.3)" }} />
+                            </button>
+                          </div>
                         ))}
                       </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="form-actions">
-                  <button type="button" className="btn btn-outline" onClick={() => { setShowCreate(false); setEditing(null); }}>Cancel</button>
-                  <button type="submit" className="btn btn-primary" disabled={saving}>
-                    {saving ? 'Saving…' : editing ? 'Update Role' : 'Create Role'}
-                  </button>
-                </div>
-              </form>
+                    )}
+                  </div>
+                );
+              })}
             </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+            <button onClick={() => { setIsCreating(false); setEditing(null); }} className="btn btn-outline">Cancel</button>
+            <button onClick={save} disabled={saveLoading} className="btn btn-primary">{saveLoading ? "Saving..." : editing ? "Update Role" : "Create Role"}</button>
           </div>
         </div>
       )}
+
+      <div className="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Role</th>
+              <th>Description</th>
+              <th>Permissions</th>
+              <th>Members</th>
+              <th>Status</th>
+              <th style={{ textAlign: "right" }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map(role => {
+              const permCount = Object.values(role.permissions).filter(Boolean).length;
+              return (
+                <tr key={role.id}>
+                  <td>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: 8, background: `${role.color}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <RoleIcon name={role.icon} color={role.color} size={16} />
+                      </div>
+                      <span style={{ fontWeight: 600, color: "#e6edf3" }}>{role.name}</span>
+                    </div>
+                  </td>
+                  <td style={{ color: "#7d8590", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{role.description || "—"}</td>
+                  <td>
+                    <span className="badge badge-default">{permCount} permissions</span>
+                  </td>
+                  <td>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <Users size={14} style={{ color: "#7d8590" }} />
+                      <span style={{ color: "#c9d1d9" }}>{role._count?.assignments || 0}</span>
+                    </div>
+                  </td>
+                  <td>
+                    {role.isSystem ? (
+                      <span className="badge" style={{ background: "rgba(139,92,246,0.15)", color: "#a78bfa" }}>System</span>
+                    ) : (
+                      <span className="badge badge-default">Custom</span>
+                    )}
+                  </td>
+                  <td style={{ textAlign: "right" }}>
+                    <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                      <button onClick={() => openEdit(role)} className="btn btn-sm btn-outline" title="View & Edit">
+                        <Eye size={14} />
+                      </button>
+                      <button onClick={() => openEdit(role)} className="btn btn-sm btn-outline" disabled={role.isSystem} title={role.isSystem ? "System roles cannot be edited" : "Edit"}>
+                        <Edit2 size={14} />
+                      </button>
+                      <button onClick={() => deleteRole(role.id)} className="btn btn-sm btn-danger" disabled={role.isSystem} title={role.isSystem ? "System roles cannot be deleted" : "Delete"}>
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+            {filtered.length === 0 && (
+              <tr><td colSpan={6} style={{ textAlign: "center", padding: 40, color: "#7d8590" }}>No roles found</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {toast && <div className={`toast ${toast.includes("created") || toast.includes("updated") || toast.includes("deleted") ? "toast-success" : "toast-error"}`} onClick={() => setToast(null)}>{toast}</div>}
     </div>
   );
 }
