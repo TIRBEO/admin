@@ -3,23 +3,65 @@
 > next build
 
    ▲ Next.js 15.5.19
-   - Environments: .env.local
+   - Environments: .env
 
    Creating an optimized production build ...
-<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (106kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
-<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (250kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
- ⚠ Compiled with warnings in 4.8s
+ ✓ Compiled successfully in 30.9s
+   Skipping validation of types
+   Skipping linting
+   Collecting page data ...
+   Generating static pages (0/36) ...
+   Generating static pages (9/36) 
+   Generating static pages (18/36) 
+   Generating static pages (27/36) 
+ ✓ Generating static pages (36/36)
+   Finalizing page optimization ...
+   Collecting build traces ...
 
-../../node_modules/.pnpm/@supabase+supabase-js@2.110.0/node_modules/@supabase/supabase-js/dist/index.mjs
-A Node.js API is used (process.version at line: 27) which is not supported in the Edge Runtime.
-Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+Route (app)                                 Size  First Load JS
+┌ ○ /                                    2.23 kB         110 kB
+├ ○ /_not-found                            992 B         103 kB
+├ ○ /analytics                           3.11 kB         105 kB
+├ ○ /login                               2.67 kB         105 kB
+├ ○ /media                               4.89 kB         107 kB
+├ ○ /moderation                          2.93 kB         105 kB
+├ ○ /monitor                             1.71 kB         109 kB
+├ ○ /monitor/audit                       2.83 kB         105 kB
+├ ○ /routes                              2.13 kB         110 kB
+├ ○ /settings/2fa                        4.23 kB         106 kB
+├ ○ /settings/accounts                   3.58 kB         106 kB
+├ ○ /settings/admin                      3.56 kB         106 kB
+├ ○ /settings/api                        3.46 kB         106 kB
+├ ○ /settings/brand                      4.22 kB         106 kB
+├ ○ /settings/dashboard                  3.34 kB         105 kB
+├ ○ /settings/domains                    1.38 kB         103 kB
+├ ○ /settings/email                      3.34 kB         105 kB
+├ ○ /settings/email/templates            4.81 kB         107 kB
+├ ƒ /settings/email/templates/[id]       3.75 kB         106 kB
+├ ○ /settings/landing                     3.9 kB         111 kB
+├ ○ /settings/landing/about              2.98 kB         105 kB
+├ ○ /settings/landing/faq                3.11 kB         105 kB
+├ ○ /settings/landing/footer             3.51 kB         106 kB
+├ ○ /settings/landing/hero               3.21 kB         105 kB
+├ ○ /settings/landing/navbar             3.34 kB         105 kB
+├ ○ /settings/landing/newsletter         3.15 kB         105 kB
+├ ○ /settings/landing/preloader          3.14 kB         105 kB
+├ ○ /settings/landing/redirects          3.23 kB         105 kB
+├ ○ /settings/layout                     2.38 kB         104 kB
+├ ○ /settings/notifications              3.14 kB         105 kB
+├ ○ /settings/roles                      6.21 kB         108 kB
+├ ○ /settings/theme                      4.68 kB         107 kB
+├ ○ /unauthorized                        3.46 kB         106 kB
+├ ○ /users                               3.04 kB         111 kB
+└ ○ /workspaces                          1.21 kB         109 kB
++ First Load JS shared by all             102 kB
+  ├ chunks/4557610a-fefa5be19e77ed4a.js  54.2 kB
+  ├ chunks/785-778584e14f2dca51.js       45.8 kB
+  └ other shared chunks (total)          1.97 kB
 
-Import trace for requested module:
-../../node_modules/.pnpm/@supabase+supabase-js@2.110.0/node_modules/@supabase/supabase-js/dist/index.mjs
-../../node_modules/.pnpm/@supabase+ssr@0.5.2_@supabase+supabase-js@2.110.0/node_modules/@supabase/ssr/dist/module/createBrowserClient.js
-../../node_modules/.pnpm/@supabase+ssr@0.5.2_@supabase+supabase-js@2.110.0/node_modules/@supabase/ssr/dist/module/index.js
-../../packages/database/dist/chunk-6K52ARED.mjs
-../../packages/database/dist/middleware-client.mjs
 
- ✓ Compiled successfully in 24.7s
-   Linting and checking validity of types ...
+ƒ Middleware                               34 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
