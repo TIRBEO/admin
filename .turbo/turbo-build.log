@@ -1,0 +1,104 @@
+
+> @tirbeo/admin@0.0.1 build C:\Users\gwbis\Downloads\Tirbeo-All\apps\admin
+> next build
+
+▲ Next.js 16.2.12 (Turbopack)
+- Environments: .env
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 98s
+  Running TypeScript ...
+  Finished TypeScript in 20.2s ...
+  Collecting page data using 15 workers ...
+  Generating static pages using 15 workers (0/72) ...
+  Generating static pages using 15 workers (18/72) 
+  Generating static pages using 15 workers (36/72) 
+  Generating static pages using 15 workers (54/72) 
+✓ Generating static pages using 15 workers (72/72) in 1658ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /account
+├ ○ /alerts
+├ ○ /analytics
+├ ○ /apps
+├ ○ /billing
+├ ○ /data
+├ ○ /devices
+├ ○ /directory
+├ ○ /directory/groups
+├ ○ /directory/ous
+├ ○ /directory/settings
+├ ○ /directory/users
+├ ƒ /directory/users/[id]
+├ ○ /forms
+├ ƒ /forms/[id]
+├ ○ /health
+├ ○ /integrations
+├ ○ /login
+├ ○ /login/forgot-password
+├ ○ /media
+├ ○ /moderation
+├ ○ /monitor
+├ ○ /monitor/audit
+├ ○ /reporting
+├ ○ /reserved-addresses
+├ ○ /routes
+├ ○ /rules
+├ ○ /security
+├ ○ /security/access-control
+├ ○ /security/audit
+├ ○ /security/authentication
+├ ○ /security/blocks
+├ ○ /security/captcha
+├ ○ /security/captcha/analytics
+├ ○ /security/captcha/blocks
+├ ○ /security/captcha/logs
+├ ○ /security/events
+├ ○ /security/policies
+├ ○ /settings
+├ ○ /settings/2fa
+├ ○ /settings/accounts
+├ ○ /settings/admin
+├ ○ /settings/api
+├ ○ /settings/apps
+├ ƒ /settings/apps/[app]
+├ ○ /settings/brand
+├ ○ /settings/dashboard
+├ ○ /settings/domains
+├ ○ /settings/email
+├ ○ /settings/email/templates
+├ ƒ /settings/email/templates/[id]
+├ ○ /settings/landing/about
+├ ○ /settings/landing/faq
+├ ○ /settings/landing/feedback
+├ ○ /settings/landing/footer
+├ ○ /settings/landing/hero
+├ ○ /settings/landing/navbar
+├ ○ /settings/landing/newsletter
+├ ○ /settings/landing/preloader
+├ ○ /settings/landing/redirects
+├ ○ /settings/landing/seo
+├ ○ /settings/landing/subscribers
+├ ○ /settings/layout
+├ ○ /settings/notifications
+├ ○ /settings/roles
+├ ○ /settings/theme
+├ ○ /storage
+├ ○ /support
+├ ○ /support/tickets
+├ ƒ /support/tickets/[id]
+├ ○ /tickets
+├ ƒ /tickets/[id]
+├ ○ /unauthorized
+├ ○ /users
+└ ○ /workspaces
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
