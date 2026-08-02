@@ -1,4 +1,8 @@
 {
   "installCommand": "npm install",
-  "buildCommand": "npm run build"
+  "buildCommand": "npm run build",
+  "env": {
+    "API_URL": "https://api.tirbeo.app",
+    "NEXT_PUBLIC_API_URL": "https://api.tirbeo.app"
+  }
 }
