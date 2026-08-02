@@ -17,8 +17,8 @@ const DEFAULTS: BrandConfig = {
   logoUrl: '',
   brandName: 'Tirbeo',
   brandTagline: 'Build communities. Share ideas. Grow together.',
-  primaryColor: '#022B22',
-  accentColor: '#569578',
+  primaryColor: '#1A73E8',
+  accentColor: '#4285F4',
   emailFromName: 'Tirbeo',
   emailFromAddress: 'noreply@send.tirbeo.app',
 };
@@ -154,7 +154,7 @@ export default function BrandSettingsPage() {
         <div style={{ marginTop: 16, padding: 16, background: 'var(--bg-canvas)', borderRadius: 12, border: '1px solid var(--border-default)' }}>
           <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Color Preview</p>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            {[cfg.primaryColor, cfg.accentColor, '#275D46', '#12271D', '#101C13', '#B7C6BE', '#F2EEE8'].map((c, i) => (
+            {[cfg.primaryColor, cfg.accentColor, '#4285F4', '#AECBFA', '#1D4ED8', '#B7C6BE', '#F2EEE8'].map((c, i) => (
               <div key={i} style={{ textAlign: 'center' }}>
                 <div style={{ width: 48, height: 48, borderRadius: 12, background: c, border: '2px solid rgba(255,255,255,0.1)' }} />
                 <span style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>{c}</span>

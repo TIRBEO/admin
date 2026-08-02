@@ -11,14 +11,14 @@ import { CaptchaWidget } from '../components/captcha/captcha-widget';
 type Step = 'welcome' | 'password' | 'mfa';
 
 const THEME = {
-  primary: '#022B22',
-  primaryHover: '#033d33',
+  primary: '#1A73E8',
+  primaryHover: '#1769d2',
   primaryLight: '#e8f0fe',
   text: '#202124',
   textSecondary: '#5f6368',
   textTertiary: '#80868b',
   border: '#dadce0',
-  borderFocus: '#022B22',
+  borderFocus: '#1A73E8',
   error: '#d93025',
   success: '#188038',
   surface: '#ffffff',
@@ -132,7 +132,7 @@ export default function AdminLoginPage() {
   }, []);
 
   const leftContent = (
-    <div className="flex flex-col justify-center h-full bg-[#022B22] relative overflow-hidden">
+    <div className="flex flex-col justify-center h-full bg-[#1A73E8] relative overflow-hidden">
       <Image
         src="/hero-admin.svg"
         alt="Administrator with secure privileged access"
@@ -140,7 +140,7 @@ export default function AdminLoginPage() {
         className="object-cover opacity-50"
         priority
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-[#022B22] via-[#022B22]/70 to-[#022B22]/40" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#1A73E8] via-[#1A73E8]/70 to-[#1A73E8]/40" />
       <div className="relative flex-1 flex flex-col justify-center p-12 lg:p-16">
         <div className="max-w-lg">
           <BrandLogo textClassName="text-[32px] leading-tight font-semibold tracking-tight text-white mb-6 block" height={40} />
@@ -165,10 +165,10 @@ export default function AdminLoginPage() {
   );
 
   const inputClassName = "w-full h-11 rounded-lg border border-[#dadce0] bg-white px-3.5 text-sm text-[#202124] placeholder:text-[#80868b] outline-none transition-all duration-200";
-  const inputFocusClassName = "focus:border-[#022B22] focus:ring-[3px] focus:ring-[#022B22]/5 hover:border-[#9aa0a6]";
+  const inputFocusClassName = "focus:border-[#1A73E8] focus:ring-[3px] focus:ring-[#1A73E8]/5 hover:border-[#9aa0a6]";
   const labelClassName = "block text-sm font-medium text-[#3c4043] mb-1.5";
   const errorClassName = "text-xs text-[#d93025] mt-1.5";
-  const primaryButtonClassName = "h-10 px-5 rounded-lg bg-[#022B22] hover:bg-[#033d33] active:bg-[#044a38] text-white text-sm font-medium transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2 shadow-sm hover:shadow-md";
+  const primaryButtonClassName = "h-10 px-5 rounded-lg bg-[#1A73E8] hover:bg-[#1769d2] active:bg-[#1558b0] text-white text-sm font-medium transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2 shadow-sm hover:shadow-md";
 
   return (
     <AuthShell title="Admin Console" subtitle="Secure access for administrators" variant="split" leftContent={leftContent} image={{ src: "/hero-admin.svg", alt: "Administrator with secure privileged access" }}>
@@ -176,7 +176,7 @@ export default function AdminLoginPage() {
         {step === 'welcome' && (
           <div className="space-y-5">
             <div className="text-center mb-6">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#022B22]/5 border border-[#022B22]/10">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#1A73E8]/5 border border-[#1A73E8]/10">
                 <BrandLogo className="h-9 w-9 rounded-full object-contain" />
               </div>
               <h1 className="text-[24px] leading-tight font-semibold tracking-tight text-[#202124] mb-1">Admin sign in</h1>
@@ -206,7 +206,7 @@ export default function AdminLoginPage() {
             </form>
             <div className="text-center pt-2">
               <a href="https://tirbeo.app" target="_blank" rel="noopener noreferrer"
-                className="text-sm font-medium text-[#022B22] hover:text-[#033d33] transition-colors inline-flex items-center gap-1.5">
+                className="text-sm font-medium text-[#1A73E8] hover:text-[#1769d2] transition-colors inline-flex items-center gap-1.5">
                 <ExternalLink className="w-3.5 h-3.5" /> Tirbeo Home
               </a>
             </div>
@@ -216,7 +216,7 @@ export default function AdminLoginPage() {
         {step === 'password' && (
           <div className="space-y-5">
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[#022B22]/5 border border-[#022B22]/10">
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[#1A73E8]/5 border border-[#1A73E8]/10">
                 <BrandLogo className="h-6 w-6 rounded-full object-contain" />
               </div>
               <div>
@@ -267,7 +267,7 @@ export default function AdminLoginPage() {
                 </button>
               </div>
               <div className="text-center pt-2">
-                <a href="/login/forgot-password" className="text-sm font-medium text-[#022B22] hover:text-[#033d33] transition-colors">
+                <a href="/login/forgot-password" className="text-sm font-medium text-[#1A73E8] hover:text-[#1769d2] transition-colors">
                   Forgot password?
                 </a>
               </div>
@@ -278,8 +278,8 @@ export default function AdminLoginPage() {
         {step === 'mfa' && (
           <div className="space-y-5">
             <div className="text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#022B22]/5 border border-[#022B22]/10">
-                <Shield className="w-6 h-6 text-[#022B22]" />
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#1A73E8]/5 border border-[#1A73E8]/10">
+                <Shield className="w-6 h-6 text-[#1A73E8]" />
               </div>
               <h1 className="text-[20px] leading-tight font-semibold tracking-tight text-[#202124] mb-1">Verify it&apos;s you</h1>
               <p className="text-sm text-[#5f6368]">Enter the 6-digit code from your authenticator app</p>

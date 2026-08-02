@@ -16,6 +16,13 @@ const DEFAULTS = {
   showOnlineUsers: true,
   maxUploadSizeMb: 5,
   allowedFileTypes: 'jpg, png, gif, pdf, doc',
+  support: {
+    enabled: true,
+    title: 'Need help?',
+    description: 'Get support from our team or browse the help center.',
+    link: 'https://support.tirbeo.app',
+    linkLabel: 'Get support',
+  },
 };
 
 type Config = typeof DEFAULTS;
@@ -45,6 +52,8 @@ export default function DashboardSettingsPage() {
   };
 
   const upd = <K extends keyof Config>(k: K, v: Config[K]) => setCfg(p => ({ ...p, [k]: v }));
+  const updSupport = (k: keyof Config['support'], v: string | boolean) =>
+    setCfg(p => ({ ...p, support: { ...p.support, [k]: v } }));
 
   if (loading) return <div className="loading">Loading…</div>;
 
@@ -98,6 +107,24 @@ export default function DashboardSettingsPage() {
         </Field>
         <Field label="Allowed File Types" desc="Comma-separated">
           <Input value={cfg.allowedFileTypes} onChange={e => upd('allowedFileTypes', e.target.value)} />
+        </Field>
+      </SectionCard>
+
+      <SectionCard title="Support" desc="Support section shown on the dashboard home">
+        <Field label="Show Support Section" horizontal>
+          <Toggle checked={cfg.support.enabled} onChange={v => updSupport('enabled', v)} />
+        </Field>
+        <Field label="Title">
+          <Input value={cfg.support.title} onChange={e => updSupport('title', e.target.value)} />
+        </Field>
+        <Field label="Description">
+          <textarea className="textarea" rows={2} value={cfg.support.description} onChange={e => updSupport('description', e.target.value)} />
+        </Field>
+        <Field label="Link URL">
+          <Input value={cfg.support.link} onChange={e => updSupport('link', e.target.value)} />
+        </Field>
+        <Field label="Link Label">
+          <Input value={cfg.support.linkLabel} onChange={e => updSupport('linkLabel', e.target.value)} />
         </Field>
       </SectionCard>
     </SettingsPage>

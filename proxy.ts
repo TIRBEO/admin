@@ -1,6 +1,8 @@
 import { NextResponse, NextRequest } from 'next/server';
 
-const API_URL = 'https://api.tirbeo.app';
+const API_URL = process.env.API_URL
+  || process.env.NEXT_PUBLIC_API_URL
+  || (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://api.tirbeo.app');
 
 interface AuthCacheEntry {
   adminRole: string | null;
