@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@tirbeo/charts": "^1.0.5",
+    "@tirbeo/charts": "^1.0.6",
     "@tirbeo/icons": "^1.0.5",
     "@tirbeo/theme": "^1.0.5",
     "@tirbeo/ui": "^1.0.5",
