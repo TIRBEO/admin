@@ -1,13 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { EntityPage, StatusBadge, DataTable } from '@tirbeo/ui';
 import { apiFetch } from '../../../../lib';
 import { Shield, Users, Key, Activity, Settings, AlertTriangle } from 'lucide-react';
 
-export default async function UserDetail(props: { params: Promise<{ id: string }> }) {
-  const { id } = await props.params;
+export default function UserDetail() {
+  const { id } = useParams<{ id: string }>();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');

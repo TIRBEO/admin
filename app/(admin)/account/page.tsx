@@ -119,8 +119,8 @@ export default function AccountPage() {
           <h3 className="text-sm font-semibold text-[var(--color-admin-text-secondary)] uppercase tracking-wider mb-4">Quick Links</h3>
           <div className="grid grid-cols-2 gap-3">
             {[
-              { label: 'Change Password', href: '/settings/2fa' },
-              { label: 'Notification Preferences', href: '/settings/notifications' },
+              { label: 'Change Password', href: '/admin/settings/2fa' },
+              { label: 'Notification Preferences', href: '/admin/settings/notifications' },
               { label: 'Security Settings', href: '/admin/security' },
               { label: 'Theme Preferences', href: '/admin/settings/theme' },
             ].map(link => (

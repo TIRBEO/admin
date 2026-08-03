@@ -1,6 +1,6 @@
 ﻿'use client';
 import React, { useEffect, useState, useRef } from 'react';
-import { apiFetch, API, getFileSize, isImage, isVideo } from '../../lib';
+import { apiFetch, getFileSize, isImage, isVideo } from '../../lib';
 import { Toast } from '../settings/shared';
 
 interface MediaItem {
@@ -80,9 +80,8 @@ export default function MediaLibraryPage() {
       fd.append('folder', editFolder || 'general');
       fd.append('altText', editAlt || file.name);
       fd.append('tags', '[]');
-      const res = await fetch(`${API}/api/admin/media`, {
+      const res = await apiFetch('/api/admin/media', {
         method: 'POST',
-        credentials: 'include',
         body: fd,
       });
       if (!res.ok) throw new Error('Upload failed');
