@@ -10,11 +10,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@tirbeo/charts": "^1.0.3",
-    "@tirbeo/icons": "^1.0.3",
-    "@tirbeo/theme": "^1.0.3",
-    "@tirbeo/ui": "^1.0.3",
-    "@tirbeo/utils": "^0.0.4",
+    "@tirbeo/charts": "^1.0.4",
+    "@tirbeo/icons": "^1.0.4",
+    "@tirbeo/theme": "^1.0.4",
+    "@tirbeo/ui": "^1.0.4",
+    "@tirbeo/utils": "^0.0.5",
     "date-fns": "4.4.0",
     "lucide-react": "1.28.0",
     "next": "16.2.12",
