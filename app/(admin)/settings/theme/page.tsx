@@ -21,6 +21,7 @@ interface ThemeConfig {
   fontHeading: string;
   borderRadius: string;
   logoUrl: string;
+  heroImage: string;
   brandName: string;
   brandTagline: string;
   emailHeaderBg: string;
@@ -50,6 +51,7 @@ const DEFAULTS: ThemeConfig = {
   fontHeading: 'Inter Tight, Inter, -apple-system, sans-serif',
   borderRadius: '12px',
   logoUrl: '',
+  heroImage: '',
   brandName: 'Tirbeo',
   brandTagline: 'Build communities. Share ideas. Grow together.',
   emailHeaderBg: '#0B0B0D',
@@ -59,6 +61,38 @@ const DEFAULTS: ThemeConfig = {
   lightBgSecondary: '#F5F5F5',
   lightTextPrimary: '#0B0B0D',
   lightAccentPrimary: '#D8B36A',
+};
+
+// Monochrome preset (spec §2): pure black/white, no grays.
+// Single reserved red (#FF4444) for errors; success/warning stay white.
+const MONOCHROME_PRESET: ThemeConfig = {
+  bgPrimary: '#000000',
+  bgSecondary: '#000000',
+  bgCard: '#000000',
+  bgElevated: '#000000',
+  textPrimary: '#FFFFFF',
+  textSecondary: '#FFFFFF',
+  textMuted: '#FFFFFF',
+  accentPrimary: '#FFFFFF',
+  accentSecondary: '#FFFFFF',
+  accentHover: '#000000',
+  success: '#FFFFFF',
+  warning: '#FFFFFF',
+  error: '#FF4444',
+  fontPrimary: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+  fontHeading: 'Inter, -apple-system, sans-serif',
+  borderRadius: '12px',
+  logoUrl: '',
+  heroImage: '',
+  brandName: 'Tirbeo',
+  brandTagline: 'Black. White. Precise. Premium.',
+  emailHeaderBg: '#000000',
+  emailButtonColor: '#FFFFFF',
+  emailTextColor: '#FFFFFF',
+  lightBgPrimary: '#FFFFFF',
+  lightBgSecondary: '#FFFFFF',
+  lightTextPrimary: '#000000',
+  lightAccentPrimary: '#000000',
 };
 
 type SectionKey = keyof ThemeConfig;
@@ -93,6 +127,12 @@ export default function ThemeSettingsPage() {
   const reset = async () => {
     setCfg(DEFAULTS);
     setMsg(null);
+  };
+
+  const applyMonochrome = () => {
+    setCfg((p) => ({ ...MONOCHROME_PRESET, logoUrl: p.logoUrl, heroImage: p.heroImage, brandName: p.brandName, brandTagline: p.brandTagline }));
+    setMsg({ type: 'success', text: 'Monochrome preset applied — review & save' });
+    setTimeout(() => setMsg(null), 3000);
   };
 
   const upd = (k: SectionKey, v: string) => setCfg(p => ({ ...p, [k]: v }));
@@ -220,6 +260,19 @@ export default function ThemeSettingsPage() {
             <Field label="Brand Tagline">
               <Input value={cfg.brandTagline} onChange={e => upd('brandTagline', e.target.value)} placeholder="Build communities. Share ideas." />
             </Field>
+            <Field label="Login Hero Image" desc="Background image for the right panel of the login / signup page (shown in black & white)">
+              <Input value={cfg.heroImage} onChange={e => upd('heroImage', e.target.value)} placeholder="https://..." />
+            </Field>
+            {cfg.heroImage && (
+              <div style={{ marginTop: 12, padding: 12, background: 'var(--bg-canvas)', borderRadius: 8 }}>
+                <img
+                  src={cfg.heroImage}
+                  alt="Login hero preview"
+                  style={{ width: '100%', maxHeight: 140, objectFit: 'cover', objectPosition: 'center', borderRadius: 8, filter: 'grayscale(1)' }}
+                  onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+              </div>
+            )}
           </SectionCard>
 
           {/* 7. Email Colors */}
@@ -244,6 +297,9 @@ export default function ThemeSettingsPage() {
           {/* Actions */}
           <div className="card" style={{ marginTop: 8 }}>
             <div className="card-body" style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button className="btn btn-outline" onClick={applyMonochrome} type="button">
+                ⬛ Monochrome Preset
+              </button>
               <button className="btn btn-outline" onClick={reset} type="button">Reset to Default</button>
               <button className="btn btn-primary" onClick={save} disabled={saving} type="button">
                 {saving ? 'Saving...' : 'Save Theme'}

@@ -108,9 +108,9 @@ export default function AdminUsersPage() {
   const isAdmin = myRole === 'admin' || isSuperAdmin;
 
   function getStatusLabel(user: User): { label: string; color: string } {
-    if (user.isBanned) return { label: 'Banned', color: '#da3633' };
-    if (isOnline(user.lastActiveAt)) return { label: 'Online', color: '#238636' };
-    return { label: 'Offline', color: 'rgba(255,255,255,0.2)' };
+    if (user.isBanned) return { label: 'Banned', color: 'var(--color-error, var(--error))' };
+    if (isOnline(user.lastActiveAt)) return { label: 'Online', color: 'var(--color-success, var(--success))' };
+    return { label: 'Offline', color: 'var(--text-muted)' };
   }
 
   return (
@@ -161,7 +161,7 @@ export default function AdminUsersPage() {
                       <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                         <button className="btn btn-sm btn-outline" onClick={() => setEditing(u)}>Edit</button>
                         {isSuperAdmin && (
-                          <button className="btn btn-sm btn-outline" onClick={() => { setResetPwUser(u); setNewPassword(''); setResetMsg(null); }} style={{ borderColor: 'var(--warning-subtle, rgba(244,185,66,0.3))', color: '#F4B942' }}>
+                          <button className="btn btn-sm btn-outline" onClick={() => { setResetPwUser(u); setNewPassword(''); setResetMsg(null); }} style={{ borderColor: 'var(--warning-subtle, rgba(244,185,66,0.3))', color: 'var(--color-warning, var(--warning))' }}>
                             Reset Password
                           </button>
                         )}
@@ -271,11 +271,12 @@ export default function AdminUsersPage() {
               </div>
               <div className="form-actions">
                 <button className="btn btn-outline" onClick={() => setResetPwUser(null)}>Cancel</button>
+                {/* ink-on-yellow in both modes (--color-on-accent is cream in light mode) */}
                 <button
                   className="btn btn-primary"
                   disabled={resetLoading || newPassword.length < 8}
                   onClick={handleResetPassword}
-                  style={{ background: 'linear-gradient(135deg, #F4B942, #d4a030)' }}
+                  style={{ background: 'var(--color-warning, var(--warning))', color: '#17150f', border: '2px solid var(--color-border, var(--border))' }}
                 >
                   {resetLoading ? 'Resetting...' : 'Reset Password'}
                 </button>

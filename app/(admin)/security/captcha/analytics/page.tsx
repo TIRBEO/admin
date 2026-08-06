@@ -105,7 +105,7 @@ export default function CaptchaAnalyticsPage() {
           <h1 className="text-[28px] font-semibold text-[var(--color-text)] leading-tight">CAPTCHA Analytics</h1>
           <p className="mt-1 text-sm text-[var(--color-text-secondary)]">Anti-abuse challenge performance and risk enforcement</p>
         </div>
-        <div className="flex rounded-lg border border-[var(--color-border)] overflow-hidden">
+        <div className="flex rounded-lg border-2 border-[var(--color-border)] overflow-hidden">
           {(['24h', '7d', '30d'] as Range[]).map(r => (
             <button
               key={r}
@@ -124,7 +124,7 @@ export default function CaptchaAnalyticsPage() {
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         {stats.map(s => (
-          <div key={s.label} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm">
+          <div key={s.label} className="border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-card)]">
             <div className={`inline-flex h-9 w-9 items-center justify-center rounded-lg ${s.color}`}>
               <s.icon className="w-4 h-4" />
             </div>
@@ -135,7 +135,7 @@ export default function CaptchaAnalyticsPage() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-4 mb-6">
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm">
+        <div className="border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-card)]">
           <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3">Difficulty distribution</h2>
           {d.difficultyDistribution.length === 0 ? (
             <p className="text-sm text-[var(--color-text-secondary)]">No challenges in this window</p>
@@ -157,7 +157,7 @@ export default function CaptchaAnalyticsPage() {
           )}
         </div>
 
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm">
+        <div className="border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-card)]">
           <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3">Top failed IPs</h2>
           {d.topFailedIps.length === 0 ? (
             <p className="text-sm text-[var(--color-text-secondary)]">No failures in this window</p>
@@ -175,13 +175,13 @@ export default function CaptchaAnalyticsPage() {
       </div>
 
       {d.settings && (
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm mb-6">
+        <div className="border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-card)] mb-6">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-[var(--color-text)]">Enforcement settings</h2>
             <span className="text-xs text-[var(--color-text-secondary)]">{saveMsg || (saving ? 'Saving...' : '')}</span>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
-            <label className="flex items-center justify-between rounded-lg border border-[var(--color-border)] p-3 cursor-pointer">
+            <label className="flex items-center justify-between rounded-lg border-2 border-[var(--color-border)] p-3 cursor-pointer">
               <div>
                 <p className="text-sm font-medium text-[var(--color-text)]">CAPTCHA enabled</p>
                 <p className="text-xs text-[var(--color-text-secondary)]">Require challenges on auth flows</p>
@@ -193,7 +193,7 @@ export default function CaptchaAnalyticsPage() {
                 className="w-4 h-4 accent-[var(--color-primary)]"
               />
             </label>
-            <label className="flex items-center justify-between rounded-lg border border-[var(--color-border)] p-3 cursor-pointer">
+            <label className="flex items-center justify-between rounded-lg border-2 border-[var(--color-border)] p-3 cursor-pointer">
               <div>
                 <p className="text-sm font-medium text-[var(--color-text)]">Risk-based scoring</p>
                 <p className="text-xs text-[var(--color-text-secondary)]">Adapt difficulty from device and behavior signals</p>
@@ -205,7 +205,7 @@ export default function CaptchaAnalyticsPage() {
                 className="w-4 h-4 accent-[var(--color-primary)]"
               />
             </label>
-            <label className="flex items-center justify-between rounded-lg border border-[var(--color-border)] p-3">
+            <label className="flex items-center justify-between rounded-lg border-2 border-[var(--color-border)] p-3">
               <div>
                 <p className="text-sm font-medium text-[var(--color-text)]">Max attempts per challenge</p>
                 <p className="text-xs text-[var(--color-text-secondary)]">Auto-block after repeated failures</p>
@@ -216,10 +216,10 @@ export default function CaptchaAnalyticsPage() {
                 max={10}
                 value={d.settings.maxAttemptsPerChallenge}
                 onChange={e => saveSettings({ maxAttemptsPerChallenge: Number(e.target.value) })}
-                className="w-16 px-2 py-1 rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] text-sm"
+                className="w-16 px-2 py-1 rounded-md border-2 border-[var(--color-border)] bg-[var(--color-bg)] text-sm"
               />
             </label>
-            <label className="flex items-center justify-between rounded-lg border border-[var(--color-border)] p-3">
+            <label className="flex items-center justify-between rounded-lg border-2 border-[var(--color-border)] p-3">
               <div>
                 <p className="text-sm font-medium text-[var(--color-text)]">Challenge expiry (minutes)</p>
                 <p className="text-xs text-[var(--color-text-secondary)]">Time before an unsolved challenge expires</p>
@@ -230,7 +230,7 @@ export default function CaptchaAnalyticsPage() {
                 max={30}
                 value={d.settings.challengeExpiry}
                 onChange={e => saveSettings({ challengeExpiry: Number(e.target.value) })}
-                className="w-16 px-2 py-1 rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] text-sm"
+                className="w-16 px-2 py-1 rounded-md border-2 border-[var(--color-border)] bg-[var(--color-bg)] text-sm"
               />
             </label>
           </div>
@@ -238,7 +238,7 @@ export default function CaptchaAnalyticsPage() {
       )}
 
       {d.blockedUsers.length > 0 && (
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm">
+        <div className="border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-card)]">
           <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3">Recently blocked</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

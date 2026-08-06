@@ -14,18 +14,26 @@ interface EmailConfig {
   smtpPass?: string;
   defaultFromEmail?: string;
   defaultFromName?: string;
-  welcomeFromEmail?: string;
-  welcomeFromName?: string;
+  founderFromEmail?: string;
+  founderFromName?: string;
+  founderSignature?: string;
   otpFromEmail?: string;
   otpFromName?: string;
   resetFromEmail?: string;
   resetFromName?: string;
+  securityFromEmail?: string;
+  securityFromName?: string;
+  billingFromEmail?: string;
+  billingFromName?: string;
+  supportFromEmail?: string;
+  supportFromName?: string;
   notifyFromEmail?: string;
   notifyFromName?: string;
   alertFromEmail?: string;
   alertFromName?: string;
   formsFromEmail?: string;
   formsFromName?: string;
+  genericSignature?: string;
   customDomain?: string;
   dkimEnabled?: boolean;
   enabled: boolean;
@@ -43,31 +51,42 @@ const DEFAULTS: EmailConfig = {
   smtpPass: '',
   defaultFromEmail: 'noreply@send.tirbeo.app',
   defaultFromName: 'Tirbeo',
-  welcomeFromEmail: '',
-  welcomeFromName: '',
+  founderFromEmail: 'admin@send.tirbeo.app',
+  founderFromName: 'Bishnu Neupane',
+  founderSignature: '— Bishnu Neupane\nFounder\nTirbeo\nThanks for joining us.',
   otpFromEmail: '',
   otpFromName: '',
   resetFromEmail: '',
   resetFromName: '',
+  securityFromEmail: 'security@send.tirbeo.app',
+  securityFromName: 'Tirbeo Security',
+  billingFromEmail: 'billing@send.tirbeo.app',
+  billingFromName: 'Tirbeo Billing',
+  supportFromEmail: 'support@send.tirbeo.app',
+  supportFromName: 'Tirbeo Support',
   notifyFromEmail: '',
   notifyFromName: '',
   alertFromEmail: 'alerts@send.tirbeo.app',
   alertFromName: 'Tirbeo Alerts',
   formsFromEmail: 'forms@send.tirbeo.app',
   formsFromName: 'Tirbeo Forms',
+  genericSignature: '— The Tirbeo Team\nsupport@tirbeo.app\nhttps://tirbeo.app',
   customDomain: '',
   dkimEnabled: false,
   enabled: true,
 };
 
 const EMAIL_TYPES = [
-  { key: 'default', label: 'Default (Transactional)', desc: 'Welcome, OTP, password reset, magic link' },
-  { key: 'welcome', label: 'Welcome Email', desc: 'Sent after successful signup' },
+  { key: 'founder', label: 'Founder Welcome', desc: 'Sent after signup from founder' },
   { key: 'otp', label: 'OTP / Verification', desc: 'Login OTP, email verification codes' },
+  { key: 'security', label: 'Security', desc: 'Login alerts, suspicious login, password changes' },
   { key: 'reset', label: 'Password Reset', desc: 'Password reset emails' },
-  { key: 'notify', label: 'Notifications / Digest', desc: 'Notification digests and user notifications' },
+  { key: 'billing', label: 'Billing', desc: 'Invoices, receipts, payment notifications' },
+  { key: 'support', label: 'Support', desc: 'Support tickets and admin requests' },
+  { key: 'notify', label: 'Notifications / Digest', desc: 'Social notifications, digests' },
   { key: 'alert', label: 'Admin Alerts', desc: 'System alerts and admin notifications' },
   { key: 'forms', label: 'Forms', desc: 'Form submission notifications and confirmations' },
+  { key: 'default', label: 'Default', desc: 'Fallback for any email type' },
 ] as const;
 
 export default function EmailSettingsPage() {
@@ -219,68 +238,72 @@ export default function EmailSettingsPage() {
         </div>
       </SectionCard>
 
+      <SectionCard title="Email Signatures" desc="Customize signatures for founder welcome and generic emails. Use \n for new lines.">
+        <Field label="Founder Signature" desc="Used only in Welcome emails">
+          <textarea
+            className="textarea"
+            rows={4}
+            value={cfg.founderSignature || ''}
+            onChange={e => upd('founderSignature', e.target.value)}
+            style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}
+            placeholder="— Bishnu Neupane\nFounder\nTirbeo\nThanks for joining us."
+          />
+        </Field>
+        <Field label="Generic Signature" desc="Used in all non-welcome emails">
+          <textarea
+            className="textarea"
+            rows={4}
+            value={cfg.genericSignature || ''}
+            onChange={e => upd('genericSignature', e.target.value)}
+            style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}
+            placeholder="— The Tirbeo Team\nsupport@tirbeo.app\nhttps://tirbeo.app"
+          />
+        </Field>
+      </SectionCard>
+
       <SectionCard title="Per-Email-Type From Addresses" desc="Override sender for specific email categories">
-        {EMAIL_TYPES.map(type => (
+        {EMAIL_TYPES.map(type => {
+          const emailKey = type.key + 'FromEmail' as keyof EmailConfig;
+          const nameKey = type.key + 'FromName' as keyof EmailConfig;
+          return (
           <div key={type.key} style={{ marginBottom: 16, padding: 16, background: 'var(--bg-canvas)', borderRadius: 12, border: '1px solid var(--border-default)' }}>
             <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>{type.label}</p>
             <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>{type.desc}</p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <Field label="From Email">
                 <Input
-                  value={
-type.key === 'default' ? (cfg.defaultFromEmail || '') :
-                     type.key === 'welcome' ? (cfg.welcomeFromEmail || '') :
-                     type.key === 'otp' ? (cfg.otpFromEmail || '') :
-                     type.key === 'reset' ? (cfg.resetFromEmail || '') :
-                     type.key === 'notify' ? (cfg.notifyFromEmail || '') :
-                     type.key === 'alert' ? (cfg.alertFromEmail || '') :
-                     type.key === 'forms' ? (cfg.formsFromEmail || '') : ''
-                   }
-                   onChange={e => {
-                     const key = type.key === 'default' ? 'defaultFromEmail' :
-                       type.key === 'welcome' ? 'welcomeFromEmail' :
-                       type.key === 'otp' ? 'otpFromEmail' :
-                       type.key === 'reset' ? 'resetFromEmail' :
-                       type.key === 'notify' ? 'notifyFromEmail' :
-                       type.key === 'alert' ? 'alertFromEmail' :
-                       type.key === 'forms' ? 'formsFromEmail' : 'defaultFromEmail' as keyof EmailConfig;
-                     upd(key, e.target.value);
-                   }}
-                   placeholder={
-                     type.key === 'alert' ? 'alerts@send.tirbeo.app' :
-                     type.key === 'forms' ? 'forms@send.tirbeo.app' :
-                     type.key === 'default' ? 'noreply@send.tirbeo.app' : ''
-                   }
+                  value={cfg[type.key === 'default' ? 'defaultFromEmail' : emailKey] as string || ''}
+                  onChange={e => upd(type.key === 'default' ? 'defaultFromEmail' : emailKey, e.target.value)}
+                  placeholder={
+                    type.key === 'support' ? 'support@send.tirbeo.app' :
+                    type.key === 'billing' ? 'billing@send.tirbeo.app' :
+                    type.key === 'security' ? 'security@send.tirbeo.app' :
+                    type.key === 'founder' ? 'admin@send.tirbeo.app' :
+                    type.key === 'alert' ? 'alerts@send.tirbeo.app' :
+                    type.key === 'forms' ? 'forms@send.tirbeo.app' :
+                    type.key === 'default' ? 'noreply@send.tirbeo.app' : ''
+                  }
                 />
               </Field>
               <Field label="From Name">
                 <Input
-                  value={
-type.key === 'default' ? (cfg.defaultFromName || '') :
-                     type.key === 'welcome' ? (cfg.welcomeFromName || '') :
-                     type.key === 'otp' ? (cfg.otpFromName || '') :
-                     type.key === 'reset' ? (cfg.resetFromName || '') :
-                     type.key === 'notify' ? (cfg.notifyFromName || '') :
-                     type.key === 'alert' ? (cfg.alertFromName || '') :
-                     type.key === 'forms' ? (cfg.formsFromName || '') : ''
-                   }
-                   onChange={e => {
-                     const key = type.key === 'default' ? 'defaultFromName' :
-                       type.key === 'welcome' ? 'welcomeFromName' :
-                       type.key === 'otp' ? 'otpFromName' :
-                       type.key === 'reset' ? 'resetFromName' :
-                       type.key === 'notify' ? 'notifyFromName' :
-                       type.key === 'alert' ? 'alertFromName' :
-                       type.key === 'forms' ? 'formsFromName' : 'defaultFromName' as keyof EmailConfig;
-                     upd(key, e.target.value);
-                   }}
-                   placeholder={type.key === 'alert' ? 'Tirbeo Alerts' :
-                     type.key === 'forms' ? 'Tirbeo Forms' : 'Tirbeo'}
+                  value={cfg[type.key === 'default' ? 'defaultFromName' : nameKey] as string || ''}
+                  onChange={e => upd(type.key === 'default' ? 'defaultFromName' : nameKey, e.target.value)}
+                  placeholder={
+                    type.key === 'founder' ? 'Bishnu Neupane' :
+                    type.key === 'billing' ? 'Tirbeo Billing' :
+                    type.key === 'security' ? 'Tirbeo Security' :
+                    type.key === 'support' ? 'Tirbeo Support' :
+                    type.key === 'alert' ? 'Tirbeo Alerts' :
+                    type.key === 'forms' ? 'Tirbeo Forms' :
+                    'Tirbeo'
+                  }
                 />
               </Field>
             </div>
           </div>
-        ))}
+          );
+        })}
       </SectionCard>
 
       <SectionCard title="Global Toggle" desc="Enable or disable all outgoing emails">

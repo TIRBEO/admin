@@ -69,8 +69,9 @@ export function BrandLogo({
       className={
         textClassName ||
         (variant === "light"
-          ? "select-none text-[21px] font-medium text-white tracking-[-0.01em]"
-          : "select-none text-[21px] font-medium text-[#5f6368] tracking-[-0.01em]")
+          ? // Light variant renders on dark surfaces (e.g. dark headers) — must stay paper in both themes
+            "select-none text-[21px] font-medium text-[#f6f3ea] tracking-[-0.01em]"
+          : "select-none text-[21px] font-medium text-[var(--color-text-secondary, var(--text-muted))] tracking-[-0.01em]")
       }
     >
       {name}

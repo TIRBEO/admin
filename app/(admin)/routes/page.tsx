@@ -31,9 +31,9 @@ function RoleCheckboxes({ name, defaultValues = ['member'] }: { name: string; de
         <label key={role} style={{
           display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px',
           borderRadius: 8, fontSize: 12, cursor: 'pointer',
-          background: selected.includes(role) ? 'rgba(79,122,255,0.15)' : 'rgba(255,255,255,0.04)',
-          border: selected.includes(role) ? '1px solid rgba(79,122,255,0.3)' : '1px solid rgba(255,255,255,0.06)',
-          color: selected.includes(role) ? '#7a9aff' : 'var(--text-muted)',
+          background: selected.includes(role) ? 'var(--color-warning-subtle, rgba(255,217,61,0.15))' : 'var(--color-surface-muted, rgba(255,255,255,0.04))',
+          border: selected.includes(role) ? '1px solid var(--color-warning, var(--warning))' : '1px solid var(--color-border-muted, rgba(255,255,255,0.06))',
+          color: selected.includes(role) ? 'var(--color-warning, var(--warning))' : 'var(--text-muted)',
         }}>
           <input type="checkbox" checked={selected.includes(role)} onChange={() => {
             setSelected(prev => prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]);
@@ -100,7 +100,7 @@ function RoleCheckboxes({ name, defaultValues = ['member'] }: { name: string; de
                   <tr key={r.id}>
                     <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{r.path}</td>
                     <td><span className={`badge badge-${r.method.toLowerCase()}`}>{r.method}</span></td>
-                    <td style={{ color: r.internal ? '#4ade80' : 'var(--text-muted)' }}>{r.internal ? 'Yes' : 'No'}</td>
+                    <td style={{ color: r.internal ? 'var(--color-success, var(--success))' : 'var(--text-muted)' }}>{r.internal ? 'Yes' : 'No'}</td>
                     <td style={{ fontSize: 12 }}>{r.allowedRoles.join(', ')}</td>
                     <td><span className={`badge ${r.enabled ? 'badge-enabled' : 'badge-disabled'}`}>{r.enabled ? 'Enabled' : 'Disabled'}</span></td>
                     <td><div className="flex gap-2"><button className="btn btn-sm btn-outline" onClick={() => setEditing(r)}>Edit</button><button className="btn btn-sm btn-danger" onClick={() => handleDelete(r.id)}>Delete</button></div></td>

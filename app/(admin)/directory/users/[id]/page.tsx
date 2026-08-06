@@ -34,7 +34,7 @@ export default function UserDetail() {
       <div className="p-6 lg:p-8 space-y-6 animate-pulse">
         <div className="h-8 w-64 bg-[var(--color-admin-surface-hover)] rounded" />
         <div className="h-6 w-48 bg-[var(--color-admin-surface-hover)] rounded" />
-        <div className="h-64 bg-[var(--color-admin-surface-hover)] rounded-xl" />
+        <div className="h-64 bg-[var(--color-admin-surface-hover)] " />
       </div>
     );
   }
@@ -42,7 +42,7 @@ export default function UserDetail() {
   if (!user) {
     return (
       <div className="p-6 lg:p-8">
-        <div className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-12 text-center">
+        <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-12 text-center">
           <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-[var(--color-error)]" />
           <h3 className="text-lg font-medium text-[var(--color-admin-text)] mb-2">User not found</h3>
           <p className="text-sm text-[var(--color-admin-text-secondary)] mb-4">The user you are looking for does not exist or has been removed.</p>
@@ -71,7 +71,7 @@ export default function UserDetail() {
       actions={
         <div className="flex items-center gap-2">
           <button onClick={() => router.push(`/admin/directory/users/${id}/edit`)}
-            className="px-4 py-2 rounded-lg border border-[var(--color-admin-border)] text-sm font-medium text-[var(--color-admin-text-secondary)] hover:bg-[var(--color-admin-surface-hover)] transition-colors">
+            className="px-4 py-2 rounded-lg border-2 border-[var(--color-admin-border)] text-sm font-medium text-[var(--color-admin-text-secondary)] hover:bg-[var(--color-admin-surface-hover)] transition-colors">
             Edit
           </button>
           <button onClick={() => {/* suspend handler */}}
@@ -83,7 +83,7 @@ export default function UserDetail() {
       {activeTab === 'overview' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <div className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
+            <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
               <h3 className="text-sm font-semibold text-[var(--color-admin-text-secondary)] uppercase tracking-wider mb-4">User Information</h3>
               <dl className="space-y-4">
                 <div className="flex justify-between"><dt className="text-sm text-[var(--color-admin-text-muted)]">Name</dt><dd className="text-sm text-[var(--color-admin-text)]">{user.name || '—'}</dd></div>
@@ -95,16 +95,16 @@ export default function UserDetail() {
             </div>
           </div>
           <div className="space-y-4">
-            <div className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
+            <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
               <h3 className="text-sm font-semibold text-[var(--color-admin-text-secondary)] uppercase tracking-wider mb-4">Quick Actions</h3>
               <div className="space-y-2">
-                <button onClick={() => setActiveTab('security')} className="w-full p-3 rounded-lg border border-[var(--color-admin-border)] text-left text-sm hover:bg-[var(--color-admin-surface-hover)] transition-colors">
+                <button onClick={() => setActiveTab('security')} className="w-full p-3 rounded-lg border-2 border-[var(--color-admin-border)] text-left text-sm hover:bg-[var(--color-admin-surface-hover)] transition-colors">
                   <Shield className="w-4 h-4 inline mr-2 text-[var(--color-primary)]" />Manage Security
                 </button>
-                <button onClick={() => setActiveTab('roles')} className="w-full p-3 rounded-lg border border-[var(--color-admin-border)] text-left text-sm hover:bg-[var(--color-admin-surface-hover)] transition-colors">
+                <button onClick={() => setActiveTab('roles')} className="w-full p-3 rounded-lg border-2 border-[var(--color-admin-border)] text-left text-sm hover:bg-[var(--color-admin-surface-hover)] transition-colors">
                   <Key className="w-4 h-4 inline mr-2 text-[var(--color-warning)]" />Assign Roles
                 </button>
-                <button onClick={() => setActiveTab('activity')} className="w-full p-3 rounded-lg border border-[var(--color-admin-border)] text-left text-sm hover:bg-[var(--color-admin-surface-hover)] transition-colors">
+                <button onClick={() => setActiveTab('activity')} className="w-full p-3 rounded-lg border-2 border-[var(--color-admin-border)] text-left text-sm hover:bg-[var(--color-admin-surface-hover)] transition-colors">
                   <Activity className="w-4 h-4 inline mr-2 text-[var(--color-info)]" />View Activity
                 </button>
               </div>
@@ -113,27 +113,27 @@ export default function UserDetail() {
         </div>
       )}
       {activeTab === 'access' && (
-        <div className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
+        <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
           <p className="text-sm text-[var(--color-admin-text-muted)]">Access management content</p>
         </div>
       )}
       {activeTab === 'roles' && (
-        <div className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
+        <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
           <p className="text-sm text-[var(--color-admin-text-muted)]">Role assignments content</p>
         </div>
       )}
       {activeTab === 'groups' && (
-        <div className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
+        <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
           <p className="text-sm text-[var(--color-admin-text-muted)]">Group memberships content</p>
         </div>
       )}
       {activeTab === 'security' && (
-        <div className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
+        <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
           <p className="text-sm text-[var(--color-admin-text-muted)]">Security settings content</p>
         </div>
       )}
       {activeTab === 'activity' && (
-        <div className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
+        <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
           <p className="text-sm text-[var(--color-admin-text-muted)]">Activity log content</p>
         </div>
       )}

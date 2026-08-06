@@ -72,9 +72,9 @@ export default function BillingPage() {
       <div className="p-6 lg:p-8 animate-pulse space-y-4">
         <div className="h-8 w-48 bg-[var(--color-admin-surface-hover)] rounded" />
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[1,2,3].map(i => <div key={i} className="h-24 bg-[var(--color-admin-surface-hover)] rounded-xl" />)}
+          {[1,2,3].map(i => <div key={i} className="h-24 bg-[var(--color-admin-surface-hover)] " />)}
         </div>
-        <div className="h-64 bg-[var(--color-admin-surface-hover)] rounded-xl" />
+        <div className="h-64 bg-[var(--color-admin-surface-hover)] " />
       </div>
     );
   }
@@ -89,21 +89,21 @@ export default function BillingPage() {
       }>
       {/* KPI row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-4">
+        <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-medium text-[var(--color-admin-text-secondary)] uppercase tracking-wider">Active Plans</span>
             <CreditCard className="w-4 h-4 text-[var(--color-primary)]" />
           </div>
           <p className="text-xl font-semibold text-[var(--color-admin-text)]">{plans.filter(p => p.isActive !== false).length}</p>
         </div>
-        <div className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-4">
+        <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-medium text-[var(--color-admin-text-secondary)] uppercase tracking-wider">Total Subscribers</span>
             <Users className="w-4 h-4 text-[var(--color-info)]" />
           </div>
           <p className="text-xl font-semibold text-[var(--color-admin-text)]">{stats.subscriptions || stats.totalSubscriptions || '—'}</p>
         </div>
-        <div className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-4">
+        <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-medium text-[var(--color-admin-text-secondary)] uppercase tracking-wider">MRR</span>
             <TrendingUp className="w-4 h-4 text-[var(--color-success)]" />

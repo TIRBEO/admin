@@ -16,7 +16,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 
 function PolicyCard({ icon: Icon, title, description, color, children }: { icon: any; title: string; description: string; color: string; children?: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
+    <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
       <div className="flex items-start gap-4 mb-4">
         <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${color}18` }}>
           <Icon className="w-5 h-5" style={{ color }} />
@@ -68,7 +68,7 @@ export default function SecurityPolicies() {
       <div className="p-6 lg:p-8 animate-pulse space-y-4">
         <div className="h-8 w-48 bg-[var(--color-admin-surface-hover)] rounded" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[1,2,3,4].map(i => <div key={i} className="h-48 bg-[var(--color-admin-surface-hover)] rounded-xl" />)}
+          {[1,2,3,4].map(i => <div key={i} className="h-48 bg-[var(--color-admin-surface-hover)] " />)}
         </div>
       </div>
     );

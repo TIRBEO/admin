@@ -134,7 +134,7 @@ export default function RolesPage() {
 
       <div className="grid md:grid-cols-2 gap-4 mb-6">
         {roles.filter(r => r.isSystem).map(role => (
-          <div key={role.id} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm p-5">
+          <div key={role.id} className="border-2 border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] p-5">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-[var(--color-primary-surface)] flex items-center justify-center">
                 <Shield className="w-5 h-5 text-[var(--color-primary)]" />
@@ -153,7 +153,7 @@ export default function RolesPage() {
         ))}
       </div>
 
-      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
+      <div className="border-2 border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)]">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -214,7 +214,7 @@ export default function RolesPage() {
 
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-[var(--color-surface)] border-2 border-[var(--color-border)] shadow-[var(--shadow-card)] max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-[var(--color-border)]">
               <h2 className="text-lg font-semibold text-[var(--color-text)]">
                 {editingRole ? 'Edit Role' : 'Create Role'}
@@ -227,7 +227,7 @@ export default function RolesPage() {
                   <input
                     value={formData.name}
                     onChange={e => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)]"
+                    className="w-full px-4 py-2 rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-bg)]"
                     placeholder="e.g. Editor, Viewer"
                   />
                 </div>
@@ -236,14 +236,14 @@ export default function RolesPage() {
                   <input
                     value={formData.description}
                     onChange={e => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)]"
+                    className="w-full px-4 py-2 rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-bg)]"
                     placeholder="What can this role do?"
                   />
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-[var(--color-text)] mb-2">App permissions</label>
-                <div className="border border-[var(--color-border)] rounded-lg overflow-hidden">
+                <div className="border-2 border-[var(--color-border)] rounded-lg overflow-hidden">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-[var(--color-surface-muted)]">

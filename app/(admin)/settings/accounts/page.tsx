@@ -36,8 +36,6 @@ const DEFAULTS = {
   ui: {
     welcomeTitle: 'Welcome back',
     welcomeSubtitle: 'Sign in to continue to TIRBEO.',
-    heroTitle: 'Everything you need, in one workspace.',
-    heroDescription: 'Manage your work, collaborate with your team, and access your TIRBEO apps from one secure account.',
     privacyLink: 'https://docs.tirbeo.app/privacy',
     termsLink: 'https://docs.tirbeo.app/terms',
     helpLink: 'https://docs.tirbeo.app/help',
@@ -145,7 +143,7 @@ export default function AccountsSettingsPage() {
           return (
             <div key={key} className="mb-5 last:mb-0">
               <div className="flex items-center justify-between mb-3">
-                <span className="font-medium text-sm text-[#202124]">{label}</span>
+                <span className="font-medium text-sm text-[var(--text)]">{label}</span>
                 <Toggle checked={p.enabled} onChange={v => setProvider(key, 'enabled', v)} />
               </div>
               {p.enabled && (
@@ -172,12 +170,6 @@ export default function AccountsSettingsPage() {
         </Field>
         <Field label="Welcome Subtitle">
           <Input value={cfg.ui.welcomeSubtitle} onChange={e => setUi('welcomeSubtitle', e.target.value)} />
-        </Field>
-        <Field label="Hero Title" desc="Left branding panel heading">
-          <Input value={cfg.ui.heroTitle} onChange={e => setUi('heroTitle', e.target.value)} />
-        </Field>
-        <Field label="Hero Description" desc="Left branding panel body text">
-          <textarea className="textarea" rows={3} value={cfg.ui.heroDescription} onChange={e => setUi('heroDescription', e.target.value)} />
         </Field>
       </SectionCard>
 

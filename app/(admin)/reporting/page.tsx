@@ -24,9 +24,9 @@ export default function ReportingPage() {
       <div className="p-6 lg:p-8 animate-pulse space-y-4">
         <div className="h-8 w-48 bg-[var(--color-admin-surface-hover)] rounded" />
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-          {[1,2,3,4].map(i => <div key={i} className="h-24 bg-[var(--color-admin-surface-hover)] rounded-xl" />)}
+          {[1,2,3,4].map(i => <div key={i} className="h-24 bg-[var(--color-admin-surface-hover)] " />)}
         </div>
-        <div className="h-64 bg-[var(--color-admin-surface-hover)] rounded-xl" />
+        <div className="h-64 bg-[var(--color-admin-surface-hover)] " />
       </div>
     );
   }
@@ -55,7 +55,7 @@ export default function ReportingPage() {
       {/* KPI row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {metrics.map(m => (
-          <div key={m.label} className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-4">
+          <div key={m.label} className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-[var(--color-admin-text-secondary)] uppercase tracking-wider">{m.label}</span>
               {m.trend === 'up' ? <TrendingUp className="w-4 h-4 text-[var(--color-success)]" /> : <TrendingDown className="w-4 h-4 text-[var(--color-error)]" />}
@@ -68,7 +68,7 @@ export default function ReportingPage() {
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Signup trends */}
-        <div className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
+        <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
           <h3 className="text-sm font-semibold text-[var(--color-admin-text-secondary)] uppercase tracking-wider mb-4">Signup Trends</h3>
           {analytics?.signupTrends && analytics.signupTrends.length > 0 ? (
             <div className="space-y-2">
@@ -92,7 +92,7 @@ export default function ReportingPage() {
         </div>
 
         {/* Top actions */}
-        <div className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
+        <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
           <h3 className="text-sm font-semibold text-[var(--color-admin-text-secondary)] uppercase tracking-wider mb-4">Top Actions</h3>
           {analytics?.topActions && analytics.topActions.length > 0 ? (
             <div className="space-y-2">

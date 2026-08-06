@@ -8,7 +8,7 @@ import { Shield, Key, Smartphone, Clock, AlertTriangle, Check } from 'lucide-rea
 
 function SettingCard({ title, description, children, action }: { title: string; description?: string; children?: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-5 mb-4">
+    <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-5 mb-4">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h3 className="text-sm font-medium text-[var(--color-admin-text)]">{title}</h3>
@@ -69,7 +69,7 @@ export default function AuthenticationSettings() {
               <span className="text-sm text-[var(--color-admin-text)]">Minimum length</span>
               <select value={settings.minPasswordLength || 8}
                 onChange={e => updateSetting('minPasswordLength', parseInt(e.target.value))}
-                className="px-3 py-1.5 rounded-lg border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)]">
+                className="px-3 py-1.5 rounded-lg border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)]">
                 {[6,8,10,12,16].map(n => <option key={n} value={n}>{n} characters</option>)}
               </select>
             </div>
@@ -85,7 +85,7 @@ export default function AuthenticationSettings() {
               <span className="text-sm text-[var(--color-admin-text)]">Password expiration (days)</span>
               <select value={settings.passwordExpiryDays || 90}
                 onChange={e => updateSetting('passwordExpiryDays', parseInt(e.target.value))}
-                className="px-3 py-1.5 rounded-lg border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)]">
+                className="px-3 py-1.5 rounded-lg border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)]">
                 {[30,60,90,180,365].map(n => <option key={n} value={n}>{n} days</option>)}
               </select>
             </div>
@@ -135,7 +135,7 @@ export default function AuthenticationSettings() {
               <span className="text-sm text-[var(--color-admin-text)]">Session timeout (minutes)</span>
               <select value={settings.sessionTimeoutMinutes || 60}
                 onChange={e => updateSetting('sessionTimeoutMinutes', parseInt(e.target.value))}
-                className="px-3 py-1.5 rounded-lg border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)]">
+                className="px-3 py-1.5 rounded-lg border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)]">
                 {[15,30,60,120,240,480].map(n => <option key={n} value={n}>{n} min</option>)}
               </select>
             </div>
@@ -143,7 +143,7 @@ export default function AuthenticationSettings() {
               <span className="text-sm text-[var(--color-admin-text)]">Max concurrent sessions</span>
               <select value={settings.maxConcurrentSessions || 5}
                 onChange={e => updateSetting('maxConcurrentSessions', parseInt(e.target.value))}
-                className="px-3 py-1.5 rounded-lg border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)]">
+                className="px-3 py-1.5 rounded-lg border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)]">
                 {[1,2,3,5,10,0].map(n => <option key={n} value={n}>{n === 0 ? 'Unlimited' : n}</option>)}
               </select>
             </div>
@@ -151,7 +151,7 @@ export default function AuthenticationSettings() {
               <span className="text-sm text-[var(--color-admin-text)]">Remember me duration (days)</span>
               <select value={settings.rememberMeDays || 30}
                 onChange={e => updateSetting('rememberMeDays', parseInt(e.target.value))}
-                className="px-3 py-1.5 rounded-lg border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)]">
+                className="px-3 py-1.5 rounded-lg border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)]">
                 {[7,14,30,60,90].map(n => <option key={n} value={n}>{n} days</option>)}
               </select>
             </div>
@@ -165,7 +165,7 @@ export default function AuthenticationSettings() {
               <span className="text-sm text-[var(--color-admin-text)]">Max login attempts</span>
               <select value={settings.maxLoginAttempts || 5}
                 onChange={e => updateSetting('maxLoginAttempts', parseInt(e.target.value))}
-                className="px-3 py-1.5 rounded-lg border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)]">
+                className="px-3 py-1.5 rounded-lg border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)]">
                 {[3,5,10,20].map(n => <option key={n} value={n}>{n} attempts</option>)}
               </select>
             </div>
@@ -173,7 +173,7 @@ export default function AuthenticationSettings() {
               <span className="text-sm text-[var(--color-admin-text)]">Lockout duration (minutes)</span>
               <select value={settings.lockoutDurationMinutes || 15}
                 onChange={e => updateSetting('lockoutDurationMinutes', parseInt(e.target.value))}
-                className="px-3 py-1.5 rounded-lg border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)]">
+                className="px-3 py-1.5 rounded-lg border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)]">
                 {[5,10,15,30,60].map(n => <option key={n} value={n}>{n} min</option>)}
               </select>
             </div>

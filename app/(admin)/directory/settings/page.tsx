@@ -16,7 +16,7 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
 
 function SettingCard({ title, description, children, action }: { title: string; description?: string; children?: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-5 mb-4">
+    <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-5 mb-4">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h3 className="text-sm font-medium text-[var(--color-admin-text)]">{title}</h3>
@@ -56,7 +56,7 @@ export default function DirectorySettings() {
       <div className="p-6 lg:p-8 animate-pulse space-y-4">
         <div className="h-8 w-48 bg-[var(--color-admin-surface-hover)] rounded" />
         <div className="h-6 w-64 bg-[var(--color-admin-surface-hover)] rounded" />
-        <div className="h-64 bg-[var(--color-admin-surface-hover)] rounded-xl" />
+        <div className="h-64 bg-[var(--color-admin-surface-hover)] " />
       </div>
     );
   }
@@ -88,7 +88,7 @@ export default function DirectorySettings() {
               <span className="text-sm text-[var(--color-admin-text)]">Suspend inactive accounts after (days)</span>
               <select value={settings.inactiveSuspendDays || 90}
                 onChange={e => updateSetting('inactiveSuspendDays', parseInt(e.target.value))}
-                className="px-3 py-1.5 rounded-lg border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)]">
+                className="px-3 py-1.5 rounded-lg border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)]">
                 {[30, 60, 90, 180, 365].map(n => <option key={n} value={n}>{n} days</option>)}
               </select>
             </div>
@@ -110,7 +110,7 @@ export default function DirectorySettings() {
               <span className="text-sm text-[var(--color-admin-text)]">Max custom attributes per user</span>
               <select value={settings.maxCustomAttributes || 20}
                 onChange={e => updateSetting('maxCustomAttributes', parseInt(e.target.value))}
-                className="px-3 py-1.5 rounded-lg border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)]">
+                className="px-3 py-1.5 rounded-lg border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)]">
                 {[10, 20, 50, 100].map(n => <option key={n} value={n}>{n}</option>)}
               </select>
             </div>
@@ -128,11 +128,11 @@ export default function DirectorySettings() {
               <span className="text-sm text-[var(--color-admin-text)]">Auto-sync interval (minutes)</span>
               <select value={settings.syncIntervalMinutes || 60}
                 onChange={e => updateSetting('syncIntervalMinutes', parseInt(e.target.value))}
-                className="px-3 py-1.5 rounded-lg border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)]">
+                className="px-3 py-1.5 rounded-lg border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)]">
                 {[15, 30, 60, 120, 360, 720].map(n => <option key={n} value={n}>{n} min</option>)}
               </select>
             </div>
-            <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--color-admin-border)] text-sm text-[var(--color-admin-text-secondary)] hover:bg-[var(--color-admin-surface-hover)]">
+            <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-[var(--color-admin-border)] text-sm text-[var(--color-admin-text-secondary)] hover:bg-[var(--color-admin-surface-hover)]">
               <RefreshCw className="w-3.5 h-3.5" /> Sync Now
             </button>
           </div>
@@ -149,7 +149,7 @@ export default function DirectorySettings() {
               <span className="text-sm text-[var(--color-admin-text)]">Max group depth</span>
               <select value={settings.maxGroupDepth || 5}
                 onChange={e => updateSetting('maxGroupDepth', parseInt(e.target.value))}
-                className="px-3 py-1.5 rounded-lg border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)]">
+                className="px-3 py-1.5 rounded-lg border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)]">
                 {[3, 5, 10].map(n => <option key={n} value={n}>{n} levels</option>)}
               </select>
             </div>
@@ -157,7 +157,7 @@ export default function DirectorySettings() {
               <span className="text-sm text-[var(--color-admin-text)]">Auto-assign new users to default group</span>
               <select value={settings.defaultGroup || 'none'}
                 onChange={e => updateSetting('defaultGroup', e.target.value)}
-                className="px-3 py-1.5 rounded-lg border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)]">
+                className="px-3 py-1.5 rounded-lg border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)]">
                 <option value="none">No auto-assign</option>
                 <option value="all-users">All Users</option>
                 <option value="members">Members</option>

@@ -102,7 +102,7 @@ export default function AuditLog() {
         page={page} totalPages={totalPages} onPageChange={setPage} total={total}
         bulkActions={
           <button onClick={handleExport}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--color-admin-border)] text-xs font-medium text-[var(--color-admin-text-secondary)] hover:bg-[var(--color-admin-surface-hover)]">
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-[var(--color-admin-border)] text-xs font-medium text-[var(--color-admin-text-secondary)] hover:bg-[var(--color-admin-surface-hover)]">
             Export Selected
           </button>
         }

@@ -13,7 +13,7 @@ const DEFAULTS = {
   placeholder: 'you@example.com',
   buttonLabel: 'Subscribe',
   disclaimer: 'We respect your privacy. Unsubscribe at any time.',
-  accentColor: '#4f7aff',
+  accentColor: '#ffd93d',
 };
 
 export default function NewsletterPage() {

@@ -57,28 +57,28 @@ export default function CaptchaSettingsPage() {
     <div className="p-6 lg:p-8 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-[28px] font-semibold text-[var(--color-text)] leading-tight">CAPTCHA Settings</h1>
-          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">Configure CAPTCHA enforcement and difficulty levels</p>
+          <h1 className="text-[28px] font-semibold text-[var(--text)] leading-tight">CAPTCHA Settings</h1>
+          <p className="mt-1 text-sm text-[var(--text-secondary)]">Configure CAPTCHA enforcement and difficulty levels</p>
         </div>
       </div>
 
       {message && (
-        <div className="mb-6 p-4 rounded-lg bg-green-50 border border-green-200 text-green-700">
+        <div className="mb-6 p-4 rounded-lg bg-[var(--success-surface)] border border-[var(--success)] text-[var(--success)]">
           {message}
         </div>
       )}
 
       <div className="space-y-6">
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2">
+        <div className="card">
+          <h2 className="text-lg font-semibold text-[var(--text)] mb-4 flex items-center gap-2">
             <Shield className="w-5 h-5" />
             General Settings
           </h2>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-[var(--color-text)]">Enable CAPTCHA</p>
-                <p className="text-sm text-[var(--color-text-secondary)]">Turn on/off CAPTCHA challenges</p>
+                <p className="font-medium text-[var(--text)]">Enable CAPTCHA</p>
+                <p className="text-sm text-[var(--text-secondary)]">Turn on/off CAPTCHA challenges</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -87,14 +87,14 @@ export default function CaptchaSettingsPage() {
                   onChange={(e) => setSettings({ ...settings, enabled: e.target.checked })}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                <div className="w-11 h-6 bg-[var(--border)] peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[var(--primary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--primary)]"></div>
               </label>
             </div>
 
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-[var(--color-text)]">Auto-enforce</p>
-                <p className="text-sm text-[var(--color-text-secondary)]">Automatically increase difficulty based on user behavior</p>
+                <p className="font-medium text-[var(--text)]">Auto-enforce</p>
+                <p className="text-sm text-[var(--text-secondary)]">Automatically increase difficulty based on user behavior</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -103,66 +103,66 @@ export default function CaptchaSettingsPage() {
                   onChange={(e) => setSettings({ ...settings, autoEnforce: e.target.checked })}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                <div className="w-11 h-6 bg-[var(--border)] peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[var(--primary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--primary)]"></div>
               </label>
             </div>
           </div>
         </div>
 
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2">
+        <div className="card">
+          <h2 className="text-lg font-semibold text-[var(--text)] mb-4 flex items-center gap-2">
             <AlertTriangle className="w-5 h-5" />
             Difficulty Thresholds
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-[var(--color-text)] mb-1">
+              <label className="form-label">
                 Easy → Medium (warnings)
               </label>
               <input
                 type="number"
                 value={settings.easyThreshold}
                 onChange={(e) => setSettings({ ...settings, easyThreshold: parseInt(e.target.value) || 2 })}
-                className="w-full px-4 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)]"
+                className="w-full"
                 min="1"
                 max="20"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[var(--color-text)] mb-1">
+              <label className="form-label">
                 Medium → Hard (warnings)
               </label>
               <input
                 type="number"
                 value={settings.mediumThreshold}
                 onChange={(e) => setSettings({ ...settings, mediumThreshold: parseInt(e.target.value) || 4 })}
-                className="w-full px-4 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)]"
+                className="w-full"
                 min="1"
                 max="20"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[var(--color-text)] mb-1">
+              <label className="form-label">
                 Hard → Block (warnings)
               </label>
               <input
                 type="number"
                 value={settings.hardThreshold}
                 onChange={(e) => setSettings({ ...settings, hardThreshold: parseInt(e.target.value) || 6 })}
-                className="w-full px-4 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)]"
+                className="w-full"
                 min="1"
                 max="20"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[var(--color-text)] mb-1">
+              <label className="form-label">
                 Block threshold (warnings)
               </label>
               <input
                 type="number"
                 value={settings.blockThreshold}
                 onChange={(e) => setSettings({ ...settings, blockThreshold: parseInt(e.target.value) || 8 })}
-                className="w-full px-4 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)]"
+                className="w-full"
                 min="1"
                 max="50"
               />
@@ -170,60 +170,60 @@ export default function CaptchaSettingsPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2">
+        <div className="card">
+          <h2 className="text-lg font-semibold text-[var(--text)] mb-4 flex items-center gap-2">
             <Settings className="w-5 h-5" />
             Challenge Settings
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-[var(--color-text)] mb-1">
+              <label className="form-label">
                 Challenge expiry (minutes)
               </label>
               <input
                 type="number"
                 value={settings.challengeExpiry}
                 onChange={(e) => setSettings({ ...settings, challengeExpiry: parseInt(e.target.value) || 5 })}
-                className="w-full px-4 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)]"
+                className="w-full"
                 min="1"
                 max="30"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[var(--color-text)] mb-1">
+              <label className="form-label">
                 Max attempts per challenge
               </label>
               <input
                 type="number"
                 value={settings.maxAttemptsPerChallenge}
                 onChange={(e) => setSettings({ ...settings, maxAttemptsPerChallenge: parseInt(e.target.value) || 3 })}
-                className="w-full px-4 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)]"
+                className="w-full"
                 min="1"
                 max="10"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[var(--color-text)] mb-1">
+              <label className="form-label">
                 Cooldown (minutes)
               </label>
               <input
                 type="number"
                 value={settings.cooldownMinutes}
                 onChange={(e) => setSettings({ ...settings, cooldownMinutes: parseInt(e.target.value) || 10 })}
-                className="w-full px-4 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)]"
+                className="w-full"
                 min="1"
                 max="120"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[var(--color-text)] mb-1">
+              <label className="form-label">
                 Admin notify threshold
               </label>
               <input
                 type="number"
                 value={settings.adminNotifyThreshold}
                 onChange={(e) => setSettings({ ...settings, adminNotifyThreshold: parseInt(e.target.value) || 5 })}
-                className="w-full px-4 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)]"
+                className="w-full"
                 min="1"
                 max="20"
               />
@@ -234,14 +234,14 @@ export default function CaptchaSettingsPage() {
         <div className="flex justify-end gap-3">
           <button
             onClick={() => router.back()}
-            className="px-4 py-2 rounded-lg text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] transition-colors"
+            className="btn-secondary"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-6 py-2 rounded-lg bg-[var(--color-primary)] text-white text-sm font-medium hover:bg-[var(--color-primary-hover)] transition-colors disabled:opacity-50"
+            className="btn-primary"
           >
             {saving ? 'Saving...' : 'Save Settings'}
           </button>

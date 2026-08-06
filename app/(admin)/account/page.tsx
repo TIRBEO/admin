@@ -39,7 +39,7 @@ export default function AccountPage() {
       <div className="p-6 lg:p-8 animate-pulse space-y-4">
         <div className="h-8 w-48 bg-[var(--color-admin-surface-hover)] rounded" />
         <div className="max-w-2xl">
-          <div className="h-64 bg-[var(--color-admin-surface-hover)] rounded-xl" />
+          <div className="h-64 bg-[var(--color-admin-surface-hover)] " />
         </div>
       </div>
     );
@@ -55,7 +55,7 @@ export default function AccountPage() {
           </div>
         )}
 
-        <div className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6 mb-4">
+        <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6 mb-4">
           <div className="flex items-start gap-4 mb-6">
             <div className="w-16 h-16 rounded-full bg-[var(--color-primary-surface)] flex items-center justify-center text-[var(--color-primary)] text-xl font-bold">
               {(profile?.name || profile?.email || 'A')[0]?.toUpperCase() || '?'}
@@ -73,13 +73,13 @@ export default function AccountPage() {
                       Save
                     </button>
                     <button onClick={() => setEditing(false)}
-                      className="px-4 py-2 rounded-lg border border-[var(--color-admin-border)] text-sm font-medium text-[var(--color-admin-text-secondary)] hover:bg-[var(--color-admin-surface-hover)] transition-colors">
+                      className="px-4 py-2 rounded-lg border-2 border-[var(--color-admin-border)] text-sm font-medium text-[var(--color-admin-text-secondary)] hover:bg-[var(--color-admin-surface-hover)] transition-colors">
                       Cancel
                     </button>
                   </div>
                 ) : (
                   <button onClick={() => setEditing(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--color-admin-border)] text-sm text-[var(--color-admin-text-secondary)] hover:bg-[var(--color-admin-surface-hover)] transition-colors">
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-[var(--color-admin-border)] text-sm text-[var(--color-admin-text-secondary)] hover:bg-[var(--color-admin-surface-hover)] transition-colors">
                     <Edit className="w-3.5 h-3.5" /> Edit
                   </button>
                 )}
@@ -92,7 +92,7 @@ export default function AccountPage() {
               <div>
                 <label className="block text-sm font-medium text-[var(--color-admin-text)] mb-1">Display Name</label>
                 <input type="text" value={name} onChange={e => setName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]" />
+                  className="w-full px-3 py-2 rounded-lg border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]" />
               </div>
             </div>
           ) : (
@@ -115,7 +115,7 @@ export default function AccountPage() {
         </div>
 
         {/* Quick links */}
-        <div className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
+        <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
           <h3 className="text-sm font-semibold text-[var(--color-admin-text-secondary)] uppercase tracking-wider mb-4">Quick Links</h3>
           <div className="grid grid-cols-2 gap-3">
             {[
@@ -125,7 +125,7 @@ export default function AccountPage() {
               { label: 'Theme Preferences', href: '/admin/settings/theme' },
             ].map(link => (
               <button key={link.label} onClick={() => router.push(link.href)}
-                className="p-3 rounded-lg border border-[var(--color-admin-border)] text-left text-sm text-[var(--color-admin-text)] hover:bg-[var(--color-admin-surface-hover)] transition-colors">
+                className="p-3 rounded-lg border-2 border-[var(--color-admin-border)] text-left text-sm text-[var(--color-admin-text)] hover:bg-[var(--color-admin-surface-hover)] transition-colors">
                 {link.label}
               </button>
             ))}

@@ -19,7 +19,7 @@ const DEFAULT_LAYOUT: LayoutConfig = {
   compactMode: false,
   animationsEnabled: true,
   showBreadcrumbs: true,
-  accentColor: '#4f7aff',
+  accentColor: '#ffd93d',
 };
 
 export default function LayoutSettingsPage() {

@@ -93,7 +93,7 @@ export default function AdminTicketDetailPage() {
         <ArrowLeft className="w-4 h-4" /> Back to tickets
       </button>
 
-      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm mb-6">
+      <div className="border-2 border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] mb-6">
         <div className="p-6 border-b border-[var(--color-border)]">
           <div className="flex items-start justify-between">
             <div>
@@ -102,7 +102,7 @@ export default function AdminTicketDetailPage() {
             </div>
             <div className="flex items-center gap-2">
               <select value={ticket.status} onChange={e => updateStatus(e.target.value)}
-                className="px-3 py-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-sm outline-none focus:border-[var(--color-primary)]">
+                className="px-3 py-1.5 rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-bg)] text-sm outline-none focus:border-[var(--color-primary)]">
                 <option value="open">Open</option>
                 <option value="in_progress">In Progress</option>
                 <option value="resolved">Resolved</option>
@@ -134,13 +134,13 @@ export default function AdminTicketDetailPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm p-4">
+      <div className="border-2 border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] p-4">
         <div className="flex gap-3">
           <textarea
             value={reply}
             onChange={e => setReply(e.target.value)}
             placeholder="Write a reply..."
-            className="flex-1 px-4 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-sm outline-none focus:border-[var(--color-primary)] resize-none"
+            className="flex-1 px-4 py-2 rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-bg)] text-sm outline-none focus:border-[var(--color-primary)] resize-none"
             rows={2}
           />
           <button

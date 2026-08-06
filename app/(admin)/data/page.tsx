@@ -38,7 +38,7 @@ export default function DataPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {group.items.map(item => (
                 <button key={item.label}
-                  className="flex items-start gap-4 p-4 rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] hover:bg-[var(--color-admin-surface-hover)] transition-colors text-left">
+                  className="flex items-start gap-4 p-4  border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] hover:bg-[var(--color-admin-surface-hover)] transition-colors text-left">
                   <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${item.color}18` }}>
                     <item.icon className="w-4 h-4" style={{ color: item.color }} />
                   </div>

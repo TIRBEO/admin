@@ -44,9 +44,10 @@ export default function DomainSettingsPage() {
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{
-                    width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff',
-                    background: 'linear-gradient(135deg, #4f7aff, #3b5de7)',
+                    width: 28, height: 28, borderRadius: 0, display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--color-on-accent, #17150f)',
+                    background: 'var(--color-accent, var(--warning))',
+                    border: '2px solid var(--color-border, var(--border))',
                   }}>
                     {sd.label.charAt(0)}
                   </div>

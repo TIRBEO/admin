@@ -24,6 +24,41 @@ function getBearerToken(): string | undefined {
   try { return window.localStorage.getItem('auth_token') || undefined; } catch { return undefined; }
 }
 
+let refreshPromise: Promise<boolean> | null = null;
+
+// Silent session refresh: the 30-day __refresh cookie (scoped to
+// /api/auth/refresh) keeps users signed in across tabs and after the
+// 15-minute access token expires — no re-login needed.
+async function tryRefreshSession(): Promise<boolean> {
+  if (refreshPromise) return refreshPromise;
+  refreshPromise = (async () => {
+    try {
+      const headers: Record<string, string> = {};
+      const csrf = getCsrf();
+      if (csrf) headers['X-CSRF-Token'] = csrf;
+      const res = await fetch(`${API}/api/auth/refresh`, {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        try { window.localStorage.removeItem('auth_token'); } catch {}
+        return false;
+      }
+      const data = await res.json().catch(() => ({}));
+      if (data?.token) {
+        try { window.localStorage.setItem('auth_token', data.token); } catch {}
+      }
+      return true;
+    } catch {
+      return false;
+    } finally {
+      setTimeout(() => { refreshPromise = null; }, 250);
+    }
+  })();
+  return refreshPromise;
+}
+
 function csrfHeaders(method: string): Record<string, string> {
   if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method.toUpperCase())) {
     const token = getCsrf();
@@ -55,7 +90,7 @@ export async function apiFetch(path: string, opts?: RequestInit) {
     if (!(opts?.body instanceof FormData)) {
       headers['Content-Type'] = 'application/json';
     }
-    const res = await fetch(`${API}${resolvedPath}`, {
+    let res = await fetch(`${API}${resolvedPath}`, {
       credentials: 'include',
       signal: controller.signal,
       ...opts,
@@ -63,8 +98,31 @@ export async function apiFetch(path: string, opts?: RequestInit) {
     });
     clearTimeout(timeout);
     if (res.status === 401) {
-      if (typeof window !== 'undefined') window.location.href = '/login';
-      throw new Error('Session expired. Please log in again.');
+      if (await tryRefreshSession()) {
+        // Refresh rotated the __csrf cookie — recompute headers so the retry
+        // carries the fresh X-CSRF-Token (and fresh bearer) instead of the stale one.
+        const freshHeaders: Record<string, string> = { ...csrfHeaders(opts?.method || 'GET') };
+        const freshBearer = getBearerToken();
+        if (freshBearer) freshHeaders['Authorization'] = `Bearer ${freshBearer}`;
+        if (!(opts?.body instanceof FormData)) {
+          freshHeaders['Content-Type'] = 'application/json';
+        }
+        const retryController = new AbortController();
+        const retryTimeout = setTimeout(() => retryController.abort(), 12000);
+        try {
+          res = await fetch(`${API}${resolvedPath}`, {
+            credentials: 'include',
+            signal: retryController.signal,
+            ...opts,
+            headers: { ...freshHeaders, ...(opts?.headers as Record<string, string> || {}) },
+          });
+        } finally {
+          clearTimeout(retryTimeout);
+        }
+      } else {
+        if (typeof window !== 'undefined') window.location.href = '/login';
+        throw new Error('Session expired. Please log in again.');
+      }
     }
     if (!opts?.method) cache.set(cacheKey, { data: res.clone(), expiry: Date.now() + TTL });
     return res;
@@ -92,12 +150,24 @@ export async function apiPost(path: string, body?: Record<string, any>): Promise
   const headers: Record<string, string> = { 'Content-Type': 'application/json', ...csrfHeaders('POST') };
   const bearer = getBearerToken();
   if (bearer) headers['Authorization'] = `Bearer ${bearer}`;
-  const res = await fetch(`${API}${resolvedPath}`, {
+  let res = await fetch(`${API}${resolvedPath}`, {
     method: 'POST',
     headers,
     credentials: 'include',
     body: body ? JSON.stringify(body) : undefined,
   });
+  if (res.status === 401 && await tryRefreshSession()) {
+    // Refresh rotated __csrf — recompute headers for the retry.
+    const freshHeaders: Record<string, string> = { 'Content-Type': 'application/json', ...csrfHeaders('POST') };
+    const freshBearer = getBearerToken();
+    if (freshBearer) freshHeaders['Authorization'] = `Bearer ${freshBearer}`;
+    res = await fetch(`${API}${resolvedPath}`, {
+      method: 'POST',
+      headers: freshHeaders,
+      credentials: 'include',
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  }
   const text = await res.text();
   let data: any;
   try { data = JSON.parse(text); } catch { data = text; }

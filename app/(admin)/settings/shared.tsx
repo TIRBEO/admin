@@ -29,7 +29,7 @@ export function SettingsPage({ title, desc, onSave, saving, children }: { title:
 
 export function SectionCard({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
+    <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
       {title && <h3 className="text-sm font-semibold text-[var(--color-admin-text-secondary)] uppercase tracking-wider mb-4">{title}</h3>}
       {desc && <p className="text-sm text-[var(--color-admin-text-muted)] mb-4">{desc}</p>}
       {children}
@@ -50,12 +50,12 @@ export function Field({ label, desc, horizontal, children }: { label: string; de
 }
 
 export function ColorInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  return <input type="color" value={value} onChange={e => onChange(e.target.value)} className="w-10 h-10 rounded border border-[var(--color-admin-border)] cursor-pointer" />;
+  return <input type="color" value={value} onChange={e => onChange(e.target.value)} className="w-10 h-10 rounded border-2 border-[var(--color-admin-border)] cursor-pointer" />;
 }
 
 export function NestedCard({ title, onRemove, children }: { title?: string; onRemove?: () => void; children: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-[var(--color-admin-border)] bg-[var(--color-admin-surface-hover)] p-4 relative">
+    <div className="rounded-lg border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface-hover)] p-4 relative">
       {onRemove && (
         <button onClick={onRemove} className="absolute top-2 right-2 text-[var(--color-admin-text-muted)] hover:text-[var(--color-error)]">
           <X className="w-4 h-4" />
@@ -73,7 +73,7 @@ export function ItemRow({ children, className }: { children: React.ReactNode; cl
 
 export function AddButton({ onClick, label }: { onClick: () => void; label?: string }) {
   return (
-    <button onClick={onClick} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--color-admin-border)] text-sm text-[var(--color-admin-text-secondary)] hover:bg-[var(--color-admin-surface-hover)] transition-colors">
+    <button onClick={onClick} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-[var(--color-admin-border)] text-sm text-[var(--color-admin-text-secondary)] hover:bg-[var(--color-admin-surface-hover)] transition-colors">
       <PlusIcon className="w-4 h-4" /> {label ?? 'Add'}
     </button>
   );

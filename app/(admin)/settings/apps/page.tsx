@@ -18,7 +18,7 @@ export default function AppsOverview() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {apps.map(app => (
           <button key={app.id} onClick={() => router.push(`/admin/settings/apps/${app.id}`)}
-            className="flex items-start gap-4 p-5 rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] hover:bg-[var(--color-admin-surface-hover)] transition-colors text-left">
+            className="flex items-start gap-4 p-5  border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] hover:bg-[var(--color-admin-surface-hover)] transition-colors text-left">
             <app.icon className="w-6 h-6 text-[var(--color-primary)] flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-base font-medium text-[var(--color-admin-text)]">{app.label}</p>

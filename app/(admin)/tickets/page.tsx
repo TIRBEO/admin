@@ -76,7 +76,7 @@ export default function AdminTicketsPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
+      <div className="border-2 border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)]">
         <div className="p-4 border-b border-[var(--color-border)] flex flex-col sm:flex-row items-start sm:items-center gap-3">
           <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-tertiary)]" />
@@ -85,12 +85,12 @@ export default function AdminTicketsPage() {
               onChange={e => setSearch(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && loadTickets()}
               placeholder="Search tickets by title, description, or email..."
-              className="w-full pl-9 pr-4 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-sm outline-none focus:border-[var(--color-primary)]"
+              className="w-full pl-9 pr-4 py-2 rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-bg)] text-sm outline-none focus:border-[var(--color-primary)]"
             />
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); loadTickets(); }}
-              className="flex-1 sm:flex-none px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-sm outline-none focus:border-[var(--color-primary)]">
+              className="flex-1 sm:flex-none px-3 py-2 rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-bg)] text-sm outline-none focus:border-[var(--color-primary)]">
               <option value="all">All statuses</option>
               <option value="open">Open</option>
               <option value="in_progress">In Progress</option>
@@ -98,7 +98,7 @@ export default function AdminTicketsPage() {
               <option value="closed">Closed</option>
             </select>
             <select value={priorityFilter} onChange={e => { setPriorityFilter(e.target.value); loadTickets(); }}
-              className="flex-1 sm:flex-none px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-sm outline-none focus:border-[var(--color-primary)]">
+              className="flex-1 sm:flex-none px-3 py-2 rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-bg)] text-sm outline-none focus:border-[var(--color-primary)]">
               <option value="all">All priorities</option>
               <option value="high">High</option>
               <option value="medium">Medium</option>

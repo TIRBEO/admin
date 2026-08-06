@@ -56,9 +56,9 @@ export default function HealthPage() {
       <div className="p-6 lg:p-8 animate-pulse space-y-4">
         <div className="h-8 w-48 bg-[var(--color-admin-surface-hover)] rounded" />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[1,2,3].map(i => <div key={i} className="h-32 bg-[var(--color-admin-surface-hover)] rounded-xl" />)}
+          {[1,2,3].map(i => <div key={i} className="h-32 bg-[var(--color-admin-surface-hover)] " />)}
         </div>
-        <div className="h-64 bg-[var(--color-admin-surface-hover)] rounded-xl" />
+        <div className="h-64 bg-[var(--color-admin-surface-hover)] " />
       </div>
     );
   }
@@ -70,15 +70,15 @@ export default function HealthPage() {
       tabs={[]} activeTab="" onTabChange={() => {}}
       actions={
         <button onClick={refresh}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-[var(--color-admin-border)] text-sm font-medium text-[var(--color-admin-text-secondary)] hover:bg-[var(--color-admin-surface-hover)] transition-colors">
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border-2 border-[var(--color-admin-border)] text-sm font-medium text-[var(--color-admin-text-secondary)] hover:bg-[var(--color-admin-surface-hover)] transition-colors">
           <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
           Refresh
         </button>
       }>
       {/* Overall status */}
-      <div className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6 mb-6">
+      <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6 mb-6">
         <div className="flex items-center gap-4">
-          <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${
+          <div className={`w-14 h-14  flex items-center justify-center ${
             health?.status === 'healthy' ? 'bg-[var(--color-success-surface)]' :
             health?.status === 'degraded' ? 'bg-[var(--color-warning-surface)]' :
             'bg-[var(--color-error-surface)]'
@@ -106,7 +106,7 @@ export default function HealthPage() {
           { name: 'Redis', icon: Server, status: health?.redis?.status || 'unknown', detail: health?.redis?.latency ? `${health.redis.latency}ms` : '—' },
           { name: 'Queue', icon: Activity, status: health?.queue?.status || 'unknown', detail: health?.queue?.depth !== undefined ? `${health.queue.depth} jobs` : '—' },
         ].map(infra => (
-          <div key={infra.name} className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-5">
+          <div key={infra.name} className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-5">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <infra.icon className="w-4 h-4 text-[var(--color-admin-text-secondary)]" />
@@ -125,12 +125,12 @@ export default function HealthPage() {
       {/* Services */}
       <h3 className="text-sm font-semibold text-[var(--color-admin-text-secondary)] uppercase tracking-wider mb-3">Services</h3>
       {services.length === 0 ? (
-        <div className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-12 text-center">
+        <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-12 text-center">
           <Server className="w-12 h-12 mx-auto mb-4 text-[var(--color-admin-text-muted)]" />
           <p className="text-sm text-[var(--color-admin-text-muted)]">No services registered</p>
         </div>
       ) : (
-        <div className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] overflow-hidden">
+        <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] overflow-hidden">
           <div className="divide-y divide-[var(--color-admin-border)]">
             {services.map((svc, i) => (
               <div key={svc.slug || i} className="flex items-center justify-between p-4 hover:bg-[var(--color-admin-surface-hover)] transition-colors">

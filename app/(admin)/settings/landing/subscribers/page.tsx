@@ -52,7 +52,7 @@ export default function SubscribersPage() {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search by email or name..."
-              className="w-full h-9 pl-9 pr-3 rounded-lg border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)] outline-none focus:border-[var(--color-admin-accent)] transition-colors"
+              className="w-full h-9 pl-9 pr-3 rounded-lg border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)] outline-none focus:border-[var(--color-admin-accent)] transition-colors"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -60,7 +60,7 @@ export default function SubscribersPage() {
             <select
               value={sourceFilter}
               onChange={e => setSourceFilter(e.target.value)}
-              className="h-9 px-3 rounded-lg border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)] outline-none focus:border-[var(--color-admin-accent)] transition-colors"
+              className="h-9 px-3 rounded-lg border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] text-sm text-[var(--color-admin-text)] outline-none focus:border-[var(--color-admin-accent)] transition-colors"
             >
               <option value="all">All sources</option>
               {sources.map(s => (
@@ -70,7 +70,7 @@ export default function SubscribersPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] overflow-hidden">
+        <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin w-6 h-6 border-2 border-[var(--color-admin-accent)] border-t-transparent rounded-full" />

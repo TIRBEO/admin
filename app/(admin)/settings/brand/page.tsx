@@ -5,6 +5,7 @@ import { SettingsPage, SectionCard, Field, Input, Toggle, Toast } from '../share
 
 interface BrandConfig {
   logoUrl: string;
+  heroImage: string;
   brandName: string;
   brandTagline: string;
   primaryColor: string;
@@ -15,10 +16,11 @@ interface BrandConfig {
 
 const DEFAULTS: BrandConfig = {
   logoUrl: '',
+  heroImage: '',
   brandName: 'Tirbeo',
   brandTagline: 'Build communities. Share ideas. Grow together.',
-  primaryColor: '#1A73E8',
-  accentColor: '#4285F4',
+  primaryColor: '#17150f',
+  accentColor: '#ffd93d',
   emailFromName: 'Tirbeo',
   emailFromAddress: 'noreply@send.tirbeo.app',
 };
@@ -39,7 +41,7 @@ export default function BrandSettingsPage() {
       const d = await res.json();
       if (d?.branding) {
         const b = d.branding;
-        setCfg(p => ({ ...p, logoUrl: b.logoUrl || '', brandName: b.brandName || '', brandTagline: b.brandTagline || '', emailFromName: b.emailFromName || '', emailFromAddress: b.emailFromAddress || '' }));
+        setCfg(p => ({ ...p, logoUrl: b.logoUrl || '', heroImage: b.heroImage || '', brandName: b.brandName || '', brandTagline: b.brandTagline || '', emailFromName: b.emailFromName || '', emailFromAddress: b.emailFromAddress || '' }));
       }
     }
     setLoading(false);
@@ -51,7 +53,7 @@ export default function BrandSettingsPage() {
     setSaving(true); setMsg(null);
     const res = await apiFetch('/api/admin/branding', {
       method: 'PUT', body: JSON.stringify({
-        logoUrl: cfg.logoUrl, brandName: cfg.brandName, brandTagline: cfg.brandTagline,
+        logoUrl: cfg.logoUrl, heroImage: cfg.heroImage, brandName: cfg.brandName, brandTagline: cfg.brandTagline,
         emailFromName: cfg.emailFromName, emailFromAddress: cfg.emailFromAddress,
       }),
     });
@@ -127,6 +129,25 @@ export default function BrandSettingsPage() {
         )}
       </SectionCard>
 
+      <SectionCard title="Login Hero Image" desc="Background image for the right panel of the login / signup page (shown in black & white)">
+        <Field label="Hero Image URL" desc="Direct URL to a landscape image — shown grayscale as the login page backdrop">
+          <Input value={cfg.heroImage} onChange={e => upd('heroImage', e.target.value)} placeholder="https://..." />
+        </Field>
+        {cfg.heroImage && (
+          <div style={{ marginTop: 12, padding: 16, background: 'var(--bg-canvas)', borderRadius: 12, border: '1px solid var(--border-default)' }}>
+            <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Preview</p>
+            <div style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', border: '1px solid var(--border-default)', aspectRatio: '16/10' }}>
+              <img
+                src={cfg.heroImage}
+                alt="Login hero preview"
+                style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(1) contrast(1.08) brightness(0.92)' }}
+                onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+            </div>
+          </div>
+        )}
+      </SectionCard>
+
       <SectionCard title="Brand Identity" desc="Name and tagline used across your platform">
         <Field label="Brand Name">
           <Input value={cfg.brandName} onChange={e => upd('brandName', e.target.value)} placeholder="Tirbeo" />
@@ -154,7 +175,7 @@ export default function BrandSettingsPage() {
         <div style={{ marginTop: 16, padding: 16, background: 'var(--bg-canvas)', borderRadius: 12, border: '1px solid var(--border-default)' }}>
           <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Color Preview</p>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            {[cfg.primaryColor, cfg.accentColor, '#4285F4', '#AECBFA', '#1D4ED8', '#B7C6BE', '#F2EEE8'].map((c, i) => (
+            {[cfg.primaryColor, cfg.accentColor, '#ffd93d', '#17150f', '#f6f3ea', '#6b6557', '#e5484d'].map((c, i) => (
               <div key={i} style={{ textAlign: 'center' }}>
                 <div style={{ width: 48, height: 48, borderRadius: 12, background: c, border: '2px solid rgba(255,255,255,0.1)' }} />
                 <span style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>{c}</span>

@@ -55,9 +55,9 @@ export default function AdminDashboard() {
       <div className="p-6 lg:p-8 space-y-6 animate-pulse">
         <div className="h-8 w-48 bg-[var(--color-admin-surface-hover)] rounded" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1,2,3,4].map(i => <div key={i} className="h-28 bg-[var(--color-admin-surface-hover)] rounded-xl" />)}
+          {[1,2,3,4].map(i => <div key={i} className="h-28 bg-[var(--color-admin-surface-hover)] " />)}
         </div>
-        <div className="h-64 bg-[var(--color-admin-surface-hover)] rounded-xl" />
+        <div className="h-64 bg-[var(--color-admin-surface-hover)] " />
       </div>
     );
   }
@@ -72,7 +72,7 @@ export default function AdminDashboard() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => window.location.reload()}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--color-admin-border)] text-sm font-medium text-[var(--color-admin-text-secondary)] hover:bg-[var(--color-admin-surface-hover)] transition-colors">
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border-2 border-[var(--color-admin-border)] text-sm font-medium text-[var(--color-admin-text-secondary)] hover:bg-[var(--color-admin-surface-hover)] transition-colors">
             <RefreshCw className="w-4 h-4" />
             Refresh
           </button>
@@ -81,7 +81,7 @@ export default function AdminDashboard() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-5">
+        <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-5">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-medium text-[var(--color-admin-text-secondary)]">Total Users</span>
             <div className="w-9 h-9 rounded-lg bg-[var(--color-primary-surface)] flex items-center justify-center">
@@ -95,7 +95,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-5">
+        <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-5">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-medium text-[var(--color-admin-text-secondary)]">Audit Events</span>
             <div className="w-9 h-9 rounded-lg bg-[var(--color-success-surface)] flex items-center justify-center">
@@ -110,7 +110,7 @@ export default function AdminDashboard() {
         </div>
 
         <button onClick={() => router.push('/admin/security/events')}
-          className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-5 text-left hover:shadow-sm hover:bg-[var(--color-admin-surface-hover)] transition-all">
+          className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-5 text-left hover:shadow-[var(--shadow-card)] hover:bg-[var(--color-admin-surface-hover)] transition-all">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-medium text-[var(--color-admin-text-secondary)]">Security Events</span>
             <div className="w-9 h-9 rounded-lg bg-[var(--color-warning-surface)] flex items-center justify-center">
@@ -131,7 +131,7 @@ export default function AdminDashboard() {
         </button>
 
         <button onClick={() => router.push('/admin/security/blocks')}
-          className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-5 text-left hover:shadow-sm hover:bg-[var(--color-admin-surface-hover)] transition-all">
+          className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-5 text-left hover:shadow-[var(--shadow-card)] hover:bg-[var(--color-admin-surface-hover)] transition-all">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-medium text-[var(--color-admin-text-secondary)]">Blocked Targets</span>
             <div className="w-9 h-9 rounded-lg bg-[var(--color-error-surface)] flex items-center justify-center">
@@ -148,7 +148,7 @@ export default function AdminDashboard() {
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Quick Actions */}
-        <div className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
+        <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
           <h2 className="text-sm font-semibold text-[var(--color-admin-text-secondary)] uppercase tracking-wider mb-4">Quick Actions</h2>
           <div className="grid grid-cols-2 gap-3">
             {[
@@ -158,7 +158,7 @@ export default function AdminDashboard() {
               { label: 'Alerts', href: '/admin/alerts', icon: Bell, color: 'var(--color-success)' },
             ].map(action => (
               <button key={action.label} onClick={() => router.push(action.href)}
-                className="flex items-center gap-4 p-4 rounded-lg border border-[var(--color-admin-border)] hover:bg-[var(--color-admin-surface-hover)] transition-colors text-left">
+                className="flex items-center gap-4 p-4 rounded-lg border-2 border-[var(--color-admin-border)] hover:bg-[var(--color-admin-surface-hover)] transition-colors text-left">
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: action.color + '18' }}>
                   <action.icon className="w-5 h-5" style={{ color: action.color }} />
                 </div>
@@ -169,7 +169,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Recent Activity */}
-        <div className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
+        <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-[var(--color-admin-text-secondary)] uppercase tracking-wider">Recent Activity</h2>
             <button onClick={() => router.push('/admin/security/audit')} className="text-xs font-medium text-[var(--color-primary)] hover:underline">View all</button>

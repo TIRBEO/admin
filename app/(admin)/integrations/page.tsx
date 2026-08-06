@@ -60,7 +60,7 @@ export default function IntegrationsPage() {
       <div className="p-6 lg:p-8 animate-pulse space-y-4">
         <div className="h-8 w-48 bg-[var(--color-admin-surface-hover)] rounded" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1,2,3,4,5,6].map(i => <div key={i} className="h-32 bg-[var(--color-admin-surface-hover)] rounded-xl" />)}
+          {[1,2,3,4,5,6].map(i => <div key={i} className="h-32 bg-[var(--color-admin-surface-hover)] " />)}
         </div>
       </div>
     );
@@ -82,7 +82,7 @@ export default function IntegrationsPage() {
           <h3 className="text-sm font-semibold text-[var(--color-admin-text-secondary)] uppercase tracking-wider mb-3">Connected</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {filtered.filter(i => i.enabled || i.status === 'active').map(int => (
-              <div key={int.id} className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-4 hover:bg-[var(--color-admin-surface-hover)] transition-colors">
+              <div key={int.id} className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-4 hover:bg-[var(--color-admin-surface-hover)] transition-colors">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-[var(--color-success-surface)] flex items-center justify-center text-[var(--color-success)] text-xs font-bold">
@@ -114,7 +114,7 @@ export default function IntegrationsPage() {
           <h3 className="text-sm font-semibold text-[var(--color-admin-text-secondary)] uppercase tracking-wider mb-3">Available Integrations</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {availableIntegrations.map(int => (
-              <div key={int.provider} className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-4 hover:bg-[var(--color-admin-surface-hover)] transition-colors">
+              <div key={int.provider} className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-4 hover:bg-[var(--color-admin-surface-hover)] transition-colors">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-[var(--color-primary-surface)] flex items-center justify-center text-[var(--color-primary)] text-xs font-bold">
@@ -128,7 +128,7 @@ export default function IntegrationsPage() {
                   <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--color-admin-surface-hover)] text-[var(--color-admin-text-muted)]">Available</span>
                 </div>
                 <p className="text-xs text-[var(--color-admin-text-muted)] mb-3">{int.description}</p>
-                <button className="w-full px-3 py-1.5 rounded-lg border border-[var(--color-admin-border)] text-sm text-[var(--color-primary)] hover:bg-[var(--color-admin-surface-hover)] transition-colors">
+                <button className="w-full px-3 py-1.5 rounded-lg border-2 border-[var(--color-admin-border)] text-sm text-[var(--color-primary)] hover:bg-[var(--color-admin-surface-hover)] transition-colors">
                   Connect
                 </button>
               </div>

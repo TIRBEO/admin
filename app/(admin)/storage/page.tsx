@@ -86,7 +86,7 @@ export default function StoragePage() {
         </button>
       }>
       {/* Storage usage bar */}
-      <div className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-5 mb-6">
+      <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-5 mb-6">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <HardDrive className="w-4 h-4 text-[var(--color-primary)]" />

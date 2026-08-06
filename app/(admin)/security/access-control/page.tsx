@@ -142,7 +142,7 @@ export default function AccessControl() {
           <h3 className="text-sm font-semibold text-[var(--color-admin-text-secondary)] uppercase tracking-wider mb-3">
             Permissions {selectedRole ? `— ${roles.find(r => r.id === selectedRole)?.name || ''}` : ''}
           </h3>
-          <div className="rounded-xl border border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-5">
+          <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-5">
             {selectedRole ? (
               <PermissionsEditor roleId={selectedRole} initialPermissions={rolePermissions} />
             ) : (

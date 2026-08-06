@@ -71,20 +71,20 @@ export default function SettingsOverview() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold text-[var(--color-text,#202124)]">Settings</h1>
-        <p className="text-sm text-[var(--color-text-secondary,#5F6368)] mt-1">Configure all platform settings</p>
+        <h1 className="text-2xl font-semibold text-[var(--color-text)]">Settings</h1>
+        <p className="text-sm text-[var(--color-text-secondary)] mt-1">Configure all platform settings</p>
       </div>
       {categories.map(group => (
         <div key={group.title}>
-          <h3 className="text-sm font-semibold text-[var(--color-text-secondary,#5F6368)] uppercase tracking-wider mb-3">{group.title}</h3>
+          <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mb-3">{group.title}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {group.items.map(item => (
               <button key={item.label} onClick={() => router.push(item.href)}
-                className="flex items-start gap-4 p-4 rounded-xl border border-[var(--color-border,#DADCE0)] bg-[var(--color-surface,#FFFFFF)] hover:bg-[var(--color-surface-muted,#F1F3F4)] transition-colors text-left">
-                <item.icon className="w-5 h-5 text-[var(--color-primary,#1A73E8)] flex-shrink-0 mt-0.5" />
+                className="flex items-start gap-4 p-4  border-2 border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-muted)] transition-colors text-left">
+                <item.icon className="w-5 h-5 text-[var(--color-primary)] flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-medium text-[var(--color-text,#202124)]">{item.label}</p>
-                  <p className="text-xs text-[var(--color-text-secondary,#5F6368)] mt-0.5">{item.desc}</p>
+                  <p className="text-sm font-medium text-[var(--color-text)]">{item.label}</p>
+                  <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">{item.desc}</p>
                 </div>
               </button>
             ))}

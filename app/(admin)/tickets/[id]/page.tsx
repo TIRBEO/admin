@@ -167,7 +167,7 @@ export default function AdminTicketDetailPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+        <div className="border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-5">
           <div className="text-xs text-[var(--color-text-tertiary)] mb-1">Status</div>
           <select value={ticket.status} onChange={e => handleStatusChange(e.target.value)} disabled={updating}
             className="text-sm font-medium text-[var(--color-text)] bg-transparent border-none outline-none disabled:opacity-50">
@@ -177,7 +177,7 @@ export default function AdminTicketDetailPage() {
             <option value="closed">Closed</option>
           </select>
         </div>
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+        <div className="border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-5">
           <div className="text-xs text-[var(--color-text-tertiary)] mb-1">Priority</div>
           <div className="text-sm font-medium text-[var(--color-text)] capitalize flex items-center gap-2">
             {ticket.priority === 'high' && <AlertCircle className="w-4 h-4 text-[var(--color-error)]" />}
@@ -186,7 +186,7 @@ export default function AdminTicketDetailPage() {
             {ticket.priority}
           </div>
         </div>
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+        <div className="border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-5">
           <div className="text-xs text-[var(--color-text-tertiary)] mb-1">Assigned To</div>
           <select value={ticket.assigned?.id || ''} onChange={e => handleAssign(e.target.value)} disabled={updating}
             className="text-sm font-medium text-[var(--color-text)] bg-transparent border-none outline-none disabled:opacity-50">
@@ -198,7 +198,7 @@ export default function AdminTicketDetailPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm overflow-hidden mb-6">
+      <div className="border-2 border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] overflow-hidden mb-6">
         <div className="p-6 border-b border-[var(--color-border)]">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-full bg-[var(--color-primary-surface)] flex items-center justify-center text-[var(--color-primary)] font-medium flex-shrink-0">
@@ -254,7 +254,7 @@ export default function AdminTicketDetailPage() {
             <div className="flex gap-3">
               <input type="text" value={reply} onChange={e => setReply(e.target.value)}
                 placeholder={isInternal ? "Add internal note..." : "Reply to customer..."}
-                className="flex-1 px-4 py-2.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-sm outline-none focus:border-[var(--color-primary)]"
+                className="flex-1 px-4 py-2.5 rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-bg)] text-sm outline-none focus:border-[var(--color-primary)]"
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleReply(e); } }}
               />
               <button type="submit" disabled={sending || !reply.trim()}

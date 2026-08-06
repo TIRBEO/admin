@@ -3,12 +3,13 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { DashboardShell, type NavSection, type AppLink } from '@tirbeo/ui';
+import { useThemeToggle } from '@tirbeo/theme';
 import { apiFetch, API } from '../lib';
 import {
   LayoutDashboard, Users, Shield, Settings, Smartphone, Globe,
   BarChart3, CreditCard, UserCircle, FileText, HardDrive,
   Puzzle, BellRing, HeartPulse, MessageSquare, Scale, Palette,
-  Mail, Lock, Building2, Key, Network, Monitor, Ban,
+  Mail, Lock, Key, Monitor, Ban, UserCheck, Sun, Moon,
 } from 'lucide-react';
 
 const NAV_SECTIONS: NavSection[] = [
@@ -24,8 +25,6 @@ const NAV_SECTIONS: NavSection[] = [
     label: 'Directory',
     items: [
       { href: '/admin/directory/users', label: 'Users', icon: Users },
-      { href: '/admin/directory/groups', label: 'Groups', icon: Building2 },
-      { href: '/admin/directory/ous', label: 'Organizational units', icon: Network },
       { href: '/admin/directory/settings', label: 'Directory settings', icon: Settings },
     ],
   },
@@ -50,10 +49,12 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: '/admin/devices', label: 'Devices', icon: Smartphone },
       { href: '/admin/apps', label: 'Apps', icon: Globe },
+      { href: '/admin/forms', label: 'Forms', icon: FileText },
       { href: '/admin/data', label: 'Data', icon: HardDrive },
       { href: '/admin/rules', label: 'Rules', icon: Scale },
       { href: '/admin/storage', label: 'Storage', icon: HardDrive },
       { href: '/admin/integrations', label: 'Integrations', icon: Puzzle },
+      { href: '/admin/settings/requests', label: 'Admin Requests', icon: UserCheck },
     ],
   },
   {
@@ -147,25 +148,42 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[var(--color-bg,var(--color-admin-bg,#F8F9FA))]">
-        <div className="animate-spin w-8 h-8 border-2 border-[var(--color-primary,#1A73E8)] border-t-transparent rounded-full" />
+      <div className="flex items-center justify-center min-h-screen bg-[var(--color-bg)]">
+        <div className="animate-spin w-8 h-8 border-2 border-[var(--color-primary)] border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <DashboardShell
-      navSections={NAV_SECTIONS}
-      apps={APPS}
-      brand={{ name: branding.name, logo: branding.logo }}
-      user={user}
-      onLogout={handleLogout}
-      onNavigate={handleNavigate}
-      currentPath={pathname}
-      onSearch={getSearchResults}
-      collapsible
+    <>
+      {/* Theme Toggle */}
+      <ThemeToggleButton />
+      <DashboardShell
+        navSections={NAV_SECTIONS}
+        apps={APPS}
+        brand={{ name: branding.name, logo: branding.logo }}
+        user={user}
+        onLogout={handleLogout}
+        onNavigate={handleNavigate}
+        currentPath={pathname}
+        onSearch={getSearchResults}
+        collapsible
+      >
+        {children}
+      </DashboardShell>
+    </>
+  );
+}
+
+function ThemeToggleButton() {
+  const { isDark, toggle } = useThemeToggle();
+  return (
+    <button
+      onClick={toggle}
+      className="theme-toggle"
+      aria-label={`Switch to ${isDark ? 'light' : 'dark'} theme`}
     >
-      {children}
-    </DashboardShell>
+      {isDark ? <Sun className="h-5 w-5" strokeWidth={2} /> : <Moon className="h-5 w-5" strokeWidth={2} />}
+    </button>
   );
 }

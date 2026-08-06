@@ -7,7 +7,7 @@ const DEFAULTS = {
   panelName: 'Tirbeo Admin',
   panelLogo: '',
   panelFavicon: '',
-  primaryColor: '#4f7aff',
+  primaryColor: '#ffd93d',
   defaultNewAdminRole: 'editor',
   notifyOnNewUser: true,
   notifyOnUserDelete: true,

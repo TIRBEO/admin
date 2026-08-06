@@ -10,7 +10,7 @@ const DEFAULTS = {
   bgImage: '',
   headline1: 'Connect.',
   headline2: 'Share.',
-  headline2Gradient: '#4f7aff',
+  headline2Gradient: '#ffd93d',
   subtitle: 'Tirbeo is the community-first platform for meaningful conversations.',
   cta1Text: 'Get Started',
   cta1Url: '/login',

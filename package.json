@@ -12,7 +12,7 @@
   "dependencies": {
     "@tirbeo/charts": "^1.0.6",
     "@tirbeo/icons": "^1.0.5",
-    "@tirbeo/theme": "^1.0.5",
+    "@tirbeo/theme": "^1.0.6",
     "@tirbeo/ui": "^1.0.5",
     "@tirbeo/utils": "^0.0.6",
     "date-fns": "4.4.0",
