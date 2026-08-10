@@ -58,13 +58,13 @@ export default function CaptchaLogsPage() {
 
   const getEventColor = (eventType: string) => {
     switch (eventType) {
-      case 'blocked': return 'bg-red-100 text-red-800';
-      case 'unblocked': return 'bg-green-100 text-green-800';
-      case 'attempt_failed': return 'bg-yellow-100 text-yellow-800';
-      case 'challenge_shown': return 'bg-blue-100 text-blue-800';
-      case 'challenge_solved': return 'bg-green-100 text-green-800';
-      case 'settings_changed': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'blocked': return 'bg-[var(--color-surface-muted)] text-[var(--color-text)] border border-[var(--color-border)]';
+      case 'unblocked': return 'bg-[var(--color-surface-muted)] text-[var(--color-text)] border border-[var(--color-border)]';
+      case 'attempt_failed': return 'bg-[var(--color-surface-muted)] text-[var(--color-text)] border border-[var(--color-border)]';
+      case 'challenge_shown': return 'bg-[var(--color-surface-muted)] text-[var(--color-text)] border border-[var(--color-border)]';
+      case 'challenge_solved': return 'bg-[var(--color-surface-muted)] text-[var(--color-text)] border border-[var(--color-border)]';
+      case 'settings_changed': return 'bg-[var(--color-surface-muted)] text-[var(--color-text)] border border-[var(--color-border)]';
+      default: return 'bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)] border border-[var(--color-border)]';
     }
   };
 

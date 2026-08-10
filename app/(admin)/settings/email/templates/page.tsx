@@ -17,13 +17,13 @@ interface Template {
 }
 
 /* ─── Brutalist paper/ink email shell (matches the account/form email theming) ─── */
-const BODY_BG = '#f6f3ea';
-const INK = '#17150f';
+const BODY_BG = '#ffffff';
+const INK = '#000000';
 const CARD_BG = '#ffffff';
-const ACCENT = '#ffd93d';
-const ON_ACCENT = '#17150f';
-const MUTED = '#6b6557';
-const BORDER = '#17150f';
+const ACCENT = '#ffffff';
+const ON_ACCENT = '#ffffff';
+const MUTED = '#666666';
+const BORDER = '#000000';
 
 const EMAIL_CSS = `
   body{font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:${BODY_BG};margin:0;padding:32px 16px}

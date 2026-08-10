@@ -111,8 +111,11 @@ export default function AccessControl() {
     { id: 'overview', label: 'Overview' },
     { id: 'authentication', label: 'Authentication' },
     { id: 'access-control', label: 'Access control' },
+    { id: 'policies', label: 'Policies' },
+    { id: 'captcha', label: 'CAPTCHA' },
+    { id: 'blocks', label: 'Blocks' },
+    { id: 'events', label: 'Events' },
     { id: 'audit', label: 'Audit log' },
-    { id: 'settings', label: 'Settings' },
   ];
 
   return (
@@ -120,7 +123,7 @@ export default function AccessControl() {
       tabs={tabs} activeTab="access-control" onTabChange={id => router.push(`/admin/security/${id === 'overview' ? '' : id}`)}
       actions={
         <button onClick={() => router.push('/admin/security/access-control/new')}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[var(--color-primary)] text-white text-sm font-medium hover:bg-[var(--color-primary-hover)] transition-colors">
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[var(--color-primary)] text-[var(--color-bg)] text-sm font-medium hover:bg-[var(--color-primary-hover)] transition-colors">
           <Plus className="w-4 h-4" />
           Create Role
         </button>

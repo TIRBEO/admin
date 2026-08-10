@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiPost, apiFetch } from '../../lib';
 import { Shield, Check, X, Clock, User, ChevronDown, ChevronUp } from 'lucide-react';
+import { Toast } from '../settings/shared';
 
 interface AdminRequest {
   id: string;
@@ -29,6 +30,7 @@ export default function AdminRequestsPage() {
   const [requests, setRequests] = useState<AdminRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [toast, setToast] = useState<{ type: 'success' | 'error' | 'warning' | 'info'; text: string } | null>(null);
   const [reviewModal, setReviewModal] = useState<{ request: AdminRequest; action: 'approve' | 'reject' } | null>(null);
   const [selectedRole, setSelectedRole] = useState('admin');
   const [rejectionReason, setRejectionReason] = useState('');
@@ -43,7 +45,7 @@ export default function AdminRequestsPage() {
       const data = await res.json();
       setRequests(data.requests || []);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to load requests');
+      setToast({ type: 'error', text: err instanceof Error ? err.message : 'Failed to load requests' });
     } finally {
       setLoading(false);
     }
@@ -69,7 +71,7 @@ export default function AdminRequestsPage() {
       setRejectionReason('');
       fetchRequests();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to review request');
+      setToast({ type: 'error', text: err instanceof Error ? err.message : 'Failed to review request' });
     } finally {
       setSubmitting(false);
     }
@@ -87,6 +89,7 @@ export default function AdminRequestsPage() {
           <p className="mt-1 sm:mt-2 text-[12px] sm:text-[13px] md:text-[14px]" style={{ color: 'var(--text-muted)' }}>Review and manage admin account requests</p>
         </div>
 
+        {toast && <Toast msg={toast} onClose={() => setToast(null)} />}
         {error && (
           <div className="p-3 sm:p-4 rounded-[10px] sm:rounded-[12px] border-2 mb-4 sm:mb-6" style={{ borderColor: 'var(--error)', backgroundColor: 'var(--bg-elevated)' }}>
             <p className="text-[13px] sm:text-[14px] font-bold" style={{ color: 'var(--error)' }}>{error}</p>
@@ -308,7 +311,7 @@ export default function AdminRequestsPage() {
                 className="flex-1 h-10 sm:h-11 rounded-[10px] sm:rounded-[12px] font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-[13px] sm:text-[14px]"
                 style={{
                   backgroundColor: reviewModal.action === 'approve' ? 'var(--primary)' : 'var(--error)',
-                  color: reviewModal.action === 'approve' ? 'var(--on-accent)' : '#f6f3ea',
+                  color: reviewModal.action === 'approve' ? 'var(--on-accent)' : '#ffffff',
                   border: `2px solid ${reviewModal.action === 'approve' ? 'var(--primary)' : 'var(--error)'}`,
                 }}
               >

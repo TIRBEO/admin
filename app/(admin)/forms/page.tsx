@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '../../lib';
+import { Toast } from '../settings/shared';
 import {
   FileText, Globe, EyeOff, Search, ExternalLink,
   Trash2, Play, Pause, RefreshCcw,
@@ -17,7 +18,11 @@ export default function AdminFormsPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [ownerBusyId, setOwnerBusyId] = useState<string | null>(null);
   const [menuId, setMenuId] = useState<string | null>(null);
-  const [error, setError] = useState('');
+  const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<any>(null);
+  const [moderateDialog, setModerateDialog] = useState<{ form: any; action: 'ban' | 'suspend' | 'unban' | 'unsuspend' } | null>(null);
+  const [moderateReason, setModerateReason] = useState('Form spam');
+  const [moderateDays, setModerateDays] = useState('7');
 
   const load = () => {
     setLoading(true);
@@ -31,68 +36,62 @@ export default function AdminFormsPage() {
 
   const setStatus = async (f: any, status: string) => {
     setBusyId(f.id);
-    setError('');
     try {
       const res = await apiFetch(`/api/admin/forms/${f.id}`, {
         method: 'PATCH',
         body: JSON.stringify({ status }),
       });
-      if (!res.ok) { const t = await res.text(); setError(t || 'Failed to update'); }
-      else load();
-    } catch (e: any) { setError(e.message || 'Failed to update'); }
+      if (!res.ok) { const t = await res.text(); setMsg({ type: 'error', text: t || 'Failed to update' }); }
+      else { load(); setMsg({ type: 'success', text: `Form ${status === 'published' ? 'published' : 'unpublished'}` }); }
+    } catch (e: any) { setMsg({ type: 'error', text: e.message || 'Failed to update' }); }
     finally { setBusyId(null); }
   };
 
   const remove = async (f: any) => {
-    if (!window.confirm(`Delete form "${f.title}" and all its responses? This cannot be undone.`)) return;
+    setConfirmDelete(null);
     setBusyId(f.id);
-    setError('');
     try {
       const res = await apiFetch(`/api/admin/forms/${f.id}`, { method: 'DELETE' });
-      if (!res.ok) { const t = await res.text(); setError(t || 'Failed to delete'); }
-      else load();
-    } catch (e: any) { setError(e.message || 'Failed to delete'); }
+      if (!res.ok) { const t = await res.text(); setMsg({ type: 'error', text: t || 'Failed to delete' }); }
+      else { load(); setMsg({ type: 'success', text: 'Form deleted' }); }
+    } catch (e: any) { setMsg({ type: 'error', text: e.message || 'Failed to delete' }); }
     finally { setBusyId(null); }
   };
 
-  // Moderate the form owner (ban/suspend spammers).
-  const moderateOwner = async (f: any, action: 'ban' | 'suspend' | 'unban' | 'unsuspend') => {
+  // Open moderation dialog
+  const openModerate = (f: any, action: 'ban' | 'suspend' | 'unban' | 'unsuspend') => {
     if (!f.user?.id) return;
     setMenuId(null);
+    setModerateDialog({ form: f, action });
+    setModerateReason('Form spam');
+    setModerateDays('7');
+  };
+
+  // Execute moderation action
+  const executeModerate = async () => {
+    if (!moderateDialog) return;
+    const { form: f, action } = moderateDialog;
     const email = f.user.email;
-    let reason = '';
-    let durationDays: number | undefined;
-
-    if (action === 'ban') {
-      reason = (window.prompt(`Ban ${email}? Enter a reason (required):`, 'Form spam') || '').trim();
-      if (!reason) return;
-      if (!window.confirm(`Ban ${email}? They will be logged out of all sessions and blocked from using Tirbeo.`)) return;
-    } else if (action === 'suspend') {
-      reason = (window.prompt(`Suspend ${email}? Enter a reason (required):`, 'Form spam') || '').trim();
-      if (!reason) return;
-      const d = (window.prompt('Suspend for how many days? (blank = indefinite):', '7') || '').trim();
-      const days = parseInt(d, 10);
-      if (!Number.isNaN(days) && days > 0) durationDays = days;
-      if (!window.confirm(`Suspend ${email}${durationDays ? ` for ${durationDays} day(s)` : ' indefinitely'}? They will be logged out of all sessions.`)) return;
-    } else if (action === 'unban') {
-      if (!window.confirm(`Unban ${email}?`)) return;
-    } else {
-      if (!window.confirm(`Unsuspend ${email}?`)) return;
-    }
-
+    setModerateDialog(null);
     setOwnerBusyId(f.id);
-    setError('');
     try {
-      const body = action === 'unban' || action === 'unsuspend'
-        ? {}
-        : { reason, ...(durationDays !== undefined ? { durationDays } : {}) };
+      let body: any = {};
+      if (action === 'ban' || action === 'suspend') {
+        const reason = moderateReason.trim();
+        if (!reason) { setMsg({ type: 'error', text: 'Reason is required' }); return; }
+        body.reason = reason;
+        if (action === 'suspend') {
+          const days = parseInt(moderateDays, 10);
+          if (!Number.isNaN(days) && days > 0) body.durationDays = days;
+        }
+      }
       const res = await apiFetch(`/api/admin/users/${f.user.id}/${action}`, {
         method: 'PATCH',
         body: JSON.stringify(body),
       });
-      if (!res.ok) { const t = await res.text(); setError(t || `Failed to ${action} user`); }
-      else load();
-    } catch (e: any) { setError(e.message || `Failed to ${action} user`); }
+      if (!res.ok) { const t = await res.text(); setMsg({ type: 'error', text: t || `Failed to ${action} user` }); }
+      else { load(); setMsg({ type: 'success', text: `User ${action}ed` }); }
+    } catch (e: any) { setMsg({ type: 'error', text: e.message || `Failed to ${action} user` }); }
     finally { setOwnerBusyId(null); }
   };
 
@@ -110,11 +109,7 @@ export default function AdminFormsPage() {
         </div>
       </div>
 
-      {error && (
-        <div className="mb-4 p-3 rounded-lg border border-[var(--color-error)] bg-[var(--color-error-surface)] text-sm text-[var(--color-error)]">
-          {error}
-        </div>
-      )}
+      <Toast msg={msg} onClose={() => setMsg(null)} />
 
       <div className="border-2 border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)]">
         <div className="p-4 border-b border-[var(--color-border)] flex items-center gap-3">
@@ -232,23 +227,23 @@ export default function AdminFormsPage() {
                                 Moderate owner
                               </div>
                               {f.ownerStatus === 'banned' ? (
-                                <button onClick={() => moderateOwner(f, 'unban')}
+                                <button onClick={() => openModerate(f, 'unban')}
                                   className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-[var(--color-success)] hover:bg-[var(--color-surface-muted)]">
                                   <UserCheck className="w-3.5 h-3.5" /> Unban user
                                 </button>
                               ) : (
-                                <button onClick={() => moderateOwner(f, 'ban')}
+                                <button onClick={() => openModerate(f, 'ban')}
                                   className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-[var(--color-error)] hover:bg-[var(--color-surface-muted)]">
                                   <UserX className="w-3.5 h-3.5" /> Ban user
                                 </button>
                               )}
                               {f.ownerStatus === 'suspended' ? (
-                                <button onClick={() => moderateOwner(f, 'unsuspend')}
+                                <button onClick={() => openModerate(f, 'unsuspend')}
                                   className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-[var(--color-success)] hover:bg-[var(--color-surface-muted)]">
                                   <ShieldCheck className="w-3.5 h-3.5" /> Unsuspend user
                                 </button>
                               ) : (
-                                <button onClick={() => moderateOwner(f, 'suspend')}
+                                <button onClick={() => openModerate(f, 'suspend')}
                                   className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-[var(--color-warning)] hover:bg-[var(--color-surface-muted)]">
                                   <Clock className="w-3.5 h-3.5" /> Suspend user
                                 </button>
@@ -258,7 +253,7 @@ export default function AdminFormsPage() {
                           )}
                         </div>
                       )}
-                      <button onClick={() => remove(f)} disabled={busyId === f.id}
+                      <button onClick={() => setConfirmDelete(f)} disabled={busyId === f.id}
                         className="inline-flex items-center gap-1 text-xs text-[var(--color-error)] hover:underline disabled:opacity-50"
                         title="Delete form">
                         <Trash2 className="w-3.5 h-3.5" />
@@ -271,6 +266,96 @@ export default function AdminFormsPage() {
           </table>
         )}
       </div>
+
+      {/* Moderation Dialog */}
+      {moderateDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setModerateDialog(null)}>
+          <div className="w-full max-w-md rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-[var(--color-text)] mb-2">
+              {moderateDialog.action === 'ban' && `Ban ${moderateDialog.form.user?.email}?`}
+              {moderateDialog.action === 'suspend' && `Suspend ${moderateDialog.form.user?.email}?`}
+              {moderateDialog.action === 'unban' && `Unban ${moderateDialog.form.user?.email}?`}
+              {moderateDialog.action === 'unsuspend' && `Unsuspend ${moderateDialog.form.user?.email}?`}
+            </h3>
+            {(moderateDialog.action === 'ban' || moderateDialog.action === 'suspend') && (
+              <p className="text-sm text-[var(--color-text-secondary)] mb-4">
+                They will be logged out of all sessions and {moderateDialog.action === 'ban' ? 'blocked from using Tirbeo' : 'unable to access the platform'}.{' '}
+                {moderateDialog.action === 'ban' ? 'This is permanent until manually unbanned.' : ''}
+              </p>
+            )}
+            {(moderateDialog.action === 'unban' || moderateDialog.action === 'unsuspend') && (
+              <p className="text-sm text-[var(--color-text-secondary)] mb-4">
+                They will regain full access to the platform.
+              </p>
+            )}
+            {(moderateDialog.action === 'ban' || moderateDialog.action === 'suspend') && (
+              <div className="space-y-3 mb-4">
+                <div>
+                  <label className="text-xs font-medium text-[var(--color-text-secondary)]">Reason</label>
+                  <input
+                    type="text"
+                    value={moderateReason}
+                    onChange={e => setModerateReason(e.target.value)}
+                    className="mt-1 w-full px-3 py-2 rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-bg)] text-sm outline-none focus:border-[var(--color-primary)]"
+                    placeholder="Enter a reason..."
+                  />
+                </div>
+                {moderateDialog.action === 'suspend' && (
+                  <div>
+                    <label className="text-xs font-medium text-[var(--color-text-secondary)]">Duration (days, blank = indefinite)</label>
+                    <input
+                      type="number"
+                      value={moderateDays}
+                      onChange={e => setModerateDays(e.target.value)}
+                      className="mt-1 w-full px-3 py-2 rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-bg)] text-sm outline-none focus:border-[var(--color-primary)]"
+                      placeholder="7"
+                      min="1"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setModerateDialog(null)} className="px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] rounded-lg transition-colors">
+                Cancel
+              </button>
+              <button
+                onClick={executeModerate}
+                className={`px-4 py-2 text-sm font-medium text-white rounded-lg hover:opacity-90 transition-opacity ${
+                  moderateDialog.action === 'ban' ? 'bg-[var(--color-error)]' :
+                  moderateDialog.action === 'suspend' ? 'bg-[var(--color-warning)]' :
+                  'bg-[var(--color-success)]'
+                }`}
+              >
+                {moderateDialog.action === 'ban' && 'Ban User'}
+                {moderateDialog.action === 'suspend' && 'Suspend User'}
+                {moderateDialog.action === 'unban' && 'Unban User'}
+                {moderateDialog.action === 'unsuspend' && 'Unsuspend User'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirm Dialog */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setConfirmDelete(null)}>
+          <div className="w-full max-w-md rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-[var(--color-text)] mb-2">Delete form?</h3>
+            <p className="text-sm text-[var(--color-text-secondary)] mb-6">
+              Delete &quot;{confirmDelete.title}&quot; and all its responses? This cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setConfirmDelete(null)} className="px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] rounded-lg transition-colors">
+                Cancel
+              </button>
+              <button onClick={() => remove(confirmDelete)} className="px-4 py-2 text-sm font-medium bg-[var(--color-error)] text-white rounded-lg hover:opacity-90 transition-opacity">
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

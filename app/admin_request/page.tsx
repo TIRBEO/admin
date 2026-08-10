@@ -7,6 +7,7 @@ import { apiPost, ApiError, API } from '../lib';
 import { BrandLogo } from '../components/brand-logo';
 import { Eye, EyeOff, ChevronRight, ExternalLink, Shield, CheckCircle2 } from 'lucide-react';
 import { CaptchaWidget } from '../components/captcha/captcha-widget';
+import { Toast } from '../(admin)/settings/shared';
 
 type Step = 'welcome' | 'password' | 'mfa' | 'success';
 
@@ -32,6 +33,7 @@ export default function AdminRequestPage() {
   const [tempToken, setTempToken] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [toast, setToast] = useState<{ type: 'success' | 'error' | 'warning' | 'info'; text: string } | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -107,10 +109,10 @@ export default function AdminRequestPage() {
       }
     } catch (err: unknown) {
       if (err instanceof ApiError) {
-        if (err.status === 409) setError('An account with this email already exists');
-        else setError(err.message);
+        if (err.status === 409) setToast({ type: 'error', text: 'An account with this email already exists' });
+        else setToast({ type: 'error', text: err.message });
       } else {
-        setError('Something went wrong. Please try again.');
+        setToast({ type: 'error', text: 'Something went wrong. Please try again.' });
       }
     } finally {
       setLoading(false);
@@ -123,7 +125,7 @@ export default function AdminRequestPage() {
     setLoading(true);
     setError('');
     try {
-      await apiPost('auth/verify-2fa', { tempToken, code: otp });
+      await apiPost('auth/verify-2fa', { tempToken, token: otp });
       const req = await apiPost('admin/requests', {
         fullName: email.trim(),
         reason: reason.trim(),
@@ -134,8 +136,8 @@ export default function AdminRequestPage() {
       setDirection('forward');
       setStep('success');
     } catch (err: unknown) {
-      if (err instanceof ApiError) setError(err.message || 'Invalid code');
-      else setError('Invalid code');
+      if (err instanceof ApiError) setToast({ type: 'error', text: err.message || 'Invalid code' });
+      else setToast({ type: 'error', text: 'Invalid code' });
       setOtp('');
     } finally {
       setLoading(false);
@@ -210,8 +212,8 @@ export default function AdminRequestPage() {
 
   return (
     <div className="min-h-screen bg-[var(--bg)]">
-      <AuthShell title="Admin Access Request" subtitle="Request administrator access for review">
-        <div ref={contentRef} className="min-h-[480px]">
+      <AuthShell title="Admin Access Request" subtitle="Request administrator access for review">            <div ref={contentRef} className="min-h-[480px]">
+          {toast && <Toast msg={toast} onClose={() => setToast(null)} />}
           <div className="mx-auto max-w-md w-full px-4">
             <div className="bg-[var(--bg-surface)] rounded-2xl p-6 shadow-xl">
           {step === 'welcome' && (
@@ -347,7 +349,7 @@ export default function AdminRequestPage() {
                   forceShow={captchaForceShow}
                   onSuccess={(rayId: string) => setCaptchaRayId(rayId)}
                   onBlocked={(rayId: string, reason: string) => {
-                    setError(`Access blocked: ${reason}. Ray ID: ${rayId}`);
+                    setToast({ type: 'error', text: `Access blocked: ${reason}. Ray ID: ${rayId}` });
                   }}
                 />
                 <div className="flex items-center justify-between pt-2">

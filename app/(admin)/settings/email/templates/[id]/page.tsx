@@ -160,7 +160,7 @@ export default function TemplateEditorPage({ params }: { params: Promise<{ id: s
           </div>
         </div>
         <div style={{
-          background: '#f6f3ea', color: '#17150f', borderRadius: 'var(--radius-sm)',
+          background: '#ffffff', color: '#000000', borderRadius: 'var(--radius-sm)',
           padding: 16, maxHeight: 400, overflow: 'auto', fontSize: 13,
         }}>
           <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderPreview()) }} />

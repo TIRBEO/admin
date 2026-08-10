@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { OTPInput } from '@tirbeo/ui';
+import { OTPInput, PasswordStrength } from '@tirbeo/ui';
 import { apiPost, ApiError, API } from '../lib';
-import { BrandLogo } from '../components/brand-logo';
-import { Eye, EyeOff, ArrowRight, Shield } from 'lucide-react';
-import { CaptchaWidget } from '../components/captcha/captcha-widget';
+import { Eye, EyeOff, ArrowRight, Shield, KeyRound } from 'lucide-react';
+import { CaptchaWidget, AUTO_PASS_RAY_ID } from '../components/captcha/captcha-widget';
+import { Toast } from '../(admin)/settings/shared';
 
-type Step = 'welcome' | 'password' | 'mfa';
+type Step = 'welcome' | 'password' | 'mfa' | 'password-change';
 
 function getRedirectUrl(): string {
   if (typeof window === 'undefined') return '/';
@@ -33,34 +33,8 @@ function setCookie(name: string, value: string, days: number = 365) {
 const THEME_COOKIE = 'tirbeo_theme';
 
 // Theme variables
-const darkVars: Record<string, string> = {
-  '--bg': '#000000',
-  '--text': '#ffffff',
-  '--text-secondary': 'rgba(255, 255, 255, 0.7)',
-  '--text-muted': 'rgba(255, 255, 255, 0.4)',
-  '--border': 'rgba(255, 255, 255, 0.15)',
-  '--border-hover': 'rgba(255, 255, 255, 0.3)',
-  '--surface': 'rgba(255, 255, 255, 0.05)',
-};
-
-const lightVars: Record<string, string> = {
-  '--bg': '#FFFFFF',
-  '--text': '#000000',
-  '--text-secondary': 'rgba(0, 0, 0, 0.7)',
-  '--text-muted': 'rgba(0, 0, 0, 0.4)',
-  '--border': 'rgba(0, 0, 0, 0.15)',
-  '--border-hover': 'rgba(0, 0, 0, 0.3)',
-  '--surface': 'rgba(0, 0, 0, 0.05)',
-};
-
 function applyTheme(theme: 'dark' | 'light') {
-  const root = document.documentElement;
-  const vars = theme === 'dark' ? darkVars : lightVars;
-  Object.entries(vars).forEach(([key, value]) => {
-    root.style.setProperty(key, value);
-  });
-  root.style.backgroundColor = vars['--bg'];
-  root.style.color = vars['--text'];
+  document.documentElement.setAttribute('data-theme', theme);
 }
 
 export default function AdminLoginPage() {
@@ -71,8 +45,13 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
   const [tempToken, setTempToken] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [toast, setToast] = useState<{ type: 'success' | 'error' | 'warning' | 'info'; text: string } | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -116,6 +95,7 @@ export default function AdminLoginPage() {
   const handlePasswordSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!password) { setFieldErrors({ password: 'Enter your password' }); return; }
+    if (!captchaRayId) { setError('Complete the security check to continue.'); return; }
     setFieldErrors({});
     setLoading(true);
     setError('');
@@ -124,17 +104,26 @@ export default function AdminLoginPage() {
       if (data.needs2FA) {
         setTempToken(data.tempToken);
         setStep('mfa');
+      } else if (data.needsPasswordChange) {
+        setTempToken(data.tempToken);
+        setStep('password-change');
       } else {
         window.location.href = getRedirectUrl();
       }
     } catch (err: unknown) {
       if (err instanceof ApiError) {
-        if (err.status === 401) setError('Invalid email or password');
-        else if (err.status === 403) setError('Access denied. Admin privileges required.');
-        else setError(err.message);
-        if (err.status === 403 && /captcha/i.test(err.message)) setCaptchaForceShow(true);
+        if (err.status === 403 && /captcha/i.test(err.message)) {
+          setCaptchaForceShow(true);
+          setToast({ type: 'error', text: err.message });
+        } else if (err.status === 401) {
+          setToast({ type: 'error', text: 'Invalid email or password' });
+        } else if (err.status === 403) {
+          setToast({ type: 'error', text: 'Access denied. Admin privileges required.' });
+        } else {
+          setToast({ type: 'error', text: err.message });
+        }
       } else {
-        setError('Something went wrong. Please try again.');
+        setToast({ type: 'error', text: 'Something went wrong. Please try again.' });
       }
     } finally {
       setLoading(false);
@@ -147,11 +136,16 @@ export default function AdminLoginPage() {
     setLoading(true);
     setError('');
     try {
-      await apiPost('admin/verify-2fa', { tempToken, code: otp });
+      const data = await apiPost('admin/verify-2fa', { tempToken, code: otp });
+      if (data?.needsPasswordChange && data?.tempToken) {
+        setTempToken(data.tempToken);
+        setStep('password-change');
+        return;
+      }
       window.location.href = getRedirectUrl();
     } catch (err: unknown) {
-      if (err instanceof ApiError) setError(err.message || 'Invalid code');
-      else setError('Invalid code');
+      if (err instanceof ApiError) setToast({ type: 'error', text: err.message || 'Invalid code' });
+      else setToast({ type: 'error', text: 'Invalid code' });
       setOtp('');
     } finally {
       setLoading(false);
@@ -164,6 +158,26 @@ export default function AdminLoginPage() {
     setFieldErrors({});
     setPassword('');
   }, []);
+
+  const handlePasswordChangeSubmit = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword.length < 8) { setFieldErrors({ newPassword: 'Password must be at least 8 characters' }); return; }
+    if (newPassword !== confirmPassword) { setFieldErrors({ confirmPassword: 'Passwords do not match' }); return; }
+    setFieldErrors({});
+    setLoading(true);
+    setError('');
+    try {
+      await apiPost('admin/change-password', { tempToken, newPassword });
+      window.location.href = getRedirectUrl();
+    } catch (err: unknown) {
+      if (err instanceof ApiError) setToast({ type: 'error', text: err.message });
+      else setToast({ type: 'error', text: 'Something went wrong. Please try again.' });
+      setNewPassword('');
+      setConfirmPassword('');
+    } finally {
+      setLoading(false);
+    }
+  }, [newPassword, confirmPassword, tempToken]);
 
   const isDark = theme === 'dark';
 
@@ -180,40 +194,58 @@ export default function AdminLoginPage() {
 
   return (
     <main 
-      className="min-h-screen min-h-[100dvh] w-full flex items-center justify-center p-4"
+      className="auth-soft min-h-screen min-h-[100dvh] w-full flex items-center justify-center p-4"
       style={{ backgroundColor: 'var(--bg)', color: 'var(--text)' }}
     >
       {/* Theme Toggle */}
       <button
         onClick={toggleTheme}
-        className="fixed top-4 right-4 z-50 w-10 h-10 flex items-center justify-center rounded-[10px] transition-all hover:scale-105"
-        style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}
+        className="theme-toggle-brutal fixed top-5 right-5 z-50 flex h-11 w-11 items-center justify-center border-2 transition-all duration-150"
+        style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)', color: 'var(--text)' }}
         aria-label={`Switch to ${isDark ? 'light' : 'dark'} theme`}
       >
         {isDark ? (
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
           </svg>
         ) : (
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
           </svg>
         )}
       </button>
 
-      <div className="w-full max-w-[380px] mx-auto">
+      <section
+        className="auth-panel w-full max-w-[420px] overflow-hidden border-2"
+        style={{ borderColor: 'var(--border)', background: 'var(--bg-surface, var(--bg))' }}
+      >
+        <div className="h-1 w-full" style={{ background: 'var(--text)' }} />
+
+        <div className="p-6 sm:p-8">
+        {toast && <Toast msg={toast} onClose={() => setToast(null)} />}
         {/* Logo */}
         <div className="mb-6 flex items-center gap-3">
-          <BrandLogo className="h-8 w-8" />
-          <span className="text-[18px] font-semibold tracking-tight" style={{ color: 'var(--text)' }}>Tirbeo</span>
+          <div
+            className="flex h-9 w-9 items-center justify-center border-2 text-sm font-black"
+            style={{ borderColor: 'var(--border)', background: 'var(--accent)', color: 'var(--on-accent)', boxShadow: '3px 3px 0 var(--border)' }}
+          >
+            T
+          </div>
+          <div>
+            <span className="block text-[17px] font-black uppercase tracking-tight" style={{ color: 'var(--text)' }}>Tirbeo</span>
+            <span className="block text-[10px] font-bold uppercase tracking-[0.28em]" style={{ color: 'var(--text-muted)' }}>Admin</span>
+          </div>
         </div>
 
         {/* Welcome Step */}
         {step === 'welcome' && (
           <div className="fade-in">
-            <header className="mb-5">
-              <h1 className="text-[28px] sm:text-[32px] font-bold tracking-tight leading-tight mb-1">Admin sign in</h1>
-              <p className="text-[14px] sm:text-[15px]" style={{ color: 'var(--text-secondary)' }}>Continue to Tirbeo Admin Console</p>
+            <header className="mb-6">
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.24em]" style={{ color: 'var(--text-muted)' }}>
+                Tirbeo admin
+              </p>
+              <h1 className="text-[28px] font-black uppercase tracking-tight leading-tight mb-1" style={{ color: 'var(--text)' }}>Admin sign in</h1>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Continue to Tirbeo Admin Console</p>
             </header>
 
             <form onSubmit={handleEmailNext} className="space-y-3" noValidate>
@@ -284,9 +316,12 @@ export default function AdminLoginPage() {
         {/* Password Step */}
         {step === 'password' && (
           <div className="fade-in">
-            <header className="mb-5">
-              <h1 className="text-[28px] sm:text-[32px] font-bold tracking-tight leading-tight mb-1">Enter password</h1>
-              <p className="text-[14px] sm:text-[15px]" style={{ color: 'var(--text-secondary)' }}>Continue with {email}</p>
+            <header className="mb-6">
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.24em]" style={{ color: 'var(--text-muted)' }}>
+                Tirbeo admin
+              </p>
+              <h1 className="text-[28px] font-black uppercase tracking-tight leading-tight mb-1" style={{ color: 'var(--text)' }}>Enter password</h1>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Continue with {email}</p>
             </header>
 
             <form onSubmit={handlePasswordSubmit} className="space-y-3" noValidate>
@@ -318,22 +353,16 @@ export default function AdminLoginPage() {
                 {fieldErrors.password && <p className="form-error">{fieldErrors.password}</p>}
               </div>
 
-              {error && (
-                <div className="auth-error">
-                  <p>{error}</p>
-                </div>
-              )}
-
               <CaptchaWidget
                 autoShow={true}
                 forceShow={captchaForceShow}
-                onSuccess={(rayId: string) => setCaptchaRayId(rayId)}
+                onSuccess={(rayId: string) => { setCaptchaRayId(rayId); setError(''); }}
                 onBlocked={(rayId: string, reason: string) => {
-                  setError(`Access blocked: ${reason}`);
+                  setToast({ type: 'error', text: `Access blocked: ${reason}` });
                 }}
               />
 
-              <button type="submit" className="btn-primary" disabled={loading}>
+              <button type="submit" className="btn-primary" disabled={loading || !captchaRayId}>
                 {loading ? 'Signing in...' : 'Sign in'}
               </button>
             </form>
@@ -367,20 +396,17 @@ export default function AdminLoginPage() {
             </div>
 
             <header className="text-center mb-5">
-              <h1 className="text-[28px] sm:text-[32px] font-bold tracking-tight leading-tight mb-1">Verify it&apos;s you</h1>
-              <p className="text-[14px] sm:text-[15px]" style={{ color: 'var(--text-secondary)' }}>Enter the 6-digit code from your authenticator app</p>
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.24em]" style={{ color: 'var(--text-muted)' }}>
+                Tirbeo admin
+              </p>
+              <h1 className="text-[28px] font-black uppercase tracking-tight leading-tight mb-1" style={{ color: 'var(--text)' }}>Verify it&apos;s you</h1>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Enter the 6-digit code from your authenticator app</p>
             </header>
 
             <form onSubmit={handleMfaSubmit} className="space-y-3">
               <div className="form-group">
                 <OTPInput value={otp} onChange={v => { setOtp(v); setError(''); }} />
               </div>
-
-              {error && (
-                <div className="auth-error">
-                  <p>{error}</p>
-                </div>
-              )}
 
               <button type="submit" className="btn-primary" disabled={loading || otp.length !== 6}>
                 {loading ? 'Verifying...' : 'Verify'}
@@ -400,13 +426,98 @@ export default function AdminLoginPage() {
           </div>
         )}
 
+        {/* Password Change Step (first login with temporary password) */}
+        {step === 'password-change' && (
+          <div className="fade-in">
+            <div className="flex justify-center mb-5">
+              <div
+                className="w-12 h-12 flex items-center justify-center"
+                style={{ border: '1px solid var(--border)' }}
+              >
+                <KeyRound className="w-6 h-6" strokeWidth={1.5} style={{ color: 'var(--text)' }} />
+              </div>
+            </div>
+
+            <header className="text-center mb-5">
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.24em]" style={{ color: 'var(--text-muted)' }}>
+                Tirbeo admin
+              </p>
+              <h1 className="text-[28px] font-black uppercase tracking-tight leading-tight mb-1" style={{ color: 'var(--text)' }}>Set a new password</h1>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                For your security, you must choose a new password before continuing.
+              </p>
+            </header>
+
+            <form onSubmit={handlePasswordChangeSubmit} className="space-y-3" noValidate>
+              <div className="form-group">
+                <label htmlFor="new-password" className="form-label">New password</label>
+                <div className="relative">
+                  <input
+                    id="new-password"
+                    type={showNewPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={e => { setNewPassword(e.target.value); setFieldErrors({}); setError(''); }}
+                    placeholder="At least 8 characters"
+                    autoFocus
+                    autoComplete="new-password"
+                    suppressHydrationWarning
+                    aria-invalid={!!fieldErrors.newPassword}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="password-toggle"
+                    tabIndex={-1}
+                    aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                <PasswordStrength password={newPassword} />
+                {fieldErrors.newPassword && <p className="form-error">{fieldErrors.newPassword}</p>}
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="confirm-password" className="form-label">Confirm new password</label>
+                <div className="relative">
+                  <input
+                    id="confirm-password"
+                    type={showConfirm ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={e => { setConfirmPassword(e.target.value); setFieldErrors({}); setError(''); }}
+                    placeholder="Re-enter your new password"
+                    autoComplete="new-password"
+                    suppressHydrationWarning
+                    aria-invalid={!!fieldErrors.confirmPassword}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm(!showConfirm)}
+                    className="password-toggle"
+                    tabIndex={-1}
+                    aria-label={showConfirm ? 'Hide password' : 'Show password'}
+                  >
+                    {showConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                {fieldErrors.confirmPassword && <p className="form-error">{fieldErrors.confirmPassword}</p>}
+              </div>
+
+              <button type="submit" className="btn-primary" disabled={loading}>
+                {loading ? 'Saving...' : 'Save and continue'}
+              </button>
+            </form>
+          </div>
+        )}
+
         {/* Footer */}
         <div className="mt-8 text-center">
           <a href="https://tirbeo.app" target="_blank" rel="noopener noreferrer" className="text-[12px] hover:underline" style={{ color: 'var(--text-muted)' }}>
             tirbeo.app
           </a>
         </div>
-      </div>
+        </div>
+      </section>
     </main>
   );
 }

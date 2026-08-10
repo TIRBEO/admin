@@ -1,12 +1,13 @@
 ﻿'use client';
 import React, { useEffect, useState } from 'react';
 import { apiFetch } from '../../lib';
+import { Toast } from '../settings/shared';
 
 interface Route { id: string; path: string; method: string; target: string | null; allowedRoles: string[]; internal: boolean; enabled: boolean; createdAt: string; }
 
 export default function AdminRoutesPage() {
   const [routes, setRoutes] = useState<Route[]>([]);
-  const [error, setError] = useState('');
+  const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [editing, setEditing] = useState<Route | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -56,7 +57,7 @@ function RoleCheckboxes({ name, defaultValues = ['member'] }: { name: string; de
         internal: form.get('internal') === 'true', enabled: form.get('enabled') === 'true',
       }),
     });
-    if (res.ok) { setShowCreate(false); loadRoutes(); } else setError('Failed to create route');
+    if (res.ok) { setShowCreate(false); loadRoutes(); setMsg({ type: 'success', text: 'Route created' }); } else setMsg({ type: 'error', text: 'Failed to create route' });
   };
 
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -71,13 +72,15 @@ function RoleCheckboxes({ name, defaultValues = ['member'] }: { name: string; de
         internal: form.get('internal') === 'true', enabled: form.get('enabled') === 'true',
       }),
     });
-    if (res.ok) { setEditing(null); loadRoutes(); } else setError('Failed to update route');
+    if (res.ok) { setEditing(null); loadRoutes(); setMsg({ type: 'success', text: 'Route updated' }); } else setMsg({ type: 'error', text: 'Failed to update route' });
   };
 
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this route?')) return;
+    setConfirmDelete(null);
     const res = await apiFetch(`/api/admin/routes/${id}`, { method: 'DELETE' });
-    if (res.ok) loadRoutes(); else setError('Failed to delete route');
+    if (res.ok) { loadRoutes(); setMsg({ type: 'success', text: 'Route deleted' }); } else setMsg({ type: 'error', text: 'Failed to delete route' });
   };
 
   return (
@@ -87,7 +90,7 @@ function RoleCheckboxes({ name, defaultValues = ['member'] }: { name: string; de
           <div><h2>Routes</h2><p className="desc">Configure API routing and access control</p></div>
           <button className="btn btn-primary" onClick={() => setShowCreate(true)}>+ New Route</button>
         </div>
-        {error && <p className="error">{error}</p>}
+        <Toast msg={msg} onClose={() => setMsg(null)} />
         {loading ? (
           <div className="loading" style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Loading routes…</div>
         ) : (
@@ -103,7 +106,7 @@ function RoleCheckboxes({ name, defaultValues = ['member'] }: { name: string; de
                     <td style={{ color: r.internal ? 'var(--color-success, var(--success))' : 'var(--text-muted)' }}>{r.internal ? 'Yes' : 'No'}</td>
                     <td style={{ fontSize: 12 }}>{r.allowedRoles.join(', ')}</td>
                     <td><span className={`badge ${r.enabled ? 'badge-enabled' : 'badge-disabled'}`}>{r.enabled ? 'Enabled' : 'Disabled'}</span></td>
-                    <td><div className="flex gap-2"><button className="btn btn-sm btn-outline" onClick={() => setEditing(r)}>Edit</button><button className="btn btn-sm btn-danger" onClick={() => handleDelete(r.id)}>Delete</button></div></td>
+                    <td><div className="flex gap-2"><button className="btn btn-sm btn-outline" onClick={() => setEditing(r)}>Edit</button><button className="btn btn-sm btn-danger" onClick={() => setConfirmDelete(r.id)}>Delete</button></div></td>
                   </tr>
                 ))}
                 {routes.length === 0 && <tr><td colSpan={6}><div className="empty-state">No routes configured</div></td></tr>}
@@ -145,6 +148,19 @@ function RoleCheckboxes({ name, defaultValues = ['member'] }: { name: string; de
           </div>
         )}
       </div>
+
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setConfirmDelete(null)}>
+          <div className="w-full max-w-sm rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-[var(--color-text)] mb-2">Delete route?</h3>
+            <p className="text-sm text-[var(--color-text-secondary)] mb-6">This action cannot be undone. The route and all its configuration will be permanently removed.</p>
+            <div className="flex items-center justify-end gap-3">
+              <button onClick={() => setConfirmDelete(null)} className="px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text)] transition-colors">Cancel</button>
+              <button onClick={() => handleDelete(confirmDelete)} className="px-4 py-2 text-sm font-medium bg-[var(--color-error)] text-white rounded-xl hover:opacity-90 transition-opacity">Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

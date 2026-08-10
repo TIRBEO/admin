@@ -20,7 +20,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (pathname === '/login' || pathname === '/unauthorized') {
+  if (pathname === '/login' || pathname.startsWith('/login/') || pathname === '/unauthorized') {
     return NextResponse.next();
   }
 

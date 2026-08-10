@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { AdminSection } from '@tirbeo/ui';
 import { apiFetch } from '../../../../app/lib';
 import { Shield, Settings, AlertTriangle, Users, FileText } from 'lucide-react';
 
@@ -53,15 +54,21 @@ export default function CaptchaSettingsPage() {
     return <div className="p-12 text-center text-[var(--color-text-secondary)]">Failed to load settings</div>;
   }
 
-  return (
-    <div className="p-6 lg:p-8 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-[28px] font-semibold text-[var(--text)] leading-tight">CAPTCHA Settings</h1>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">Configure CAPTCHA enforcement and difficulty levels</p>
-        </div>
-      </div>
+  const tabs = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'authentication', label: 'Authentication' },
+    { id: 'access-control', label: 'Access control' },
+    { id: 'policies', label: 'Policies' },
+    { id: 'captcha', label: 'CAPTCHA' },
+    { id: 'blocks', label: 'Blocks' },
+    { id: 'events', label: 'Events' },
+    { id: 'audit', label: 'Audit log' },
+  ];
 
+  return (
+    <AdminSection title="CAPTCHA" description="Configure CAPTCHA enforcement and difficulty levels"
+      tabs={tabs} activeTab="captcha" onTabChange={id => router.push(`/admin/security/${id === 'overview' ? '' : id}`)}>
+      <div className="max-w-4xl mx-auto">
       {message && (
         <div className="mb-6 p-4 rounded-lg bg-[var(--success-surface)] border border-[var(--success)] text-[var(--success)]">
           {message}
@@ -87,7 +94,7 @@ export default function CaptchaSettingsPage() {
                   onChange={(e) => setSettings({ ...settings, enabled: e.target.checked })}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-[var(--border)] peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[var(--primary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--primary)]"></div>
+                <div className="w-11 h-6 bg-[var(--border)] peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[var(--primary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-[var(--bg)] peer-checked:after:bg-[var(--bg)] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--primary)]"></div>
               </label>
             </div>
 
@@ -103,7 +110,7 @@ export default function CaptchaSettingsPage() {
                   onChange={(e) => setSettings({ ...settings, autoEnforce: e.target.checked })}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-[var(--border)] peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[var(--primary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--primary)]"></div>
+                <div className="w-11 h-6 bg-[var(--border)] peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[var(--primary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-[var(--bg)] peer-checked:after:bg-[var(--bg)] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--primary)]"></div>
               </label>
             </div>
           </div>
@@ -247,6 +254,7 @@ export default function CaptchaSettingsPage() {
           </button>
         </div>
       </div>
-    </div>
+      </div>
+    </AdminSection>
   );
 }

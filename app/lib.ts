@@ -1,3 +1,5 @@
+import { notifyLogout, onSessionEvent, setupVisibilityListener } from './lib/session-sync';
+
 export const API = (() => {
   if (typeof window !== 'undefined') {
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
@@ -6,6 +8,19 @@ export const API = (() => {
   }
   return process.env.NEXT_PUBLIC_API_URL || 'https://api.tirbeo.app';
 })();
+
+// Cross-tab session sync for admin app
+let syncInitialized = false;
+function initSessionSync() {
+  if (syncInitialized || typeof window === 'undefined') return;
+  syncInitialized = true;
+
+  onSessionEvent((event) => {
+    if (event.type === 'logout' || event.type === 'session-invalid') {
+      window.location.href = '/login';
+    }
+  });
+}
 
 function getCsrf(): string {
   if (typeof document === 'undefined') return '';
@@ -194,6 +209,11 @@ export function isOnline(ua?: string) {
 
 export function cn(...classes: (string | boolean | undefined | null)[]): string {
   return classes.filter(Boolean).join(' ');
+}
+
+// Initialize session sync on client
+if (typeof window !== 'undefined') {
+  initSessionSync();
 }
 
 export function getDeviceFingerprint(): string {

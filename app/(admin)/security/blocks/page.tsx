@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { AdminSection } from '@tirbeo/ui';
 import { apiFetch } from '../../../../app/lib';
 import { Ban, Search, Plus, Globe, User as UserIcon, Mail, Trash2, Clock } from 'lucide-react';
 
@@ -26,6 +28,7 @@ function formatTime(iso: string) {
 }
 
 export default function SecurityBlocksPage() {
+  const router = useRouter();
   const [items, setItems] = useState<BlockItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
@@ -80,19 +83,27 @@ export default function SecurityBlocksPage() {
 
   const totalPages = Math.max(1, Math.ceil(total / 50));
 
+  const tabs = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'authentication', label: 'Authentication' },
+    { id: 'access-control', label: 'Access control' },
+    { id: 'policies', label: 'Policies' },
+    { id: 'captcha', label: 'CAPTCHA' },
+    { id: 'blocks', label: 'Blocks' },
+    { id: 'events', label: 'Events' },
+    { id: 'audit', label: 'Audit log' },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-[var(--color-text)]">Blocked targets</h1>
-          <p className="text-sm text-[var(--color-text-secondary)] mt-0.5">Block or unblock IPs, users, and emails across the platform</p>
-        </div>
+    <AdminSection title="Blocks" description="Block or unblock IPs, users, and emails across the platform"
+      tabs={tabs} activeTab="blocks" onTabChange={id => router.push(`/admin/security/${id === 'overview' ? '' : id}`)}
+      actions={
         <button onClick={() => setShowForm(v => !v)}
           className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-[var(--color-on-accent)] bg-[var(--color-accent)] border-2 border-[var(--color-border)] shadow-[var(--shadow-card)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[5px_5px_0_0_var(--color-border)] transition-all uppercase tracking-wide">
           <Plus className="w-4 h-4" /> New block
         </button>
-      </div>
-
+      }>
+      <div className="space-y-6">
       {msg && (
         <div className={`px-4 py-3 text-sm border-2 border-[var(--color-border)] ${msg.type === 'success' ? 'bg-[var(--color-success-surface)] text-[var(--color-success)]' : 'bg-[var(--color-error-surface)] text-[var(--color-error)]'}`}>
           {msg.text}
@@ -192,6 +203,7 @@ export default function SecurityBlocksPage() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </AdminSection>
   );
 }

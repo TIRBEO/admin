@@ -9,7 +9,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
   return (
     <button onClick={() => onChange(!checked)}
       className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0 ${checked ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-admin-border)]'}`}>
-      <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${checked ? 'translate-x-4' : ''}`} />
+      <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full transition-transform ${checked ? 'bg-[var(--color-bg)] translate-x-4' : 'bg-white'}`} />
     </button>
   );
 }
@@ -18,7 +18,7 @@ function PolicyCard({ icon: Icon, title, description, color, children }: { icon:
   return (
     <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
       <div className="flex items-start gap-4 mb-4">
-        <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${color}18` }}>
+        <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `color-mix(in srgb, ${color} 12%, transparent)` }}>
           <Icon className="w-5 h-5" style={{ color }} />
         </div>
         <div>

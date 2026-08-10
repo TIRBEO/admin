@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { apiFetch } from '../../../lib';
+import { Toast } from '../../settings/shared';
 import {
   ArrowLeft, FileText, Globe, EyeOff,
   ExternalLink, RefreshCcw, Trash2, Play, Pause,
@@ -16,7 +17,8 @@ export default function AdminFormDetailsPage() {
   const [responses, setResponses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const formsOrigin = typeof window !== 'undefined' && window.location.hostname.includes('localhost')
     ? 'http://localhost:3004'
     : 'https://forms.tirbeo.app';
@@ -36,27 +38,25 @@ export default function AdminFormDetailsPage() {
 
   const setStatus = async (status: string) => {
     setBusy(true);
-    setError('');
     try {
       const res = await apiFetch(`/api/admin/forms/${formId}`, {
         method: 'PATCH',
         body: JSON.stringify({ status }),
       });
-      if (!res.ok) { const t = await res.text(); setError(t || 'Failed to update'); }
-      else load();
-    } catch (e: any) { setError(e.message || 'Failed to update'); }
+      if (!res.ok) { const t = await res.text(); setMsg({ type: 'error', text: t || 'Failed to update' }); }
+      else { load(); setMsg({ type: 'success', text: `Form ${status === 'published' ? 'published' : 'unpublished'}` }); }
+    } catch (e: any) { setMsg({ type: 'error', text: e.message || 'Failed to update' }); }
     finally { setBusy(false); }
   };
 
   const remove = async () => {
-    if (!window.confirm(`Delete form "${form?.title}" and all its responses? This cannot be undone.`)) return;
+    setConfirmDelete(false);
     setBusy(true);
-    setError('');
     try {
       const res = await apiFetch(`/api/admin/forms/${formId}`, { method: 'DELETE' });
-      if (!res.ok) { const t = await res.text(); setError(t || 'Failed to delete'); }
-      else router.push('/admin/forms');
-    } catch (e: any) { setError(e.message || 'Failed to delete'); }
+      if (!res.ok) { const t = await res.text(); setMsg({ type: 'error', text: t || 'Failed to delete' }); }
+      else { setMsg({ type: 'success', text: 'Form deleted' }); router.push('/admin/forms'); }
+    } catch (e: any) { setMsg({ type: 'error', text: e.message || 'Failed to delete' }); }
     finally { setBusy(false); }
   };
 
@@ -82,11 +82,7 @@ export default function AdminFormDetailsPage() {
         </div>
       </div>
 
-      {error && (
-        <div className="mb-4 p-3 rounded-lg border border-[var(--color-error)] bg-[var(--color-error-surface)] text-sm text-[var(--color-error)]">
-          {error}
-        </div>
-      )}
+      <Toast msg={msg} onClose={() => setMsg(null)} />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-5">
@@ -124,7 +120,7 @@ export default function AdminFormDetailsPage() {
             Open public form <ExternalLink className="w-3 h-3" />
           </a>
         </div>
-        <button onClick={remove} disabled={busy}
+        <button onClick={() => setConfirmDelete(true)} disabled={busy}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--color-error)] text-xs font-medium text-[var(--color-error)] hover:bg-[var(--color-error-surface)] disabled:opacity-50">
           <Trash2 className="w-3.5 h-3.5" /> Delete form
         </button>
@@ -185,6 +181,25 @@ export default function AdminFormDetailsPage() {
           )}
         </div>
       </div>
+      {/* Delete Confirm Dialog */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setConfirmDelete(false)}>
+          <div className="w-full max-w-md rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-[var(--color-text)] mb-2">Delete form?</h3>
+            <p className="text-sm text-[var(--color-text-secondary)] mb-6">
+              Delete &quot;{form?.title}&quot; and all its responses? This cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setConfirmDelete(false)} className="px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] rounded-lg transition-colors">
+                Cancel
+              </button>
+              <button onClick={remove} disabled={busy} className="px-4 py-2 text-sm font-medium bg-[var(--color-error)] text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50">
+                {busy ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { apiFetch } from '../lib';
 import {
   Users, Building2, Activity, ShieldCheck, Bell,
   AlertTriangle, RefreshCw, Ban, Lock, ArrowUp,
+  ArrowRight, TrendingUp, Clock, ChevronRight,
 } from 'lucide-react';
 
 interface Counts {
@@ -52,144 +53,190 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="p-6 lg:p-8 space-y-6 animate-pulse">
-        <div className="h-8 w-48 bg-[var(--color-admin-surface-hover)] rounded" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1,2,3,4].map(i => <div key={i} className="h-28 bg-[var(--color-admin-surface-hover)] " />)}
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="skeleton h-7 w-32 mb-2" />
+            <div className="skeleton h-4 w-48" />
+          </div>
         </div>
-        <div className="h-64 bg-[var(--color-admin-surface-hover)] " />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1,2,3,4].map(i => (
+            <div key={i} className="kpi-card">
+              <div className="skeleton h-4 w-24 mb-4" />
+              <div className="skeleton h-8 w-16 mb-2" />
+              <div className="skeleton h-3 w-32" />
+            </div>
+          ))}
+        </div>
+        <div className="grid lg:grid-cols-2 gap-6">
+          <div className="skeleton h-64 rounded-lg" />
+          <div className="skeleton h-64 rounded-lg" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 lg:p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-6">
+      {/* Page Header */}
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-[28px] font-semibold text-[var(--color-admin-text)]">Dashboard</h1>
-          <p className="mt-1 text-sm text-[var(--color-admin-text-secondary)]">System overview and monitoring</p>
+          <h1 className="page-title">Dashboard</h1>
+          <p className="page-subtitle">System overview and monitoring</p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => window.location.reload()}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border-2 border-[var(--color-admin-border)] text-sm font-medium text-[var(--color-admin-text-secondary)] hover:bg-[var(--color-admin-surface-hover)] transition-colors">
-            <RefreshCw className="w-4 h-4" />
-            Refresh
-          </button>
-        </div>
+        <button
+          onClick={() => window.location.reload()}
+          className="btn-secondary"
+        >
+          <RefreshCw className="w-4 h-4" />
+          Refresh
+        </button>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium text-[var(--color-admin-text-secondary)]">Total Users</span>
-            <div className="w-9 h-9 rounded-lg bg-[var(--color-primary-surface)] flex items-center justify-center">
-              <Users className="w-4 h-4 text-[var(--color-primary)]" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="kpi-card">
+          <div className="kpi-card-header">
+            <span className="kpi-card-label">Total Users</span>
+            <div className="kpi-card-icon">
+              <Users className="w-4 h-4 text-[var(--text-muted)]" />
             </div>
           </div>
-          <p className="text-2xl font-semibold text-[var(--color-admin-text)]">{counts?.users?.toLocaleString() || '—'}</p>
-          <div className="flex items-center gap-1 mt-2">
-            <Building2 className="w-3.5 h-3.5 text-[var(--color-admin-text-muted)]" />
-            <span className="text-xs text-[var(--color-admin-text-muted)]">{counts?.organizations?.toLocaleString() || 0} organizations</span>
+          <div className="kpi-card-value">{counts?.users?.toLocaleString() || '—'}</div>
+          <div className="kpi-card-meta">
+            <Building2 className="w-3.5 h-3.5" />
+            <span>{counts?.organizations?.toLocaleString() || 0} organizations</span>
           </div>
         </div>
 
-        <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium text-[var(--color-admin-text-secondary)]">Audit Events</span>
-            <div className="w-9 h-9 rounded-lg bg-[var(--color-success-surface)] flex items-center justify-center">
-              <Activity className="w-4 h-4 text-[var(--color-success)]" />
+        <div className="kpi-card">
+          <div className="kpi-card-header">
+            <span className="kpi-card-label">Audit Events</span>
+            <div className="kpi-card-icon">
+              <Activity className="w-4 h-4 text-[var(--text-muted)]" />
             </div>
           </div>
-          <p className="text-2xl font-semibold text-[var(--color-admin-text)]">{counts?.auditEvents?.toLocaleString() || '—'}</p>
-          <div className="flex items-center gap-1 mt-2">
-            <Lock className="w-3.5 h-3.5 text-[var(--color-admin-text-muted)]" />
-            <span className="text-xs text-[var(--color-admin-text-muted)]">logged system actions</span>
+          <div className="kpi-card-value">{counts?.auditEvents?.toLocaleString() || '—'}</div>
+          <div className="kpi-card-meta">
+            <Clock className="w-3.5 h-3.5" />
+            <span>logged system actions</span>
           </div>
         </div>
 
-        <button onClick={() => router.push('/admin/security/events')}
-          className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-5 text-left hover:shadow-[var(--shadow-card)] hover:bg-[var(--color-admin-surface-hover)] transition-all">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium text-[var(--color-admin-text-secondary)]">Security Events</span>
-            <div className="w-9 h-9 rounded-lg bg-[var(--color-warning-surface)] flex items-center justify-center">
-              <ShieldCheck className="w-4 h-4 text-[var(--color-warning)]" />
+        <button
+          onClick={() => router.push('/admin/security/events')}
+          className="kpi-card text-left cursor-pointer"
+        >
+          <div className="kpi-card-header">
+            <span className="kpi-card-label">Security Events</span>
+            <div className="kpi-card-icon">
+              <ShieldCheck className="w-4 h-4 text-[var(--text-muted)]" />
             </div>
           </div>
-          <p className="text-2xl font-semibold text-[var(--color-admin-text)]">{security?.today?.total?.toLocaleString() || 0}</p>
-          <div className="flex items-center gap-1 mt-2">
+          <div className="kpi-card-value">{security?.today?.total?.toLocaleString() || '0'}</div>
+          <div className="kpi-card-meta">
             {security?.today?.critical ? (
-              <AlertTriangle className="w-3.5 h-3.5 text-[var(--color-error)]" />
+              <AlertTriangle className="w-3.5 h-3.5 text-[var(--error)]" />
             ) : (
-              <ArrowUp className="w-3.5 h-3.5 text-[var(--color-success)]" />
+              <TrendingUp className="w-3.5 h-3.5 text-[var(--success)]" />
             )}
-            <span className="text-xs text-[var(--color-admin-text-muted)]">
-              {security?.today?.critical ? `${security.today.critical} critical today` : 'today · no critical'}
+            <span>
+              {security?.today?.critical
+                ? `${security.today.critical} critical today`
+                : 'today · no critical'}
             </span>
           </div>
         </button>
 
-        <button onClick={() => router.push('/admin/security/blocks')}
-          className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-5 text-left hover:shadow-[var(--shadow-card)] hover:bg-[var(--color-admin-surface-hover)] transition-all">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium text-[var(--color-admin-text-secondary)]">Blocked Targets</span>
-            <div className="w-9 h-9 rounded-lg bg-[var(--color-error-surface)] flex items-center justify-center">
-              <Ban className="w-4 h-4 text-[var(--color-error)]" />
+        <button
+          onClick={() => router.push('/admin/security/blocks')}
+          className="kpi-card text-left cursor-pointer"
+        >
+          <div className="kpi-card-header">
+            <span className="kpi-card-label">Blocked Targets</span>
+            <div className="kpi-card-icon">
+              <Ban className="w-4 h-4 text-[var(--text-muted)]" />
             </div>
           </div>
-          <p className="text-2xl font-semibold text-[var(--color-admin-text)]">{security?.activeBlocks ?? counts?.blocked ?? 0}</p>
-          <div className="flex items-center gap-1 mt-2">
-            <AlertTriangle className="w-3.5 h-3.5 text-[var(--color-error)]" />
-            <span className="text-xs text-[var(--color-admin-text-muted)]">active IP / user / email blocks</span>
+          <div className="kpi-card-value">{security?.activeBlocks ?? counts?.blocked ?? 0}</div>
+          <div className="kpi-card-meta">
+            <AlertTriangle className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+            <span>active IP / user / email blocks</span>
           </div>
         </button>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
+      {/* Main Content */}
+      <div className="grid lg:grid-cols-3 gap-6">
         {/* Quick Actions */}
-        <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
-          <h2 className="text-sm font-semibold text-[var(--color-admin-text-secondary)] uppercase tracking-wider mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-2 gap-3">
+        <div className="section">
+          <div className="section-header">
+            <h2 className="section-title">Quick Actions</h2>
+          </div>
+          <div className="space-y-2">
             {[
-              { label: 'Add User', href: '/admin/directory/users', icon: Users, color: 'var(--color-primary)' },
-              { label: 'Security Events', href: '/admin/security/events', icon: ShieldCheck, color: 'var(--color-warning)' },
-              { label: 'Blocklist', href: '/admin/security/blocks', icon: Ban, color: 'var(--color-error)' },
-              { label: 'Alerts', href: '/admin/alerts', icon: Bell, color: 'var(--color-success)' },
+              { label: 'Add User', href: '/admin/directory/users', icon: Users, desc: 'Create a new user account' },
+              { label: 'Security Events', href: '/admin/security/events', icon: ShieldCheck, desc: 'View security logs' },
+              { label: 'Blocklist', href: '/admin/security/blocks', icon: Ban, desc: 'Manage blocked targets' },
+              { label: 'Alerts', href: '/admin/alerts', icon: Bell, desc: 'View system alerts' },
+              { label: 'Settings', href: '/admin/settings', icon: Lock, desc: 'System configuration' },
             ].map(action => (
-              <button key={action.label} onClick={() => router.push(action.href)}
-                className="flex items-center gap-4 p-4 rounded-lg border-2 border-[var(--color-admin-border)] hover:bg-[var(--color-admin-surface-hover)] transition-colors text-left">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: action.color + '18' }}>
-                  <action.icon className="w-5 h-5" style={{ color: action.color }} />
+              <button
+                key={action.label}
+                onClick={() => router.push(action.href)}
+                className="w-full flex items-center gap-3 p-3 rounded-lg border border-[var(--border)] hover:bg-[var(--bg-hover)] transition-colors text-left group"
+              >
+                <div className="w-9 h-9 rounded-lg bg-[var(--bg-hover)] flex items-center justify-center flex-shrink-0">
+                  <action.icon className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text)]" />
                 </div>
-                <span className="text-sm font-medium text-[var(--color-admin-text)]">{action.label}</span>
+                <div className="flex-1 min-w-0">
+                  <span className="text-sm font-medium text-[var(--text)] block">{action.label}</span>
+                  <span className="text-xs text-[var(--text-muted)]">{action.desc}</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity" />
               </button>
             ))}
           </div>
         </div>
 
         {/* Recent Activity */}
-        <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-[var(--color-admin-text-secondary)] uppercase tracking-wider">Recent Activity</h2>
-            <button onClick={() => router.push('/admin/security/audit')} className="text-xs font-medium text-[var(--color-primary)] hover:underline">View all</button>
+        <div className="section lg:col-span-2">
+          <div className="section-header">
+            <h2 className="section-title">Recent Activity</h2>
+            <button
+              onClick={() => router.push('/admin/security/audit')}
+              className="text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
+            >
+              View all →
+            </button>
           </div>
           {activity.length === 0 ? (
-            <div className="text-center py-8">
-              <Activity className="w-8 h-8 mx-auto mb-2 text-[var(--color-admin-text-muted)]" />
-              <p className="text-sm text-[var(--color-admin-text-muted)]">No recent activity</p>
+            <div className="empty-state">
+              <div className="empty-state-icon">
+                <Activity className="w-5 h-5" />
+              </div>
+              <p className="empty-state-title">No recent activity</p>
+              <p className="empty-state-desc">Activity will appear here as users interact with the system</p>
             </div>
           ) : (
             <div className="space-y-1">
               {activity.map((item, i) => (
-                <div key={item.id || i} className="flex items-start gap-4 p-2 rounded-lg hover:bg-[var(--color-admin-surface-hover)] transition-colors">
-                  <div className="w-2 h-2 rounded-full bg-[var(--color-primary)] mt-1.5 flex-shrink-0" />
+                <div
+                  key={item.id || i}
+                  className="flex items-start gap-3 p-3 rounded-lg hover:bg-[var(--bg-hover)] transition-colors"
+                >
+                  <div className="w-1.5 h-1.5 rounded-full bg-[var(--text-muted)] mt-2 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-[var(--color-admin-text)] truncate">
-                      {item.actor} <span className="text-[var(--color-admin-text-secondary)]">{item.action}</span>
-                      {item.target && <span className="text-[var(--color-admin-text-muted)]"> — {item.target}</span>}
+                    <p className="text-sm text-[var(--text)]">
+                      <span className="font-medium">{item.actor}</span>
+                      {' '}
+                      <span className="text-[var(--text-secondary)]">{item.action}</span>
+                      {item.target && (
+                        <span className="text-[var(--text-muted)]"> — {item.target}</span>
+                      )}
                     </p>
-                    <p className="text-xs text-[var(--color-admin-text-muted)] mt-0.5">
+                    <p className="text-xs text-[var(--text-muted)] mt-0.5">
                       {new Date(item.createdAt).toLocaleTimeString()}
                     </p>
                   </div>
@@ -197,6 +244,32 @@ export default function AdminDashboard() {
               ))}
             </div>
           )}
+        </div>
+      </div>
+
+      {/* System Status */}
+      <div className="mt-6 section">
+        <div className="section-header">
+          <h2 className="section-title">System Status</h2>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[
+            { label: 'API', status: 'Operational', color: 'var(--success)' },
+            { label: 'Database', status: 'Operational', color: 'var(--success)' },
+            { label: 'Redis', status: 'Operational', color: 'var(--success)' },
+            { label: 'WebSocket', status: 'Operational', color: 'var(--success)' },
+          ].map(service => (
+            <div key={service.label} className="flex items-center gap-3 p-3 rounded-lg bg-[var(--bg)]">
+              <div
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{ backgroundColor: service.color }}
+              />
+              <div>
+                <p className="text-sm font-medium text-[var(--text)]">{service.label}</p>
+                <p className="text-xs text-[var(--text-muted)]">{service.status}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

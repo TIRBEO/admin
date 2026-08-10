@@ -90,12 +90,12 @@ export default function CaptchaAnalyticsPage() {
   const d = data;
 
   const stats = [
-    { label: 'Challenges issued', value: d.totalChallenges.toLocaleString(), icon: Activity, color: 'text-blue-600 bg-blue-100' },
-    { label: 'Attempts', value: d.totalAttempts.toLocaleString(), icon: ShieldCheck, color: 'text-purple-600 bg-purple-100' },
-    { label: 'Pass rate', value: d.passRate !== null ? `${d.passRate}%` : '—', icon: TrendingUp, color: 'text-green-600 bg-green-100' },
-    { label: 'Avg solve time', value: d.avgSolveMs !== null ? `${(d.avgSolveMs / 1000).toFixed(1)}s` : '—', icon: Clock, color: 'text-amber-600 bg-amber-100' },
-    { label: 'Blocks', value: d.totalBlocks.toLocaleString(), icon: Ban, color: 'text-red-600 bg-red-100' },
-    { label: 'Active blocks', value: d.activeBlocks.toLocaleString(), icon: AlertTriangle, color: 'text-orange-600 bg-orange-100' },
+    { label: 'Challenges issued', value: d.totalChallenges.toLocaleString(), icon: Activity, color: 'text-[var(--color-text)] bg-[var(--color-surface-muted)]' },
+    { label: 'Attempts', value: d.totalAttempts.toLocaleString(), icon: ShieldCheck, color: 'text-[var(--color-text)] bg-[var(--color-surface-muted)]' },
+    { label: 'Pass rate', value: d.passRate !== null ? `${d.passRate}%` : '—', icon: TrendingUp, color: 'text-[var(--color-text)] bg-[var(--color-surface-muted)]' },
+    { label: 'Avg solve time', value: d.avgSolveMs !== null ? `${(d.avgSolveMs / 1000).toFixed(1)}s` : '—', icon: Clock, color: 'text-[var(--color-text)] bg-[var(--color-surface-muted)]' },
+    { label: 'Blocks', value: d.totalBlocks.toLocaleString(), icon: Ban, color: 'text-[var(--color-text)] bg-[var(--color-surface-muted)]' },
+    { label: 'Active blocks', value: d.activeBlocks.toLocaleString(), icon: AlertTriangle, color: 'text-[var(--color-text)] bg-[var(--color-surface-muted)]' },
   ];
 
   return (
@@ -112,7 +112,7 @@ export default function CaptchaAnalyticsPage() {
               onClick={() => setRange(r)}
               className={`px-3 py-1.5 text-sm font-medium transition-colors ${
                 range === r
-                  ? 'bg-[var(--color-primary)] text-white'
+                  ? 'bg-[var(--color-primary)] text-[var(--color-bg)]'
                   : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]'
               }`}
             >
@@ -166,7 +166,7 @@ export default function CaptchaAnalyticsPage() {
               {d.topFailedIps.map(tf => (
                 <li key={tf.ip} className="flex items-center justify-between text-sm">
                   <span className="font-mono text-[var(--color-text-secondary)]">{tf.ip}</span>
-                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">{tf.count} fails</span>
+                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--color-surface-muted)] text-[var(--color-text)] border border-[var(--color-border)]">{tf.count} fails</span>
                 </li>
               ))}
             </ul>
@@ -255,7 +255,7 @@ export default function CaptchaAnalyticsPage() {
                   <tr key={b.id} className="border-b border-[var(--color-border)] last:border-0">
                     <td className="px-3 py-2 font-mono text-[var(--color-text-secondary)]">{b.ipAddress || '—'}</td>
                     <td className="px-3 py-2">
-                      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--color-surface-muted)] text-[var(--color-text)] border border-[var(--color-border)]">
                         {(b.reason || 'blocked').replace(/_/g, ' ')}
                       </span>
                     </td>

@@ -19,8 +19,8 @@ const DEFAULTS: BrandConfig = {
   heroImage: '',
   brandName: 'Tirbeo',
   brandTagline: 'Build communities. Share ideas. Grow together.',
-  primaryColor: '#17150f',
-  accentColor: '#ffd93d',
+  primaryColor: '#000000',
+  accentColor: '#ffffff',
   emailFromName: 'Tirbeo',
   emailFromAddress: 'noreply@send.tirbeo.app',
 };
@@ -118,11 +118,11 @@ export default function BrandSettingsPage() {
         {cfg.logoUrl && (
           <div style={{ marginTop: 12, padding: 16, background: 'var(--bg-canvas)', borderRadius: 12, border: '1px solid var(--border-default)' }}>
             <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Preview</p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#12271D', padding: '20px 24px', borderRadius: 14, border: '1px solid #214434' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#111827', padding: '20px 24px', borderRadius: 14, border: '1px solid #222222' }}>
               <img src={cfg.logoUrl} alt="Logo" style={{ width: 48, height: 48, objectFit: 'contain', borderRadius: 8 }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
               <div>
                 <p style={{ fontSize: 16, fontWeight: 700, color: '#fff' }}>{cfg.brandName}</p>
-                <p style={{ fontSize: 13, color: '#8DA39A' }}>{cfg.brandTagline}</p>
+                <p style={{ fontSize: 13, color: '#888888' }}>{cfg.brandTagline}</p>
               </div>
             </div>
           </div>
@@ -175,7 +175,7 @@ export default function BrandSettingsPage() {
         <div style={{ marginTop: 16, padding: 16, background: 'var(--bg-canvas)', borderRadius: 12, border: '1px solid var(--border-default)' }}>
           <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Color Preview</p>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            {[cfg.primaryColor, cfg.accentColor, '#ffd93d', '#17150f', '#f6f3ea', '#6b6557', '#e5484d'].map((c, i) => (
+            {[cfg.primaryColor, cfg.accentColor, '#ffffff', '#000000', '#222222', '#888888', '#e0e0e0'].map((c, i) => (
               <div key={i} style={{ textAlign: 'center' }}>
                 <div style={{ width: 48, height: 48, borderRadius: 12, background: c, border: '2px solid rgba(255,255,255,0.1)' }} />
                 <span style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>{c}</span>

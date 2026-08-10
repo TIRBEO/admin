@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '../../../../../app/lib';
-import { Shield, UserCheck, Search, Clock, AlertTriangle, Download, Trash2, CheckSquare, Square, Flag, Inbox } from 'lucide-react';
+import { Shield, UserCheck, Search, Clock, AlertTriangle, Download, Trash2, CheckSquare, Square, Flag, Inbox, X } from 'lucide-react';
+import { Toast } from '../../../settings/shared';
 
 interface Block {
   id: string;
@@ -40,6 +41,11 @@ export default function CaptchaBlocksPage() {
   const [exporting, setExporting] = useState(false);
   const [flagLoading, setFlagLoading] = useState(false);
   const [appealLoading, setAppealLoading] = useState(false);
+  const [toast, setToast] = useState<{ type: 'success' | 'error' | 'warning' | 'info'; text: string } | null>(null);
+  const [flagModalOpen, setFlagModalOpen] = useState(false);
+  const [flagFormId, setFlagFormId] = useState('');
+  const [flagReason, setFlagReason] = useState('suspicious_activity');
+  const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
   useEffect(() => {
     loadBlocks();
@@ -70,87 +76,108 @@ export default function CaptchaBlocksPage() {
   const handleAppealUnblock = async (appeal: Appeal) => {
     const rayId = (appeal.description || '').match(/Ray ID:\s*([\w-]+)/i)?.[1];
     if (!rayId) {
-      alert('No Ray ID found in this appeal. Open the ticket to resolve manually.');
+      setToast({ type: 'error', text: 'No Ray ID found in this appeal. Open the ticket to resolve manually.' });
       return;
     }
-    if (!confirm(`Unblock Ray ID ${rayId} and close appeal "${appeal.subject}"?`)) return;
-    setAppealLoading(true);
-    try {
-      const res = await apiFetch(`/api/support/tickets/appeals/${encodeURIComponent(rayId)}/unblock`, {
-        method: 'POST',
-      });
-      if (res.ok) {
-        alert(`Ray ID ${rayId} unblocked.`);
-        loadBlocks();
-        loadAppeals();
-      } else {
-        const data = await res.json().catch(() => ({}));
-        alert(`Failed to unblock: ${data.error || 'unknown error'}`);
-      }
-    } catch {
-      alert('Failed to unblock');
-    }
-    setAppealLoading(false);
+    setConfirmModal({
+      message: `Unblock Ray ID ${rayId} and close appeal "${appeal.subject}"?`,
+      onConfirm: async () => {
+        setAppealLoading(true);
+        try {
+          const res = await apiFetch(`/api/support/tickets/appeals/${encodeURIComponent(rayId)}/unblock`, {
+            method: 'POST',
+          });
+          if (res.ok) {
+            setToast({ type: 'success', text: `Ray ID ${rayId} unblocked.` });
+            loadBlocks();
+            loadAppeals();
+          } else {
+            const data = await res.json().catch(() => ({}));
+            setToast({ type: 'error', text: `Failed to unblock: ${data.error || 'unknown error'}` });
+          }
+        } catch {
+          setToast({ type: 'error', text: 'Failed to unblock' });
+        }
+        setAppealLoading(false);
+      },
+    });
   };
 
   const handleUnblock = async (rayId: string) => {
-    if (!confirm('Are you sure you want to unblock this user?')) return;
-    try {
-      const res = await apiFetch('/api/captcha/admin/blocks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rayId, action: 'unblock' }),
-      });
-      if (res.ok) {
-        setBlocks(blocks.filter(b => b.rayId !== rayId));
-        setSelected(prev => {
-          const next = new Set(prev);
-          next.delete(rayId);
-          return next;
-        });
-      }
-    } catch {}
+    setConfirmModal({
+      message: 'Are you sure you want to unblock this user?',
+      onConfirm: async () => {
+        try {
+          const res = await apiFetch('/api/captcha/admin/blocks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rayId, action: 'unblock' }),
+          });
+          if (res.ok) {
+            setBlocks(blocks.filter(b => b.rayId !== rayId));
+            setSelected(prev => {
+              const next = new Set(prev);
+              next.delete(rayId);
+              return next;
+            });
+          }
+        } catch {}
+      },
+    });
   };
 
   const handleBulkUnblock = async () => {
     if (selected.size === 0) return;
-    if (!confirm(`Are you sure you want to unblock ${selected.size} user(s)?`)) return;
-    
-    setBulkLoading(true);
-    try {
-      const res = await apiFetch('/api/captcha/admin/blocks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rayIds: Array.from(selected), action: 'bulk_unblock' }),
-      });
-      if (res.ok) {
-        setBlocks(blocks.filter(b => !selected.has(b.rayId)));
-        setSelected(new Set());
-      }
-    } catch {}
-    setBulkLoading(false);
+    setConfirmModal({
+      message: `Are you sure you want to unblock ${selected.size} user(s)?`,
+      onConfirm: async () => {
+        setBulkLoading(true);
+        try {
+          const res = await apiFetch('/api/captcha/admin/blocks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rayIds: Array.from(selected), action: 'bulk_unblock' }),
+          });
+          if (res.ok) {
+            setBlocks(blocks.filter(b => !selected.has(b.rayId)));
+            setSelected(new Set());
+          }
+        } catch {}
+        setBulkLoading(false);
+      },
+    });
   };
 
   const handleFlagForm = async () => {
-    const formId = (window.prompt('Form ID or public ID to flag:' ) || '').trim();
-    if (!formId) return;
-    const reason = (window.prompt('Reason (e.g. suspicious_activity):') || 'suspicious_activity').trim();
+    setFlagFormId('');
+    setFlagReason('suspicious_activity');
+    setFlagModalOpen(true);
+  };
+
+  const submitFlagForm = async () => {
+    const formIdVal = flagFormId.trim();
+    if (!formIdVal) {
+      setToast({ type: 'error', text: 'Form ID is required' });
+      return;
+    }
+    const reasonVal = flagReason.trim() || 'suspicious_activity';
+    setFlagModalOpen(false);
     setFlagLoading(true);
     try {
       const res = await apiFetch('/api/captcha/admin/blocks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'flag', formId, reason }),
+        body: JSON.stringify({ action: 'flag', formId: formIdVal, reason: reasonVal }),
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        alert(`Form flagged. The owner has been emailed. Ray ID: ${data.block?.rayId || data.rayId || 'generated'}`);
+        setToast({ type: 'success', text: `Form flagged. The owner has been emailed. Ray ID: ${data.block?.rayId || data.rayId || 'generated'}` });
         loadBlocks();
       } else {
-        alert(`Failed to flag form: ${data.error || 'unknown error'}`);
+        setToast({ type: 'error', text: `Failed to flag form: ${data.error || 'unknown error'}` });
       }
     } catch {
-      alert('Failed to flag form');
+      setToast({ type: 'error', text: 'Failed to flag form' });
     }
     setFlagLoading(false);
   };
@@ -211,6 +238,84 @@ export default function CaptchaBlocksPage() {
 
   return (
     <div className="p-6 lg:p-8 max-w-6xl mx-auto">
+      {toast && <Toast msg={toast} onClose={() => setToast(null)} />}
+
+      {/* Flag Form Modal */}
+      {flagModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setFlagModalOpen(false)}>
+          <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl p-6 w-full max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-[var(--text)]">Flag Form</h3>
+              <button onClick={() => setFlagModalOpen(false)} className="p-1 hover:bg-[var(--surface)] rounded-lg transition-colors">
+                <X className="w-5 h-5 text-[var(--text-muted)]" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1.5">Form ID or Public ID</label>
+                <input
+                  type="text"
+                  value={flagFormId}
+                  onChange={(e) => setFlagFormId(e.target.value)}
+                  placeholder="e.g. form_abc123 or my-form-slug"
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-sm text-[var(--text)] outline-none focus:border-[var(--primary)]"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1.5">Reason</label>
+                <input
+                  type="text"
+                  value={flagReason}
+                  onChange={(e) => setFlagReason(e.target.value)}
+                  placeholder="suspicious_activity"
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-sm text-[var(--text)] outline-none focus:border-[var(--primary)]"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button onClick={() => setFlagModalOpen(false)} className="btn-secondary">Cancel</button>
+                <button
+                  onClick={submitFlagForm}
+                  disabled={!flagFormId.trim()}
+                  className="btn-primary"
+                >
+                  <Flag className="w-4 h-4" />
+                  Flag Form
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Modal */}
+      {confirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setConfirmModal(null)}>
+          <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl p-6 w-full max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-warning-surface)]">
+                <AlertTriangle className="w-5 h-5 text-[var(--color-warning)]" />
+              </div>
+              <h3 className="text-lg font-semibold text-[var(--text)]">Confirm Action</h3>
+            </div>
+            <p className="text-sm text-[var(--text-secondary)] mb-6">{confirmModal.message}</p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setConfirmModal(null)} className="btn-secondary">Cancel</button>
+              <button
+                onClick={() => {
+                  const action = confirmModal.onConfirm;
+                  setConfirmModal(null);
+                  action();
+                }}
+                className="btn-primary"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-[28px] font-semibold text-[var(--text)] leading-tight">Blocked Users</h1>

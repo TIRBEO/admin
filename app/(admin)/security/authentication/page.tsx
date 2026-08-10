@@ -25,7 +25,7 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
   return (
     <button onClick={() => onChange(!checked)}
       className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0 ${checked ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-admin-border)]'}`}>
-      <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${checked ? 'translate-x-4' : ''}`} />
+      <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full transition-transform ${checked ? 'bg-[var(--color-bg)] translate-x-4' : 'bg-white'}`} />
     </button>
   );
 }
@@ -54,8 +54,11 @@ export default function AuthenticationSettings() {
     { id: 'overview', label: 'Overview' },
     { id: 'authentication', label: 'Authentication' },
     { id: 'access-control', label: 'Access control' },
+    { id: 'policies', label: 'Policies' },
+    { id: 'captcha', label: 'CAPTCHA' },
+    { id: 'blocks', label: 'Blocks' },
+    { id: 'events', label: 'Events' },
     { id: 'audit', label: 'Audit log' },
-    { id: 'settings', label: 'Settings' },
   ];
 
   return (

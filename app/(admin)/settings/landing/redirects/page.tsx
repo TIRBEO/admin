@@ -102,7 +102,7 @@ function NestedRedirectCard({ from, to, onUpdateFrom, onUpdateTo, onRemove }: {
 }) {
   return (
     <div className="nested-card" style={{ position: 'relative' }}>
-      <button className="btn btn-icon btn-danger" onClick={onRemove} title="Remove" style={{ position: 'absolute', top: 8, right: 8, width: 28, height: 28, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: 'none', cursor: 'pointer', background: 'rgba(239,68,68,0.1)', color: '#f87171', fontSize: 16, lineHeight: 1 }}>×</button>
+      <button className="btn btn-icon btn-danger" onClick={onRemove} title="Remove" style={{ position: 'absolute', top: 8, right: 8, width: 28, height: 28, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: 'none', cursor: 'pointer', background: 'var(--color-surface-muted)', color: 'var(--color-text)', fontSize: 16, lineHeight: 1 }}>×</button>
       <Field label="From Path">
         <Input value={from} onChange={e => onUpdateFrom(e.target.value)} placeholder="/old-path" />
       </Field>

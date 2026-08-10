@@ -12,7 +12,7 @@ interface Ticket {
   priority: string;
   status: string;
   customer?: { name?: string; email?: string };
-  assignedTo?: { name?: string; email?: string };
+  assigned?: { name?: string; email?: string };
   queue?: { name?: string };
   createdAt?: string;
   updatedAt?: string;
@@ -25,7 +25,7 @@ export default function SupportPage() {
   const router = useRouter();
 
   useEffect(() => {
-    apiFetch('/api/support/tickets').then(async r => {
+    apiFetch('/api/admin/tickets?limit=100').then(async r => {
       if (r.ok) { const d = await r.json(); setTickets(d.tickets || d.data || d || []); }
       setLoading(false);
     }).catch(() => setLoading(false));
@@ -61,9 +61,9 @@ export default function SupportPage() {
       <StatusBadge status={t.status === 'open' ? 'active' : t.status === 'in_progress' ? 'suspended' : 'error'}
         label={t.status === 'in_progress' ? 'In Progress' : t.status?.charAt(0).toUpperCase() + t.status?.slice(1)} />
     )},
-    { key: 'assignedTo', label: 'Assigned To', render: (t: Ticket) => (
+    { key: 'assigned', label: 'Assigned To', render: (t: Ticket) => (
       <span className="text-sm text-[var(--color-admin-text)]">
-        {t.assignedTo?.name || t.assignedTo?.email || <span className="text-[var(--color-admin-text-muted)]">Unassigned</span>}
+        {t.assigned?.name || t.assigned?.email || <span className="text-[var(--color-admin-text-muted)]">Unassigned</span>}
       </span>
     )},
     { key: 'createdAt', label: 'Created', render: (t: Ticket) => (
@@ -89,7 +89,7 @@ export default function SupportPage() {
         </button>
       }>
       <DataTable columns={columns} data={filtered} keyExtractor={t => t.id}
-        onRowClick={t => router.push(`/admin/support/${t.id}`)}
+        onRowClick={t => router.push(`/admin/tickets/${t.id}`)}
         loading={loading} searchable searchPlaceholder="Search tickets..."
         emptyState={
           <div className="p-12 text-center">

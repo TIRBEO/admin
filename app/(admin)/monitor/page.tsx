@@ -1,6 +1,7 @@
 ﻿'use client';
 import React, { useEffect, useState } from 'react';
 import { apiFetch } from '../../lib';
+import { Toast } from '../settings/shared';
 
 interface Log { id: string; method: string; path: string; status: number; ip: string; userId: string | null; createdAt: string; }
 interface Blocked { id: string; ip: string | null; userId: string | null; reason: string | null; createdAt: string; }
@@ -10,6 +11,7 @@ export default function AdminMonitorPage() {
   const [logs, setLogs] = useState<Log[]>([]);
   const [blocked, setBlocked] = useState<Blocked[]>([]);
   const [error, setError] = useState('');
+  const [toast, setToast] = useState<{ type: 'success' | 'error' | 'warning' | 'info'; text: string } | null>(null);
   const [showAddBlock, setShowAddBlock] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -33,12 +35,12 @@ export default function AdminMonitorPage() {
     const ip = form.get('ip') as string; const userId = form.get('userId') as string; const reason = form.get('reason') as string;
     if (ip) body.ip = ip; if (userId) body.userId = userId; if (reason) body.reason = reason;
     const res = await apiFetch('/api/admin/monitor/blocked', { method: 'POST', body: JSON.stringify(body) });
-    if (res.ok) { setShowAddBlock(false); loadData(); } else setError('Failed to add block');
+    if (res.ok) { setShowAddBlock(false); loadData(); setToast({ type: 'success', text: 'Block added successfully' }); } else setToast({ type: 'error', text: 'Failed to add block' });
   };
 
   const handleRemoveBlock = async (id: string) => {
     const res = await apiFetch('/api/admin/monitor/blocked', { method: 'DELETE', body: JSON.stringify({ id }) });
-    if (res.ok) loadData(); else setError('Failed to remove block');
+    if (res.ok) { loadData(); setToast({ type: 'success', text: 'Block removed' }); } else setToast({ type: 'error', text: 'Failed to remove block' });
   };
 
   return (
@@ -46,6 +48,7 @@ export default function AdminMonitorPage() {
       <div className="main">
         <h2>Monitor</h2>
         <p className="desc">Request logs and blocklist management</p>
+        {toast && <Toast msg={toast} onClose={() => setToast(null)} />}
         {error && <p className="error">{error}</p>}
         {loading ? (
           <div className="loading" style={{ padding: 60, textAlign: 'center', color: 'var(--text-muted)' }}>Loading monitor data…</div>

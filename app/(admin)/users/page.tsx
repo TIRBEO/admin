@@ -1,13 +1,32 @@
 ﻿'use client';
 import React, { useEffect, useState } from 'react';
 import { apiFetch, isOnline } from '../../lib';
+import { Toast } from '../settings/shared';
 
 interface Role { id: string; name: string; color: string; icon: string; isSystem?: boolean; description?: string; }
 interface User {
   id: string; email: string; name: string | null; adminRole: string | null;
   photoUrl: string | null; phoneNumber: string | null; occupation: string | null;
-  createdAt: string; lastActiveAt?: string; roles: Role[];
+  createdAt: string; lastActiveAt?: string | null; lastLoginAt?: string | null;
+  roles: Role[];
   isBanned?: boolean;
+}
+
+function formatRelativeTime(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHour = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHour / 24);
+
+  if (diffSec < 60) return 'Just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffHour < 24) return `${diffHour}h ago`;
+  if (diffDay < 7) return `${diffDay}d ago`;
+  if (diffDay < 30) return `${Math.floor(diffDay / 7)}w ago`;
+  return date.toLocaleDateString();
 }
 
 export default function AdminUsersPage() {
@@ -15,21 +34,21 @@ export default function AdminUsersPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const [error, setError] = useState('');
+  const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [editing, setEditing] = useState<User | null>(null);
   const [myRole, setMyRole] = useState<string>('');
   const [allRoles, setAllRoles] = useState<Role[]>([]);
   const [resetPwUser, setResetPwUser] = useState<User | null>(null);
   const [newPassword, setNewPassword] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
-  const [resetMsg, setResetMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const limit = 100;
 
   const loadUsers = async (p: number, s: string) => {
     const params = new URLSearchParams({ page: String(p), limit: String(limit) });
     if (s) params.set('search', s);
     const res = await apiFetch(`/api/admin/users?${params}`);
-    if (!res.ok) { setError('Failed to load users'); return; }
+    if (!res.ok) { setMsg({ type: 'error', text: 'Failed to load users' }); return; }
     const data = await res.json();
     setUsers(data.users); setTotal(data.total);
   };
@@ -59,13 +78,13 @@ export default function AdminUsersPage() {
       if (adminRole === 'none') body.adminRole = null; else body.adminRole = adminRole;
     }
     const res = await apiFetch(`/api/admin/users/${editing.id}`, { method: 'PATCH', body: JSON.stringify(body) });
-    if (res.ok) { setEditing(null); loadUsers(page, search); } else setError('Failed to update user');
+    if (res.ok) { setEditing(null); loadUsers(page, search); setMsg({ type: 'success', text: 'User updated' }); } else setMsg({ type: 'error', text: 'Failed to update user' });
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this user permanently? This cannot be undone.')) return;
+    setConfirmDelete(null);
     const res = await apiFetch(`/api/admin/users/${id}`, { method: 'DELETE' });
-    if (res.ok) loadUsers(page, search); else setError('Failed to delete user');
+    if (res.ok) { loadUsers(page, search); setMsg({ type: 'success', text: 'User deleted' }); } else setMsg({ type: 'error', text: 'Failed to delete user' });
   };
 
   const handleRoleToggle = async (userId: string, roleId: string, hasRole: boolean) => {
@@ -78,29 +97,29 @@ export default function AdminUsersPage() {
       method: 'PATCH',
       body: JSON.stringify({ roleIds: newRoles }),
     });
-    if (res.ok) loadUsers(page, search); else setError('Failed to update roles');
+    if (res.ok) { loadUsers(page, search); setMsg({ type: 'success', text: 'Roles updated' }); } else setMsg({ type: 'error', text: 'Failed to update roles' });
   };
 
   const handleResetPassword = async () => {
     if (!resetPwUser || !newPassword || newPassword.length < 8) return;
-    setResetLoading(true); setResetMsg(null);
+    setResetLoading(true);
     try {
       const res = await apiFetch(`/api/admin/users/${resetPwUser.id}/password`, {
         method: 'POST',
         body: JSON.stringify({ password: newPassword }),
       });
       if (res.ok) {
-        setResetMsg({ type: 'success', text: `Password reset for ${resetPwUser.email}` });
+        setMsg({ type: 'success', text: `Password reset for ${resetPwUser.email}` });
         setResetPwUser(null); setNewPassword('');
       } else {
         const text = await res.text();
-        setResetMsg({ type: 'error', text: text || 'Failed to reset password' });
+        setMsg({ type: 'error', text: text || 'Failed to reset password' });
       }
     } catch {
-      setResetMsg({ type: 'error', text: 'Connection error' });
+      setMsg({ type: 'error', text: 'Connection error' });
     }
     setResetLoading(false);
-    setTimeout(() => setResetMsg(null), 4000);
+
   };
 
   const totalPages = Math.ceil(total / limit);
@@ -109,7 +128,7 @@ export default function AdminUsersPage() {
 
   function getStatusLabel(user: User): { label: string; color: string } {
     if (user.isBanned) return { label: 'Banned', color: 'var(--color-error, var(--error))' };
-    if (isOnline(user.lastActiveAt)) return { label: 'Online', color: 'var(--color-success, var(--success))' };
+    if (user.lastActiveAt && isOnline(user.lastActiveAt)) return { label: 'Online', color: 'var(--color-success, var(--success))' };
     return { label: 'Offline', color: 'var(--text-muted)' };
   }
 
@@ -118,12 +137,7 @@ export default function AdminUsersPage() {
       <div className="main">
         <h2>Users</h2>
         <p className="desc">{total} total users</p>
-        {error && <p className="error">{error}</p>}
-        {resetMsg && (
-          <div className={`toast toast-${resetMsg.type}`} style={{ position: 'relative', bottom: 'auto', right: 'auto', marginBottom: 12 }}>
-            {resetMsg.text}
-          </div>
-        )}
+        <Toast msg={msg} onClose={() => setMsg(null)} />
         <form onSubmit={handleSearch} className="search-form">
           <input type="text" placeholder="Search by email or name..." value={search} onChange={e => setSearch(e.target.value)} />
           <button type="submit" className="btn btn-primary">Search</button>
@@ -132,7 +146,7 @@ export default function AdminUsersPage() {
         <div className="card" style={{ padding: 0 }}>
           <div className="table-wrapper">
             <table>
-              <thead><tr><th>Status</th><th>Email</th><th>Name</th><th>Role</th><th>Custom Roles</th><th>Actions</th></tr></thead>
+              <thead><tr><th>Status</th><th>Email</th><th>Name</th><th>Role</th><th>Custom Roles</th><th>Last Active</th><th>Actions</th></tr></thead>
               <tbody>
                 {users.map(u => {
                   const status = getStatusLabel(u);
@@ -157,21 +171,30 @@ export default function AdminUsersPage() {
                         {u.roles.length === 0 && <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>—</span>}
                       </div>
                     </td>
+                    <td style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                      {u.lastActiveAt ? (
+                        <span title={new Date(u.lastActiveAt).toLocaleString()}>
+                          {formatRelativeTime(u.lastActiveAt)}
+                        </span>
+                      ) : (
+                        <span>Never</span>
+                      )}
+                    </td>
                     <td>
                       <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                         <button className="btn btn-sm btn-outline" onClick={() => setEditing(u)}>Edit</button>
                         {isSuperAdmin && (
-                          <button className="btn btn-sm btn-outline" onClick={() => { setResetPwUser(u); setNewPassword(''); setResetMsg(null); }} style={{ borderColor: 'var(--warning-subtle, rgba(244,185,66,0.3))', color: 'var(--color-warning, var(--warning))' }}>
+                          <button className="btn btn-sm btn-outline" onClick={() => { setResetPwUser(u); setNewPassword(''); }} style={{ borderColor: 'var(--warning-subtle, rgba(244,185,66,0.3))', color: 'var(--color-warning, var(--warning))' }}>
                             Reset Password
                           </button>
                         )}
-                        {isSuperAdmin && <button className="btn btn-sm btn-danger" onClick={() => handleDelete(u.id)}>Delete</button>}
+                        {isSuperAdmin && <button className="btn btn-sm btn-danger" onClick={() => setConfirmDelete(u.id)}>Delete</button>}
                       </div>
                     </td>
                   </tr>
                   );
                 })}
-                {users.length === 0 && <tr><td colSpan={6}><div className="empty-state">No users found</div></td></tr>}
+                {users.length === 0 && <tr><td colSpan={7}><div className="empty-state">No users found</div></td></tr>}
               </tbody>
             </table>
           </div>
@@ -276,10 +299,26 @@ export default function AdminUsersPage() {
                   className="btn btn-primary"
                   disabled={resetLoading || newPassword.length < 8}
                   onClick={handleResetPassword}
-                  style={{ background: 'var(--color-warning, var(--warning))', color: '#17150f', border: '2px solid var(--color-border, var(--border))' }}
+                  style={{ background: 'var(--color-warning, var(--warning))', color: '#000000', border: '2px solid var(--color-border, var(--border))' }}
                 >
                   {resetLoading ? 'Resetting...' : 'Reset Password'}
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirm Dialog */}
+        {confirmDelete && (
+          <div className="modal-overlay" onClick={() => setConfirmDelete(null)}>
+            <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 400 }}>
+              <h3 style={{ marginBottom: 4 }}>Delete user?</h3>
+              <p className="modal-desc" style={{ marginBottom: 20 }}>
+                This action cannot be undone. The user will be permanently deleted.
+              </p>
+              <div className="form-actions">
+                <button className="btn btn-outline" onClick={() => setConfirmDelete(null)}>Cancel</button>
+                <button className="btn btn-danger" onClick={() => handleDelete(confirmDelete)}>Delete</button>
               </div>
             </div>
           </div>

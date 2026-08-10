@@ -2,94 +2,186 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AdminSection, StatusBadge } from '@tirbeo/ui';
 import { apiFetch } from '../../lib';
-import { Shield, Key, Users, FileText, Activity } from 'lucide-react';
+import {
+  Shield, ShieldCheck, Ban, AlertTriangle, Activity,
+  Lock, Key, Eye, BarChart3, ChevronRight, RefreshCw,
+  Clock, TrendingUp, Users, FileText,
+} from 'lucide-react';
+
+interface SecurityOverview {
+  eventsToday: number;
+  criticalToday: number;
+  activeBlocks: number;
+  blockedUsers: number;
+  captchaEnabled: boolean;
+  rateLimitingEnabled: boolean;
+  twoFactorRequired: boolean;
+}
 
 export default function SecurityOverview() {
-  const [score, setScore] = useState<number | null>(null);
+  const [stats, setStats] = useState<SecurityOverview | null>(null);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    apiFetch('/api/admin/security/score').then(async r => {
-      if (r.ok) { const d = await r.json(); setScore(d.score ?? d); }
-    }).catch(() => {});
+    Promise.all([
+      apiFetch('/api/admin/security/events?limit=1').then(r => r.ok ? r.json() : null),
+      apiFetch('/api/admin/security/blocks?limit=1').then(r => r.ok ? r.json() : null),
+      apiFetch('/api/admin/captcha/status').then(r => r.ok ? r.json() : null),
+      apiFetch('/api/admin/security/settings').then(r => r.ok ? r.json() : null),
+    ]).then(([events, blocks, captcha, settings]) => {
+      setStats({
+        eventsToday: events?.stats?.today?.total || 0,
+        criticalToday: events?.stats?.today?.critical || 0,
+        activeBlocks: blocks?.pagination?.total || 0,
+        blockedUsers: blocks?.pagination?.total || 0,
+        captchaEnabled: captcha?.enabled || false,
+        rateLimitingEnabled: settings?.rateLimiting || false,
+        twoFactorRequired: settings?.twoFactorRequired || false,
+      });
+      setLoading(false);
+    }).catch(() => setLoading(false));
   }, []);
 
-  const tabs = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'authentication', label: 'Authentication' },
-    { id: 'access-control', label: 'Access control' },
-    { id: 'audit', label: 'Audit log' },
-    { id: 'settings', label: 'Settings' },
+  if (loading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="skeleton h-7 w-40 mb-2" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1,2,3,4,5,6].map(i => (
+            <div key={i} className="kpi-card">
+              <div className="skeleton h-4 w-24 mb-4" />
+              <div className="skeleton h-8 w-16" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const QUICK_LINKS = [
+    { label: 'Security Events', href: '/admin/security/events', icon: Activity, desc: 'View all security events' },
+    { label: 'Blocked Targets', href: '/admin/security/blocks', icon: Ban, desc: 'Manage blocked IPs and users' },
+    { label: 'CAPTCHA Settings', href: '/admin/security/captcha', icon: Shield, desc: 'Configure CAPTCHA challenges' },
+    { label: 'Rate Limits', href: '/admin/security/rate-limits', icon: BarChart3, desc: 'API rate limiting rules' },
+    { label: 'Authentication', href: '/admin/security/authentication', icon: Lock, desc: 'Login and MFA settings' },
+    { label: 'Access Control', href: '/admin/security/access-control', icon: Key, desc: 'Role-based access control' },
+    { label: 'Audit Log', href: '/admin/security/audit', icon: FileText, desc: 'System audit trail' },
+    { label: 'Policies', href: '/admin/security/policies', icon: ShieldCheck, desc: 'Security policies' },
   ];
 
-  const scoreColor = score !== null ? (score >= 80 ? 'var(--color-success)' : score >= 50 ? 'var(--color-warning)' : 'var(--color-error)') : 'var(--color-admin-text-muted)';
-
   return (
-    <AdminSection title="Security" description="Manage security settings, authentication, and access control"
-      tabs={tabs} activeTab="overview" onTabChange={id => router.push(`/admin/security/${id === 'overview' ? '' : id}`)}>
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
-        <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-6 text-center lg:col-span-1">
-          <div className="w-20 h-20 rounded-full border-4 mx-auto mb-3 flex items-center justify-center" style={{ borderColor: scoreColor }}>
-            <span className="text-2xl font-bold" style={{ color: scoreColor }}>{score !== null ? score : '—'}</span>
-          </div>
-          <p className="text-xs font-medium text-[var(--color-admin-text-secondary)] uppercase tracking-wider">Security Score</p>
-          <p className="text-xs text-[var(--color-admin-text-muted)] mt-1">
-            {score !== null ? (score >= 80 ? 'Good' : score >= 50 ? 'Needs improvement' : 'Critical') : 'Loading...'}
-          </p>
+    <div className="p-6">
+      {/* Page Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="page-title">Security</h1>
+          <p className="page-subtitle">Monitor and manage security settings</p>
         </div>
-        <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-5">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-[var(--color-admin-text-secondary)]">Active Sessions</span>
-              <Activity className="w-4 h-4 text-[var(--color-primary)]" />
+        <button
+          onClick={() => window.location.reload()}
+          className="btn-secondary"
+        >
+          <RefreshCw className="w-4 h-4" />
+          Refresh
+        </button>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        <div className="kpi-card">
+          <div className="kpi-card-header">
+            <span className="kpi-card-label">Events Today</span>
+            <div className="kpi-card-icon">
+              <Activity className="w-4 h-4 text-[var(--text-muted)]" />
             </div>
-            <p className="text-2xl font-semibold text-[var(--color-admin-text)]">—</p>
           </div>
-          <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-5">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-[var(--color-admin-text-secondary)]">MFA Enabled</span>
-              <Key className="w-4 h-4 text-[var(--color-success)]" />
-            </div>
-            <p className="text-2xl font-semibold text-[var(--color-admin-text)]">—%</p>
+          <div className="kpi-card-value">{stats?.eventsToday?.toLocaleString() || '0'}</div>
+          <div className="kpi-card-meta">
+            {stats?.criticalToday ? (
+              <AlertTriangle className="w-3.5 h-3.5 text-[var(--error)]" />
+            ) : (
+              <TrendingUp className="w-3.5 h-3.5 text-[var(--success)]" />
+            )}
+            <span>
+              {stats?.criticalToday
+                ? `${stats.criticalToday} critical`
+                : 'No critical events'}
+            </span>
           </div>
-          <div className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-5">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-[var(--color-admin-text-secondary)]">Recent Alerts</span>
-              <Shield className="w-4 h-4 text-[var(--color-error)]" />
+        </div>
+
+        <div className="kpi-card">
+          <div className="kpi-card-header">
+            <span className="kpi-card-label">Active Blocks</span>
+            <div className="kpi-card-icon">
+              <Ban className="w-4 h-4 text-[var(--text-muted)]" />
             </div>
-            <p className="text-2xl font-semibold text-[var(--color-admin-text)]">—</p>
+          </div>
+          <div className="kpi-card-value">{stats?.activeBlocks || '0'}</div>
+          <div className="kpi-card-meta">
+            <Users className="w-3.5 h-3.5" />
+            <span>IPs and users blocked</span>
+          </div>
+        </div>
+
+        <div className="kpi-card">
+          <div className="kpi-card-header">
+            <span className="kpi-card-label">Security Features</span>
+            <div className="kpi-card-icon">
+              <ShieldCheck className="w-4 h-4 text-[var(--text-muted)]" />
+            </div>
+          </div>
+          <div className="space-y-2 mt-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-[var(--text-muted)]">CAPTCHA</span>
+              <span className={`badge ${stats?.captchaEnabled ? 'badge-success' : 'badge-disabled'}`}>
+                {stats?.captchaEnabled ? 'Enabled' : 'Disabled'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-[var(--text-muted)]">Rate Limiting</span>
+              <span className={`badge ${stats?.rateLimitingEnabled ? 'badge-success' : 'badge-disabled'}`}>
+                {stats?.rateLimitingEnabled ? 'Enabled' : 'Disabled'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-[var(--text-muted)]">2FA Required</span>
+              <span className={`badge ${stats?.twoFactorRequired ? 'badge-success' : 'badge-disabled'}`}>
+                {stats?.twoFactorRequired ? 'Yes' : 'No'}
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <button onClick={() => router.push('/admin/security/authentication')}
-          className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-5 hover:bg-[var(--color-admin-surface-hover)] transition-colors text-left">
-          <Key className="w-5 h-5 text-[var(--color-primary)] mb-3" />
-          <p className="text-sm font-medium text-[var(--color-admin-text)]">Authentication</p>
-          <p className="text-xs text-[var(--color-admin-text-muted)] mt-1">Password policy, MFA, passkeys</p>
-        </button>
-        <button onClick={() => router.push('/admin/security/access-control')}
-          className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-5 hover:bg-[var(--color-admin-surface-hover)] transition-colors text-left">
-          <Users className="w-5 h-5 text-[var(--color-warning)] mb-3" />
-          <p className="text-sm font-medium text-[var(--color-admin-text)]">Access Control</p>
-          <p className="text-xs text-[var(--color-admin-text-muted)] mt-1">Roles, permissions, policies</p>
-        </button>
-        <button onClick={() => router.push('/admin/security/audit')}
-          className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-5 hover:bg-[var(--color-admin-surface-hover)] transition-colors text-left">
-          <FileText className="w-5 h-5 text-[var(--color-info)] mb-3" />
-          <p className="text-sm font-medium text-[var(--color-admin-text)]">Audit Log</p>
-          <p className="text-xs text-[var(--color-admin-text-muted)] mt-1">View security events and changes</p>
-        </button>
-        <button onClick={() => router.push('/admin/security/settings')}
-          className="border-2 border-[var(--color-admin-border)] bg-[var(--color-admin-surface)] p-5 hover:bg-[var(--color-admin-surface-hover)] transition-colors text-left">
-          <Shield className="w-5 h-5 text-[var(--color-admin-text-muted)] mb-3" />
-          <p className="text-sm font-medium text-[var(--color-admin-text)]">Settings</p>
-          <p className="text-xs text-[var(--color-admin-text-muted)] mt-1">Security preferences</p>
-        </button>
+      {/* Quick Links */}
+      <div className="section">
+        <div className="section-header">
+          <h2 className="section-title">Security Tools</h2>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {QUICK_LINKS.map(link => (
+            <button
+              key={link.label}
+              onClick={() => router.push(link.href)}
+              className="flex items-start gap-3 p-4 rounded-lg border border-[var(--border)] hover:bg-[var(--bg-hover)] hover:border-[var(--border-hover)] transition-all text-left group"
+            >
+              <div className="w-9 h-9 rounded-lg bg-[var(--bg-hover)] flex items-center justify-center flex-shrink-0">
+                <link.icon className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text)]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-[var(--text)]">{link.label}</span>
+                  <ChevronRight className="w-3.5 h-3.5 text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+                <p className="text-xs text-[var(--text-muted)] mt-1">{link.desc}</p>
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
-    </AdminSection>
+    </div>
   );
 }

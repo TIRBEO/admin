@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useState, useCallback } from 'react';
 import { apiFetch } from '../../lib';
+import { Toast } from '../settings/shared';
 
 type ReservedAddress = {
   id: string;
@@ -18,7 +19,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   system: '#da3633',
   role: '#d29922',
   branding: '#2f81f7',
-  infrastructure: '#8b5cf6',
+  infrastructure: '#ffffff',
   protocol: '#238636',
   content: '#f78166',
   legal: '#9ca3af',
@@ -42,6 +43,7 @@ export default function ReservedAddressesPage() {
   const [newCategory, setNewCategory] = useState('custom');
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState('');
+  const [toast, setToast] = useState<{ type: 'success' | 'error' | 'warning' | 'info'; text: string } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -78,9 +80,9 @@ export default function ReservedAddressesPage() {
         load();
       } else {
         const text = await res.text();
-        setError(text || 'Failed to add');
+        setToast({ type: 'error', text: text || 'Failed to add' });
       }
-    } catch { setError('Network error'); }
+    } catch { setToast({ type: 'error', text: 'Network error' }); }
     setAdding(false);
   };
 
@@ -131,7 +133,8 @@ export default function ReservedAddressesPage() {
               </select>
             </div>
           </div>
-          {error && <div style={{ color: 'var(--danger)', fontSize: 12, marginTop: 8 }}>{error}</div>}
+          {toast && <Toast msg={toast} onClose={() => setToast(null)} />}
+        {error && <div style={{ color: 'var(--danger)', fontSize: 12, marginTop: 8 }}>{error}</div>}
           <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
             <button className="btn btn-primary" onClick={addAddress} disabled={adding || !newAddr.trim()}>{adding ? 'Adding...' : 'Add'}</button>
           </div>

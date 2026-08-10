@@ -7,10 +7,32 @@ import { useThemeToggle } from '@tirbeo/theme';
 import { apiFetch, API } from '../lib';
 import {
   LayoutDashboard, Users, Shield, Settings, Smartphone, Globe,
-  BarChart3, CreditCard, UserCircle, FileText, HardDrive,
+  BarChart3, UserCircle, FileText,
   Puzzle, BellRing, HeartPulse, MessageSquare, Scale, Palette,
-  Mail, Lock, Key, Monitor, Ban, UserCheck, Sun, Moon,
+  Mail, Lock, Key, Monitor, Ban, UserCheck, Sun, Moon, Activity,
 } from 'lucide-react';
+
+// Theme toggle component for the header
+function ThemeToggle() {
+  const { isDark, toggle } = useThemeToggle();
+  
+  // Apply theme classes to root element
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle('dark', isDark);
+    root.classList.toggle('light', !isDark);
+  }, [isDark]);
+  
+  return (
+    <button
+      onClick={toggle}
+      className="flex h-9 w-9 items-center justify-center rounded-xl text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-bg-hover)]"
+      aria-label="Toggle theme"
+    >
+      {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+    </button>
+  );
+}
 
 const NAV_SECTIONS: NavSection[] = [
   {
@@ -32,6 +54,7 @@ const NAV_SECTIONS: NavSection[] = [
     label: 'Security',
     items: [
       { href: '/admin/security', label: 'Overview', icon: Shield },
+      { href: '/admin/security/audit-dashboard', label: 'Audit Dashboard', icon: BarChart3 },
       { href: '/admin/security/captcha', label: 'CAPTCHA', icon: Shield },
       { href: '/admin/security/events', label: 'Security events', icon: FileText },
       { href: '/admin/security/blocks', label: 'Blocked targets', icon: Ban },
@@ -40,6 +63,8 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/admin/security/captcha/logs', label: 'CAPTCHA Logs', icon: FileText },
       { href: '/admin/security/authentication', label: 'Authentication', icon: Lock },
       { href: '/admin/security/access-control', label: 'Access control', icon: Key },
+      { href: '/admin/security/rate-limits', label: 'Rate Limits', icon: BarChart3 },
+      { href: '/admin/security/maintenance-history', label: 'Maintenance History', icon: FileText },
       { href: '/admin/security/policies', label: 'Policies', icon: FileText },
       { href: '/admin/security/audit', label: 'Audit', icon: Monitor },
     ],
@@ -50,9 +75,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/admin/devices', label: 'Devices', icon: Smartphone },
       { href: '/admin/apps', label: 'Apps', icon: Globe },
       { href: '/admin/forms', label: 'Forms', icon: FileText },
-      { href: '/admin/data', label: 'Data', icon: HardDrive },
       { href: '/admin/rules', label: 'Rules', icon: Scale },
-      { href: '/admin/storage', label: 'Storage', icon: HardDrive },
       { href: '/admin/integrations', label: 'Integrations', icon: Puzzle },
       { href: '/admin/settings/requests', label: 'Admin Requests', icon: UserCheck },
     ],
@@ -64,7 +87,6 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/admin/settings/brand', label: 'Brand', icon: Palette },
       { href: '/admin/settings/email', label: 'Email', icon: Mail },
       { href: '/admin/settings/notifications', label: 'Notifications', icon: BellRing },
-      { href: '/admin/settings/domains', label: 'Domains', icon: Globe },
       { href: '/admin/settings/apps', label: 'App config', icon: Settings },
       { href: '/admin/settings/roles', label: 'Roles & permissions', icon: Shield },
       { href: '/admin/settings/theme', label: 'Theme', icon: Palette },
@@ -80,6 +102,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/admin/support', label: 'Support', icon: MessageSquare },
       { href: '/admin/tickets', label: 'Tickets', icon: MessageSquare },
       { href: '/admin/monitor/audit', label: 'Audit log', icon: FileText },
+      { href: '/admin/activity', label: 'Activity', icon: Activity },
     ],
   },
 ];
@@ -155,35 +178,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <>
-      {/* Theme Toggle */}
-      <ThemeToggleButton />
-      <DashboardShell
-        navSections={NAV_SECTIONS}
-        apps={APPS}
-        brand={{ name: branding.name, logo: branding.logo }}
-        user={user}
-        onLogout={handleLogout}
-        onNavigate={handleNavigate}
-        currentPath={pathname}
-        onSearch={getSearchResults}
-        collapsible
-      >
-        {children}
-      </DashboardShell>
-    </>
-  );
-}
-
-function ThemeToggleButton() {
-  const { isDark, toggle } = useThemeToggle();
-  return (
-    <button
-      onClick={toggle}
-      className="theme-toggle"
-      aria-label={`Switch to ${isDark ? 'light' : 'dark'} theme`}
+    <DashboardShell
+      navSections={NAV_SECTIONS}
+      apps={APPS}
+      brand={{ name: branding.name, logo: branding.logo }}
+      user={user}
+      onLogout={handleLogout}
+      onNavigate={handleNavigate}
+      currentPath={pathname}
+      onSearch={getSearchResults}
+      collapsible
+      headerActions={<ThemeToggle />}
     >
-      {isDark ? <Sun className="h-5 w-5" strokeWidth={2} /> : <Moon className="h-5 w-5" strokeWidth={2} />}
-    </button>
+      {children}
+    </DashboardShell>
   );
 }

@@ -143,7 +143,7 @@ export default function RolesPage() {
                 <p className="font-medium text-[var(--color-text)]">{role.name}</p>
                 <p className="text-xs text-[var(--color-text-tertiary)]">{role.description || 'System role'}</p>
               </div>
-              <span className="ml-auto inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">System</span>
+              <span className="ml-auto inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--color-surface-muted)] text-[var(--color-text)] border border-[var(--color-border)]">System</span>
             </div>
             <div className="mt-3 flex items-center gap-1 text-xs text-[var(--color-text-secondary)]">
               <Users className="w-3.5 h-3.5" />
@@ -187,7 +187,7 @@ export default function RolesPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${role.isSystem ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}`}>
+                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--color-surface-muted)] text-[var(--color-text)] border border-[var(--color-border)]`}>
                       {role.isSystem ? 'System' : 'Custom'}
                     </span>
                   </td>

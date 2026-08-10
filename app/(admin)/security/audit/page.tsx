@@ -88,8 +88,11 @@ export default function AuditLog() {
     { id: 'overview', label: 'Overview' },
     { id: 'authentication', label: 'Authentication' },
     { id: 'access-control', label: 'Access control' },
+    { id: 'policies', label: 'Policies' },
+    { id: 'captcha', label: 'CAPTCHA' },
+    { id: 'blocks', label: 'Blocks' },
+    { id: 'events', label: 'Events' },
     { id: 'audit', label: 'Audit log' },
-    { id: 'settings', label: 'Settings' },
   ];
 
   return (

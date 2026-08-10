@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { API } from '../../lib';
 
+export const AUTO_PASS_RAY_ID = 'auto';
+
 interface CaptchaChallenge {
   id: string;
   type: string;
@@ -295,12 +297,12 @@ export function CaptchaWidget({
         const forcedDifficulty = requiredDifficulty ? requiredDifficulty !== 'easy' : false;
         if (!status.captchaEnabled && !forcedDifficulty) {
           setState('hidden');
-          onSuccessRef.current?.('');
+          onSuccessRef.current?.(AUTO_PASS_RAY_ID);
           return;
         }
         if (!status.requireCaptcha && !forcedDifficulty) {
           setState('hidden');
-          onSuccessRef.current?.('');
+          onSuccessRef.current?.(AUTO_PASS_RAY_ID);
           return;
         }
         // Captcha required: show the real checkbox widget.

@@ -10,7 +10,7 @@ import {
 
 interface Ticket {
   id: string;
-  title: string;
+  subject: string;
   description: string;
   status: string;
   priority: string;
@@ -46,18 +46,23 @@ export default function AdminTicketDetailPage() {
   }, [ticketId]);
 
   useEffect(() => {
+    const t = setInterval(() => loadTicket(), 10000);
+    return () => clearInterval(t);
+  }, [ticketId]);
+
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [ticket?.messages]);
 
-  const loadTicket = async () => {
+  const loadTicket = async (silent = false) => {
     try {
-      const res = await apiFetch(`/api/admin/support/tickets/${ticketId}`);
+      const res = await apiFetch(`/api/admin/tickets/${ticketId}`);
       if (res.ok) {
         const data = await res.json();
         setTicket(data);
       }
     } catch {}
-    setLoading(false);
+    if (!silent) setLoading(false);
   };
 
   const loadUsers = async () => {
@@ -108,7 +113,7 @@ export default function AdminTicketDetailPage() {
     if (!reply.trim() || !ticket) return;
     setSending(true);
     try {
-      const res = await apiFetch(`/api/admin/support/tickets/${ticketId}/reply`, {
+      const res = await apiFetch(`/api/admin/tickets/${ticketId}/reply`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: reply.trim(), isInternal }),
@@ -126,6 +131,7 @@ export default function AdminTicketDetailPage() {
     switch (status) {
       case 'open': return 'text-[var(--color-primary)] bg-[var(--color-primary-surface)]';
       case 'in_progress': return 'text-[var(--color-warning)] bg-[var(--color-warning-surface)]';
+      case 'pending': return 'text-[var(--color-warning)] bg-[var(--color-warning-surface)]';
       case 'resolved': return 'text-[var(--color-success)] bg-[var(--color-success-surface)]';
       case 'closed': return 'text-[var(--color-text-tertiary)] bg-[var(--color-surface-muted)]';
       default: return 'text-[var(--color-text-secondary)] bg-[var(--color-surface-muted)]';
@@ -154,15 +160,21 @@ export default function AdminTicketDetailPage() {
 
   return (
     <div className="p-6 lg:p-8 max-w-5xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => router.back()} className="p-2 rounded-lg hover:bg-[var(--color-surface-muted)]">
-          <ArrowLeft className="w-5 h-5 text-[var(--color-text-secondary)]" />
-        </button>
-        <div className="flex-1 min-w-0">
-          <h1 className="text-[28px] font-semibold text-[var(--color-text)] leading-tight truncate">{ticket.title}</h1>
-          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-            #{ticket.id} • {ticket.customer.name || ticket.customer.email}
-          </p>
+      <div className="relative mb-6 overflow-hidden">
+        <div className="pointer-events-none absolute -top-24 left-0 right-0 h-40 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.05),transparent_70%)]" />
+        <div className="relative flex items-center gap-3">
+          <button onClick={() => router.back()} className="p-2 rounded-lg hover:bg-[var(--color-surface-muted)]">
+            <ArrowLeft className="w-5 h-5 text-[var(--color-text-secondary)]" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-[28px] font-semibold leading-tight truncate bg-gradient-to-b from-white to-white/60 bg-clip-text text-transparent">{ticket.subject}</h1>
+            <div className="mt-1 flex items-center gap-2">
+              <span className="text-sm text-[var(--color-text-secondary)]">#{ticket.id} • {ticket.customer.name || ticket.customer.email}</span>
+              <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium', getStatusColor(ticket.status))}>
+                {ticket.status.replace(/_/g, ' ')}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -173,6 +185,7 @@ export default function AdminTicketDetailPage() {
             className="text-sm font-medium text-[var(--color-text)] bg-transparent border-none outline-none disabled:opacity-50">
             <option value="open">Open</option>
             <option value="in_progress">In Progress</option>
+            <option value="pending">Pending</option>
             <option value="resolved">Resolved</option>
             <option value="closed">Closed</option>
           </select>

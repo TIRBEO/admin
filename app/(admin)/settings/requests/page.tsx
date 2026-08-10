@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { AdminSection, DataTable, StatusBadge } from '@tirbeo/ui';
 import { apiFetch, ApiError } from '../../../lib';
+import { Toast } from '../shared';
 
 interface AdminRequest {
   id: string;
@@ -47,6 +48,7 @@ export default function AdminRequestsPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [toast, setToast] = useState<{ type: 'success' | 'error' | 'warning' | 'info'; text: string } | null>(null);
 
   const loadRequests = async () => {
     setLoading(true);
@@ -57,7 +59,7 @@ export default function AdminRequestsPage() {
       const data = await res.json();
       setRequests(data.requests || []);
     } catch (err: any) {
-      setError(err?.message || 'Failed to load requests');
+      setToast({ type: 'error', text: err?.message || 'Failed to load requests' });
     } finally {
       setLoading(false);
     }
@@ -85,7 +87,7 @@ export default function AdminRequestsPage() {
       }
       await loadRequests();
     } catch (err: any) {
-      setError(err?.message || 'Action failed');
+      setToast({ type: 'error', text: err?.message || 'Action failed' });
     } finally {
       setActionLoading(null);
     }
@@ -210,6 +212,7 @@ export default function AdminRequestsPage() {
         </span>
       }
     >
+      {toast && <Toast msg={toast} onClose={() => setToast(null)} />}
       {error && (
         <div className="mb-4 p-3 rounded-lg bg-[var(--error-surface)] border border-[var(--error)]">
           <p className="text-sm text-[var(--error)]">{error}</p>

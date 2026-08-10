@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { AdminSection, DataTable, StatusBadge } from '@tirbeo/ui';
 import { apiFetch } from '../../lib';
-import { BellRing, AlertTriangle, CheckCircle, Clock, Filter } from 'lucide-react';
+import { BellRing, AlertTriangle, CheckCircle, Clock, Filter, ExternalLink } from 'lucide-react';
 
 interface Incident {
   id: string;
@@ -42,13 +42,14 @@ export default function AlertsPage() {
 
   const columns = [
     { key: 'title', label: 'Incident', sortable: true, render: (i: Incident) => (
-      <div className="flex items-center gap-3">
+      <a href={`/admin/alerts/${i.id}`} className="flex items-center gap-3 hover:bg-[var(--color-admin-surface-hover)] p-2 -m-2 rounded-lg transition-colors">
         <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: severityColor(i.severity) }} />
-        <div>
+        <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-[var(--color-admin-text)]">{i.title}</p>
           {i.description && <p className="text-xs text-[var(--color-admin-text-muted)] truncate max-w-md">{i.description}</p>}
         </div>
-      </div>
+        <ExternalLink className="w-4 h-4 text-[var(--color-admin-text-muted)] flex-shrink-0" />
+      </a>
     )},
     { key: 'severity', label: 'Severity', render: (i: Incident) => (
       <StatusBadge status={i.severity === 'critical' ? 'error' : i.severity === 'major' ? 'suspended' : 'active'}

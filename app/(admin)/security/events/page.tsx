@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { AdminSection } from '@tirbeo/ui';
 import { apiFetch } from '../../../../app/lib';
 import { Shield, Search, AlertTriangle, ShieldCheck, Ban, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -37,6 +39,7 @@ function formatTime(iso: string) {
 }
 
 export default function SecurityEventsPage() {
+  const router = useRouter();
   const [events, setEvents] = useState<SecurityEvent[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -79,19 +82,27 @@ export default function SecurityEventsPage() {
 
   const totalPages = Math.max(1, Math.ceil(total / 50));
 
+  const tabs = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'authentication', label: 'Authentication' },
+    { id: 'access-control', label: 'Access control' },
+    { id: 'policies', label: 'Policies' },
+    { id: 'captcha', label: 'CAPTCHA' },
+    { id: 'blocks', label: 'Blocks' },
+    { id: 'events', label: 'Events' },
+    { id: 'audit', label: 'Audit log' },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-[var(--color-text)]">Security events</h1>
-          <p className="text-sm text-[var(--color-text-secondary)] mt-0.5">XSS blocks, suspicious activity, and security signals with ray IDs</p>
-        </div>
+    <AdminSection title="Events" description="XSS blocks, suspicious activity, and security signals with ray IDs"
+      tabs={tabs} activeTab="events" onTabChange={id => router.push(`/admin/security/${id === 'overview' ? '' : id}`)}
+      actions={
         <button onClick={clearOld} disabled={clearing}
           className="px-3 py-2 text-sm font-medium text-[var(--color-error)] border-2 border-[var(--color-error)] hover:bg-[var(--color-error-surface)] disabled:opacity-50 transition-colors">
           {clearing ? 'Clearing...' : 'Clear events older than 30d'}
         </button>
-      </div>
-
+      }>
+      <div className="space-y-6">
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
@@ -193,6 +204,7 @@ export default function SecurityEventsPage() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </AdminSection>
   );
 }

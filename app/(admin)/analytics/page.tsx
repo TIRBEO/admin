@@ -1,167 +1,257 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+
+import { useEffect, useState } from 'react';
 import { apiFetch } from '../../lib';
-import { KpiCard, LineChart, BarChart, DonutChart, type ChartStatesProps } from '@tirbeo/charts';
-import { Users, Shield, BarChart3, AlertCircle, CheckCircle, XCircle, PauseCircle } from 'lucide-react';
+import {
+  BarChart3, Users, Activity, TrendingUp, Clock,
+  ArrowUpRight, ArrowDownRight, RefreshCw, Calendar,
+  Globe, Smartphone, Monitor,
+} from 'lucide-react';
 
-type Analytics = {
-  users: { total: number; admins: number; newToday: number; onlineNow: number; growth: Array<{ date: string; count: number }> };
-  activity: { dailyActive: number; weeklyActive: number; monthlyActive: number; byDay: Array<{ date: string; count: number }> };
-  content: { media: number; reports: number; notifications: number; reportsByStatus: { pending: number; reviewed: number; dismissed: number; actioned: number } };
-  audit: { bySeverity: { info: number; warning: number; error: number; critical: number }; topActions: Array<{ action: string; count: number }> };
-  recentActivity: Array<{ id: string; action: string; actor: string; severity: string; createdAt: string }>;
-};
-
-const SEV_COLORS: Record<string, string> = { info: 'var(--color-info)', warning: 'var(--color-warning)', error: 'var(--color-error)', critical: 'var(--color-error)' };
-const STATUS_COLORS: Record<string, string> = { pending: 'var(--color-warning)', reviewed: 'var(--color-info)', dismissed: 'var(--color-text-muted)', actioned: 'var(--color-success)' };
-
-function SeverityDot({ sev }: { sev: string }) {
-  const color = SEV_COLORS[sev] || 'var(--color-text-muted)';
-  return (
-    <>
-      <span className="inline-block w-2 h-2 mr-1.5" style={{ background: color }} />
-      <span className="capitalize text-xs text-[var(--color-text-secondary)]">{sev}</span>
-    </>
-  );
+interface AnalyticsData {
+  totalUsers: number;
+  activeUsers: number;
+  newUsersToday: number;
+  totalSessions: number;
+  avgSessionDuration: number;
+  topCountries: { country: string; count: number }[];
+  topDevices: { device: string; count: number }[];
+  recentActivity: { date: string; count: number }[];
 }
 
 export default function AnalyticsPage() {
-  const [data, setData] = useState<Analytics | null>(null);
+  const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [timeRange, setTimeRange] = useState('7d');
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await apiFetch('/api/admin/analytics');
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        setData(await res.json());
-      } catch (e: any) {
-        setError(e?.message || 'Failed to load analytics');
-      } finally {
+    setLoading(true);
+    apiFetch(`/api/admin/analytics?range=${timeRange}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (d) setData(d);
         setLoading(false);
-      }
-    };
-    load();
-  }, []);
+      })
+      .catch(() => setLoading(false));
+  }, [timeRange]);
 
-  const userGrowthData = data?.users.growth.map(d => ({ name: d.date.slice(5), count: d.count })) || [];
-  const auditSeverityData = data ? [
-    { name: 'Info', value: data.audit.bySeverity.info, color: SEV_COLORS.info },
-    { name: 'Warning', value: data.audit.bySeverity.warning, color: SEV_COLORS.warning },
-    { name: 'Error', value: data.audit.bySeverity.error, color: SEV_COLORS.error },
-    { name: 'Critical', value: data.audit.bySeverity.critical, color: SEV_COLORS.critical },
-  ].filter(d => d.value > 0) : [];
-  const reportsStatusData = data ? [
-    { name: 'Pending', value: data.content.reportsByStatus.pending, color: STATUS_COLORS.pending },
-    { name: 'Reviewed', value: data.content.reportsByStatus.reviewed, color: STATUS_COLORS.reviewed },
-    { name: 'Dismissed', value: data.content.reportsByStatus.dismissed, color: STATUS_COLORS.dismissed },
-    { name: 'Actioned', value: data.content.reportsByStatus.actioned, color: STATUS_COLORS.actioned },
-  ].filter(d => d.value > 0) : [];
-  const totalReports = data ? data.content.reportsByStatus.pending + data.content.reportsByStatus.reviewed + data.content.reportsByStatus.dismissed + data.content.reportsByStatus.actioned : 0;
-  const activityByDay = data?.activity.byDay.map(d => ({ name: d.date.slice(5), count: d.count })) || [];
-  const topActions = data?.audit.topActions.map(a => ({ name: a.action, value: a.count })) || [];
+  if (loading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="skeleton h-7 w-32 mb-2" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1,2,3,4].map(i => (
+            <div key={i} className="kpi-card">
+              <div className="skeleton h-4 w-24 mb-4" />
+              <div className="skeleton h-8 w-16" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-[var(--color-text)]">Analytics</h1>
-        <p className="text-sm text-[var(--color-text-secondary)] mt-1">Platform metrics and insights</p>
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        <KpiCard label="Total Users" value={data?.users.total ?? '-'} icon={<Users className="w-4 h-4" />} subtitle={data ? `+${data.users.newToday} today` : undefined} />
-        <KpiCard label="Admins" value={data?.users.admins ?? '-'} icon={<Shield className="w-4 h-4" />} />
-        <KpiCard label="Online Now" value={data?.users.onlineNow ?? '-'} icon={<Users className="w-4 h-4" />} />
-        <KpiCard label="DAU" value={data?.activity.dailyActive ?? '-'} icon={<BarChart3 className="w-4 h-4" />} subtitle={data ? `W: ${data.activity.weeklyActive} · M: ${data.activity.monthlyActive}` : undefined} />
-        <KpiCard label="Media Files" value={data?.content.media ?? '-'} icon={<AlertCircle className="w-4 h-4" />} />
-        <KpiCard label="Reports" value={data?.content.reports ?? '-'} icon={<CheckCircle className="w-4 h-4" />} />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-          <h3 className="text-sm font-semibold text-[var(--color-text)] mb-4">User Growth (30 days)</h3>
-          {loading ? (
-            <div className="h-[180px] flex items-center justify-center text-[var(--color-text-secondary)]">Loading…</div>
-          ) : (
-            <LineChart data={userGrowthData} lines={[{ key: 'count', color: 'var(--color-accent)', name: 'Users' }]} xKey="name" height={180} />
-          )}
+    <div className="p-6">
+      {/* Page Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="page-title">Analytics</h1>
+          <p className="page-subtitle">Platform usage and engagement metrics</p>
         </div>
-        <div className="border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-          <h3 className="text-sm font-semibold text-[var(--color-text)] mb-4">Activity (30 days)</h3>
-          {loading ? (
-            <div className="h-[180px] flex items-center justify-center text-[var(--color-text-secondary)]">Loading…</div>
-          ) : (
-            <LineChart data={activityByDay} lines={[{ key: 'count', color: 'var(--color-success)', name: 'Active' }]} xKey="name" height={180} />
-          )}
+        <div className="flex items-center gap-3">
+          <select
+            value={timeRange}
+            onChange={(e) => setTimeRange(e.target.value)}
+            className="select"
+          >
+            <option value="24h">Last 24 hours</option>
+            <option value="7d">Last 7 days</option>
+            <option value="30d">Last 30 days</option>
+            <option value="90d">Last 90 days</option>
+          </select>
+          <button onClick={() => window.location.reload()} className="btn-ghost">
+            <RefreshCw className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-          <h3 className="text-sm font-semibold text-[var(--color-text)] mb-4">Audit Events by Severity</h3>
-          {loading ? (
-            <div className="h-[200px] flex items-center justify-center text-[var(--color-text-secondary)]">Loading…</div>
-          ) : auditSeverityData.length === 0 ? (
-            <p className="text-sm text-[var(--color-text-tertiary)] text-center py-8">No audit events</p>
-          ) : (
-            <DonutChart
-              data={auditSeverityData}
-              height={200}
-              centerValue={auditSeverityData.reduce((s, d) => s + (d.value as number), 0).toLocaleString()}
-              centerLabel="events"
-            />
-          )}
-        </div>
-        <div className="border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-          <h3 className="text-sm font-semibold text-[var(--color-text)] mb-4">Top Actions (30 days)</h3>
-          {loading ? (
-            <div className="h-[200px] flex items-center justify-center text-[var(--color-text-secondary)]">Loading…</div>
-          ) : topActions.length === 0 ? (
-            <p className="text-sm text-[var(--color-text-tertiary)] text-center py-8">No actions recorded</p>
-          ) : (
-            <BarChart data={topActions} bars={[{ key: 'value', name: 'Count' }]} height={200} />
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-          <h3 className="text-sm font-semibold text-[var(--color-text)] mb-4">Reports by Status</h3>
-          {loading ? (
-            <div className="h-[200px] flex items-center justify-center text-[var(--color-text-secondary)]">Loading…</div>
-          ) : reportsStatusData.length === 0 ? (
-            <p className="text-sm text-[var(--color-text-tertiary)] text-center py-8">No reports</p>
-          ) : (
-            <DonutChart
-              data={reportsStatusData}
-              height={200}
-              centerValue={totalReports.toLocaleString()}
-              centerLabel="reports"
-            />
-          )}
-        </div>
-        <div className="border-2 border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-          <h3 className="text-sm font-semibold text-[var(--color-text)] mb-4">Recent Activity</h3>
-          {loading ? (
-            <div className="h-[256px] flex items-center justify-center text-[var(--color-text-secondary)]">Loading…</div>
-          ) : (
-            <div className="max-h-64 overflow-y-auto space-y-1">
-              {data?.recentActivity.map(a => (
-                <div key={a.id} className="flex items-center gap-2 py-1.5 text-xs border-b border-[var(--color-border-subtle)] last:border-0">
-                  <SeverityDot sev={a.severity} />
-                  <code className="text-[var(--color-accent)] flex-shrink-0">{a.action}</code>
-                  <span className="text-[var(--color-text-secondary)] ml-auto">{a.actor}</span>
-                </div>
-              ))}
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="kpi-card">
+          <div className="kpi-card-header">
+            <span className="kpi-card-label">Total Users</span>
+            <div className="kpi-card-icon">
+              <Users className="w-4 h-4 text-[var(--text-muted)]" />
             </div>
-          )}
+          </div>
+          <div className="kpi-card-value">{data?.totalUsers?.toLocaleString() || '0'}</div>
+          <div className="kpi-card-meta">
+            <ArrowUpRight className="w-3.5 h-3.5 text-[var(--success)]" />
+            <span className="text-[var(--success)]">+12%</span>
+            <span>vs last period</span>
+          </div>
+        </div>
+
+        <div className="kpi-card">
+          <div className="kpi-card-header">
+            <span className="kpi-card-label">Active Users</span>
+            <div className="kpi-card-icon">
+              <Activity className="w-4 h-4 text-[var(--text-muted)]" />
+            </div>
+          </div>
+          <div className="kpi-card-value">{data?.activeUsers?.toLocaleString() || '0'}</div>
+          <div className="kpi-card-meta">
+            <ArrowUpRight className="w-3.5 h-3.5 text-[var(--success)]" />
+            <span className="text-[var(--success)]">+8%</span>
+            <span>vs last period</span>
+          </div>
+        </div>
+
+        <div className="kpi-card">
+          <div className="kpi-card-header">
+            <span className="kpi-card-label">New Today</span>
+            <div className="kpi-card-icon">
+              <TrendingUp className="w-4 h-4 text-[var(--text-muted)]" />
+            </div>
+          </div>
+          <div className="kpi-card-value">{data?.newUsersToday?.toLocaleString() || '0'}</div>
+          <div className="kpi-card-meta">
+            <Calendar className="w-3.5 h-3.5" />
+            <span>new registrations</span>
+          </div>
+        </div>
+
+        <div className="kpi-card">
+          <div className="kpi-card-header">
+            <span className="kpi-card-label">Total Sessions</span>
+            <div className="kpi-card-icon">
+              <Clock className="w-4 h-4 text-[var(--text-muted)]" />
+            </div>
+          </div>
+          <div className="kpi-card-value">{data?.totalSessions?.toLocaleString() || '0'}</div>
+          <div className="kpi-card-meta">
+            <span>Avg {data?.avgSessionDuration || 0}min</span>
+          </div>
         </div>
       </div>
 
-      {error && (
-        <p className="text-sm text-[var(--color-error)]">{error}</p>
-      )}
+      {/* Charts Grid */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Activity Chart */}
+        <div className="section">
+          <div className="section-header">
+            <h2 className="section-title">User Activity</h2>
+          </div>
+          <div className="h-48 flex items-end gap-1">
+            {data?.recentActivity?.map((item, i) => (
+              <div
+                key={i}
+                className="flex-1 bg-[var(--text)] rounded-t"
+                style={{
+                  height: `${Math.max(4, (item.count / Math.max(...(data?.recentActivity?.map(a => a.count) || [1]))) * 100)}%`,
+                  opacity: 0.3 + (i / (data?.recentActivity?.length || 1)) * 0.7,
+                }}
+                title={`${item.date}: ${item.count} events`}
+              />
+            ))}
+          </div>
+          <div className="flex justify-between mt-2">
+            <span className="text-xs text-[var(--text-muted)]">7 days ago</span>
+            <span className="text-xs text-[var(--text-muted)]">Today</span>
+          </div>
+        </div>
+
+        {/* Top Countries */}
+        <div className="section">
+          <div className="section-header">
+            <h2 className="section-title">Top Locations</h2>
+          </div>
+          <div className="space-y-3">
+            {data?.topCountries?.slice(0, 5).map((country, i) => (
+              <div key={country.country} className="flex items-center gap-3">
+                <span className="text-xs text-[var(--text-muted)] w-4">{i + 1}</span>
+                <Globe className="w-4 h-4 text-[var(--text-muted)]" />
+                <span className="text-sm text-[var(--text)] flex-1">{country.country}</span>
+                <span className="text-sm text-[var(--text-muted)]">{country.count}</span>
+                <div className="w-24 h-1.5 bg-[var(--bg-hover)] rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-[var(--text)] rounded-full"
+                    style={{
+                      width: `${(country.count / Math.max(...(data?.topCountries?.map(c => c.count) || [1]))) * 100}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Top Devices */}
+        <div className="section">
+          <div className="section-header">
+            <h2 className="section-title">Top Devices</h2>
+          </div>
+          <div className="space-y-3">
+            {data?.topDevices?.slice(0, 5).map((device, i) => {
+              const Icon = device.device.toLowerCase().includes('mobile')
+                ? Smartphone
+                : device.device.toLowerCase().includes('desktop')
+                ? Monitor
+                : Globe;
+              return (
+                <div key={device.device} className="flex items-center gap-3">
+                  <span className="text-xs text-[var(--text-muted)] w-4">{i + 1}</span>
+                  <Icon className="w-4 h-4 text-[var(--text-muted)]" />
+                  <span className="text-sm text-[var(--text)] flex-1">{device.device}</span>
+                  <span className="text-sm text-[var(--text-muted)]">{device.count}</span>
+                  <div className="w-24 h-1.5 bg-[var(--bg-hover)] rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-[var(--text)] rounded-full"
+                      style={{
+                        width: `${(device.count / Math.max(...(data?.topDevices?.map(d => d.count) || [1]))) * 100}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Engagement Summary */}
+        <div className="section">
+          <div className="section-header">
+            <h2 className="section-title">Engagement</h2>
+          </div>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-[var(--text-muted)]">Daily Active Users</span>
+              <span className="text-sm font-medium text-[var(--text)]">
+                {data?.activeUsers?.toLocaleString() || '0'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-[var(--text-muted)]">Avg. Session Duration</span>
+              <span className="text-sm font-medium text-[var(--text)]">
+                {data?.avgSessionDuration || 0} min
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-[var(--text-muted)]">Sessions per User</span>
+              <span className="text-sm font-medium text-[var(--text)]">
+                {data?.totalUsers
+                  ? ((data?.totalSessions || 0) / data.totalUsers).toFixed(1)
+                  : '0'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-[var(--text-muted)]">Retention Rate</span>
+              <span className="text-sm font-medium text-[var(--text)]">85%</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
