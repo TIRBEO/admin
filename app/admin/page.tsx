@@ -259,10 +259,10 @@ export default function CommandCenter() {
           <div className="card-header"><span className="card-title">Platform Overview</span></div>
           <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {[
-              { label: 'Applications', value: 7, icon: Layers },
+              { label: 'Applications', value: ov?.apps?.total ?? 0, icon: Layers },
               { label: 'Total Roles', value: ov?.roles?.total ?? 0, icon: Shield },
               { label: 'Notifications', value: ov?.notifications?.total ?? 0, icon: MessageSquare },
-              { label: 'API Keys', value: 0, icon: Zap },
+              { label: 'API Keys', value: ov?.apiKeys?.active ?? 0, icon: Zap },
             ].map(item => (
               <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <item.icon size={15} style={{ color: 'var(--tb-text-icon-muted)' }} />

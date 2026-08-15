@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { apiFetch } from '../../../lib';
 import {
   HeartPulse, RefreshCw, CheckCircle, XCircle, Clock, Server,
-  Database, HardDrive, Wifi, Globe, Shield, Zap, Cpu, Activity,
+  Database, HardDrive, Wifi, Globe, Shield, Zap, Activity,
 } from 'lucide-react';
 
 interface ServiceStatus { name: string; ok: boolean; latency?: number; detail?: string; icon: any; }
@@ -13,29 +13,41 @@ export default function HealthPage() {
   const [loading, setLoading] = useState(true);
   const [lastCheck, setLastCheck] = useState<Date | null>(null);
   const [uptime, setUptime] = useState<string>('—');
+  const [pool, setPool] = useState<any>(null);
+  const [incidents, setIncidents] = useState<any[]>([]);
 
   const checkHealth = useCallback(async () => {
     setLoading(true);
     try {
-      const hb = await apiFetch('/api/admin/heartbeat').then(r => r.ok ? r.json() : null);
-      const sec = await apiFetch('/api/admin/security/score').then(r => r.ok ? r.json() : null);
-      const maint = await apiFetch('/api/admin/maintenance').then(r => r.ok ? r.json() : null);
+      const [detail, poolRes, sec, maint, realtime] = await Promise.all([
+        apiFetch('/api/content/health').then(r => r.ok ? r.json() : null),
+        apiFetch('/api/health/pool').then(r => r.ok ? r.json() : null),
+        apiFetch('/api/admin/security/score').then(r => r.ok ? r.json() : null),
+        apiFetch('/api/admin/maintenance').then(r => r.ok ? r.json() : null),
+        fetch('https://ws.tirbeo.app/api/health').then(r => r.ok ? r.json() : null).catch(() => null),
+      ]);
+
+      const checks = detail?.checks ?? {};
+      const db = checks.database ?? {};
+      const redis = checks.redis ?? {};
+      const queue = checks.queue ?? {};
 
       const items: ServiceStatus[] = [
-        { name: 'API Server', ok: hb?.api !== false, latency: hb?.apiLatency, detail: hb?.version, icon: Server },
-        { name: 'Database', ok: hb?.database !== false, latency: hb?.dbLatency, detail: hb?.dbEngine, icon: Database },
-        { name: 'Redis Cache', ok: hb?.redis !== false, latency: hb?.redisLatency, icon: HardDrive },
-        { name: 'WebSocket', ok: hb?.websocket !== false, detail: hb?.wsConnections ? `${hb.wsConnections} connections` : undefined, icon: Wifi },
-        { name: 'Authentication', ok: hb?.auth !== false, detail: 'OAuth + Session', icon: Shield },
-        { name: 'Email Service', ok: hb?.email !== false, detail: hb?.emailProvider || 'SMTP', icon: Globe },
-        { name: 'File Storage', ok: hb?.storage !== false, detail: hb?.storageProvider || 'Local', icon: HardDrive },
-        { name: 'Job Queue', ok: hb?.queue !== false, detail: hb?.pendingJobs ? `${hb.pendingJobs} pending` : 'Idle', icon: Zap },
+        { name: 'API Server', ok: detail?.status === 'healthy' || !!detail, detail: detail?.version || 'Vercel', icon: Server },
+        { name: 'Database', ok: db?.status === 'ok', latency: db?.latencyMs, detail: db?.status === 'error' ? db?.error : undefined, icon: Database },
+        { name: 'Redis Cache', ok: redis?.status === 'ok' || redis?.status === undefined, latency: redis?.latencyMs, detail: redis?.status === 'error' ? redis?.error : undefined, icon: HardDrive },
+        { name: 'WebSocket', ok: realtime?.status === 'healthy' || !!realtime, detail: realtime?.checks ? `DB ${realtime.checks.database} · Redis ${realtime.checks.redis}` : undefined, icon: Wifi },
+        { name: 'Authentication', ok: sec !== null, detail: 'OAuth + Session', icon: Shield },
+        { name: 'Job Queue', ok: queue?.failedJobs !== undefined && queue.failedJobs === 0, detail: queue?.pendingJobs !== undefined ? `${queue.pendingJobs} pending · ${queue.failedJobs} failed` : 'Idle', icon: Zap },
+        { name: 'Connection Pool', ok: pool?.pool?.available !== undefined ? pool.pool.available > 0 : true, detail: pool?.database ? `${pool.database.latencyMs}ms` : undefined, icon: Activity },
       ];
       setServices(items);
-      if (hb?.uptime) {
-        const d = Math.floor(hb.uptime / 86400);
-        const h = Math.floor((hb.uptime % 86400) / 3600);
-        setUptime(d > 0 ? `${d}d ${h}h` : `${h}h ${Math.floor((hb.uptime % 3600) / 60)}m`);
+      setPool(pool ?? null);
+      setIncidents(detail?.incidents ?? []);
+      if (detail?.uptime) {
+        const d = Math.floor(detail.uptime / 86400);
+        const h = Math.floor((detail.uptime % 86400) / 3600);
+        setUptime(d > 0 ? `${d}d ${h}h` : `${h}h ${Math.floor((detail.uptime % 3600) / 60)}m`);
       }
       setLastCheck(new Date());
     } catch {
@@ -48,6 +60,9 @@ export default function HealthPage() {
 
   const healthy = services.filter(s => s.ok).length;
   const total = services.length;
+  const poolAvailable = pool?.pool?.available ?? 0;
+  const poolTotal = pool?.pool?.total ?? pool?.pool?.max ?? 0;
+  const poolPct = poolTotal > 0 ? Math.round((poolAvailable / poolTotal) * 100) : 100;
 
   return (
     <div className="page-stack">
@@ -84,21 +99,21 @@ export default function HealthPage() {
       {/* Services Grid */}
       {loading && services.length === 0 ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
-          {[1,2,3,4,5,6,7,8].map(i => <div key={i} className="skeleton" style={{ height: 100 }} />)}
+          {[1,2,3,4,5,6,7].map(i => <div key={i} className="skeleton" style={{ height: 100 }} />)}
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
           {services.map(s => (
-            <div key={s.name} className="card" style={{ borderLeft: `3px solid ${s.ok ? 'var(--tb-green)' : 'var(--tb-red)'}` }}>
+            <div key={s.name} className="card" style={{ borderLeft: `3px solid ${s.ok === false ? 'var(--tb-red)' : 'var(--tb-green)'}` }}>
               <div style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
-                <div style={{ width: 40, height: 40, borderRadius: 10, background: s.ok ? 'var(--tb-green-soft)' : 'var(--tb-red-soft)',
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: s.ok === false ? 'var(--tb-red-soft)' : 'var(--tb-green-soft)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <s.icon size={18} style={{ color: s.ok ? 'var(--tb-green)' : 'var(--tb-red)' }} />
+                  <s.icon size={18} style={{ color: s.ok === false ? 'var(--tb-red)' : 'var(--tb-green)' }} />
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--tb-text-primary)' }}>{s.name}</div>
-                  <div style={{ fontSize: 12, color: s.ok ? 'var(--tb-green)' : 'var(--tb-red)', marginTop: 2 }}>
-                    {s.ok ? 'Operational' : 'Down'}
+                  <div style={{ fontSize: 12, color: s.ok === false ? 'var(--tb-red)' : 'var(--tb-green)', marginTop: 2 }}>
+                    {s.ok === false ? 'Down' : 'Operational'}
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
@@ -115,20 +130,46 @@ export default function HealthPage() {
         </div>
       )}
 
-      {/* Uptime Bar */}
+      {/* Connection Pool */}
+      {pool && (
+        <div className="card">
+          <div className="card-header"><span className="card-title">Database Connection Pool</span><span style={{ fontSize: 12, color: 'var(--tb-text-muted)' }}>Live</span></div>
+          <div className="card-body">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontSize: 13, color: 'var(--tb-text-secondary)' }}>{poolAvailable} of {poolTotal} connections available</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: poolPct > 60 ? 'var(--tb-green)' : 'var(--tb-yellow)' }}>{poolPct}%</span>
+                </div>
+                <div style={{ height: 8, borderRadius: 4, background: 'var(--tb-surface-2)', overflow: 'hidden' }}>
+                  <div style={{ width: `${Math.min(100, poolPct)}%`, height: '100%', borderRadius: 4, background: poolPct > 60 ? 'var(--tb-green)' : 'var(--tb-yellow)', transition: 'width 500ms' }} />
+                </div>
+              </div>
+            </div>
+            {pool.alerts?.lastWarningAt && (
+              <div style={{ marginTop: 12, fontSize: 12, color: 'var(--tb-yellow)' }}>
+                Last pool warning: {new Date(pool.alerts.lastWarningAt).toLocaleString()} ({pool.alerts.totalAlerts} total)
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Incidents */}
       <div className="card">
-        <div className="card-header"><span className="card-title">Uptime History</span><span style={{ fontSize: 12, color: 'var(--tb-text-muted)' }}>Last 30 days</span></div>
+        <div className="card-header"><span className="card-title">Active Incidents</span><span style={{ fontSize: 12, color: 'var(--tb-text-muted)' }}>Unresolved</span></div>
         <div className="card-body">
-          <div style={{ display: 'flex', gap: 2, height: 32, borderRadius: 6, overflow: 'hidden' }}>
-            {Array.from({ length: 30 }, (_, i) => (
-              <div key={i} style={{ flex: 1, background: Math.random() > 0.03 ? 'var(--tb-green)' : 'var(--tb-red)', borderRadius: 2, transition: 'transform 100ms' }}
-                onMouseEnter={e => (e.currentTarget.style.transform = 'scaleY(1.3)')}
-                onMouseLeave={e => (e.currentTarget.style.transform = 'scaleY(1)')} />
-            ))}
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: 11, color: 'var(--tb-text-muted)' }}>
-            <span>30 days ago</span><span>Today</span>
-          </div>
+          {incidents.length === 0 ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: 'var(--tb-green)' }}>
+              <CheckCircle size={15} /> No active incidents
+            </div>
+          ) : incidents.map((inc: any) => (
+            <div key={inc.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid var(--tb-border)' }}>
+              <XCircle size={15} style={{ color: 'var(--tb-red)' }} />
+              <span style={{ flex: 1, fontSize: 13, color: 'var(--tb-text-primary)' }}>{inc.title || inc.severity}</span>
+              <span style={{ fontSize: 12, color: 'var(--tb-text-muted)' }}>{new Date(inc.createdAt).toLocaleString()}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>

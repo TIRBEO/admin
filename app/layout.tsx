@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import './globals.css';
 
 export const dynamic = 'force-dynamic';
@@ -38,6 +40,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head><script dangerouslySetInnerHTML={{ __html: themeScript }} /></head>
       <body style={{ margin: 0, padding: 0, background: 'var(--tb-bg)', color: 'var(--tb-text-primary)' }}>
         {children}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
