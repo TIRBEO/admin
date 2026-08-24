@@ -7,7 +7,7 @@ import {
   LayoutDashboard, BarChart3, FileText, Users, Shield, Settings,
   Activity, Globe, Key, Bell, Code,
   Zap, Layers, Lock, FileWarning,
-  Server, HeartPulse, Webhook, Link,
+  Server, HeartPulse, Webhook, Link, Rocket,
 } from 'lucide-react';
 
 const NAV_SECTIONS: NavSection[] = [
@@ -17,6 +17,7 @@ const NAV_SECTIONS: NavSection[] = [
   { label: 'Platform', items: [
     { href: '/admin/applications', label: 'Applications', icon: Layers },
     { href: '/admin/users', label: 'Users', icon: Users },
+    { href: process.env.NEXT_PUBLIC_FORMS_URL || 'https://forms.tirbeo.app', label: 'Forms', icon: Zap },
   ]},
 
   { label: 'Access', items: [
@@ -41,6 +42,7 @@ const NAV_SECTIONS: NavSection[] = [
     { href: '/admin/settings', label: 'Platform', icon: Settings },
     { href: '/admin/settings/security', label: 'Security', icon: Shield },
     { href: '/admin/settings/notifications', label: 'Notifications', icon: Bell },
+    { href: '/admin/settings/product-updates', label: 'Product Updates', icon: Rocket },
     { href: '/admin/settings/integrations', label: 'Integrations', icon: Link },
   ]},
 ];

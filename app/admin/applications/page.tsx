@@ -23,7 +23,7 @@ const TIRBEO_APPS: AppInfo[] = [
   { name: 'Accounts', slug: 'accounts', description: 'Authentication, registration, and identity', url: '/auth', status: 'live', version: '2.0.0', icon: '🔐', features: ['Login', 'Registration', '2FA', 'OAuth', 'Passkeys'], health: { api: true, frontend: true, database: true }, repo: 'tirbeo/accounts', branch: 'main' },
   { name: 'Dashboard', slug: 'dashboard', description: 'Main user dashboard and workspace', url: '/dashboard', status: 'live', version: '1.5.0', icon: '📊', features: ['Widgets', 'Navigation', 'Shortcuts', 'Notifications'], health: { api: true, frontend: true, database: true }, repo: 'tirbeo/dashboard', branch: 'main' },
   { name: 'Support', slug: 'support', description: 'Customer support ticketing and knowledge base', url: '/support', status: 'live', version: '1.0.0', icon: '💬', features: ['Tickets', 'Knowledge Base', 'FAQ', 'Live Chat'], health: { api: true, frontend: true, database: true }, repo: 'tirbeo/support', branch: 'main' },
-  { name: 'Flows', slug: 'flows', description: 'Form builder and submission management', url: '/flows', status: 'live', version: '1.2.0', icon: '📝', features: ['Form Builder', 'Submissions', 'Webhooks', 'Spam Protection'], health: { api: true, frontend: true, database: true }, repo: 'tirbeo/flows', branch: 'main' },
+  { name: 'Forms', slug: 'forms', description: 'Form builder and submission management', url: '/forms', status: 'live', version: '2.0.0', icon: '📝', features: ['Form Builder', '40+ Field Types', 'Conditional Logic', 'Embed', 'API Access'], health: { api: true, frontend: true, database: true }, repo: 'tirbeo/forms', branch: 'main' },
   { name: 'Documentation', slug: 'docs', description: 'Technical documentation and developer guides', url: '/docs', status: 'live', version: '1.0.0', icon: '📚', features: ['Search', 'Versioning', 'API Docs', 'Guides'], health: { api: true, frontend: true, database: false }, repo: 'tirbeo/docs', branch: 'main' },
   { name: 'Admin', slug: 'admin', description: 'Platform administration and control center', url: '/admin', status: 'live', version: '2.0.0', icon: '⚙️', features: ['Command Center', 'Users', 'Security', 'Analytics', 'Settings'], health: { api: true, frontend: true, database: true }, repo: 'tirbeo/tirbeo', branch: 'main' },
 ];
@@ -33,7 +33,7 @@ const MOCK_DEPLOYMENTS: Record<string, { id: string; url: string; readyState: st
   accounts: { id: 'dpl_3mN7pQ', url: 'accounts.vercel.app', readyState: 'READY', createdAt: '1d ago', creator: 'bishnuneup4ne' },
   dashboard: { id: 'dpl_8wR4tY', url: 'dashboard.vercel.app', readyState: 'READY', createdAt: '3h ago', creator: 'bishnuneup4ne' },
   support: { id: 'dpl_1aB5cD', url: 'support.vercel.app', readyState: 'READY', createdAt: '5d ago', creator: 'bishnuneup4ne' },
-  flows: { id: 'dpl_6eF9gH', url: 'flows.vercel.app', readyState: 'READY', createdAt: '1w ago', creator: 'bishnuneup4ne' },
+  forms: { id: 'dpl_6eF9gH', url: 'forms.vercel.app', readyState: 'READY', createdAt: '1w ago', creator: 'bishnuneup4ne' },
   docs: { id: 'dpl_2iJ3kL', url: 'docs.vercel.app', readyState: 'READY', createdAt: '2w ago', creator: 'bishnuneup4ne' },
   admin: { id: 'dpl_4mN8oP', url: 'admin.vercel.app', readyState: 'READY', createdAt: 'Today', creator: 'bishnuneup4ne' },
 };

@@ -172,7 +172,11 @@ export default function AdminShell({ children, navSections, brand, user, onLogou
 
   const handleNav = useCallback((href: string) => {
     if (!href) return;
-    router.push(href);
+    if (href.startsWith('http://') || href.startsWith('https://')) {
+      window.open(href, '_blank', 'noopener,noreferrer');
+    } else {
+      router.push(href);
+    }
     setMobileOpen(false);
     setSearchOpen(false);
     setUserMenuOpen(false);
