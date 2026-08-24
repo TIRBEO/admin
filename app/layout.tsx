@@ -37,7 +37,10 @@ const themeScript = `
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head><script dangerouslySetInnerHTML={{ __html: themeScript }} /></head>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script defer src="https://cloud.umami.is/script.js" data-website-id="60324c6a-e4c2-4e92-b1f6-280cf3ef30a1" />
+      </head>
       <body style={{ margin: 0, padding: 0, background: 'var(--tb-bg)', color: 'var(--tb-text-primary)' }}>
         {children}
         <Analytics />
