@@ -6,7 +6,7 @@ import { useAdminWs } from './useAdminWs';
 import {
   Users, Shield, Activity, Globe, ChevronRight, RefreshCw,
   MessageSquare, Settings, AlertTriangle, CheckCircle,
-  Layers, Server, Database, Clock, ArrowUpRight,
+  Server, Database, Clock, ArrowUpRight,
   FileText, Webhook, Zap, Wifi,
 } from 'lucide-react';
 
@@ -240,7 +240,6 @@ export default function CommandCenter() {
           <div className="card-header"><span className="card-title">Quick Access</span></div>
           <div style={{ padding: 6 }}>
             {[
-              { label: 'Applications', desc: 'Manage all apps', href: '/admin/applications', icon: Layers, color: 'var(--tb-brand)' },
               { label: 'Users', desc: 'User management', href: '/admin/users', icon: Users, color: 'var(--tb-green)' },
               { label: 'Roles', desc: 'Access control', href: '/admin/access/roles', icon: Shield, color: 'var(--tb-yellow)' },
               { label: 'Audit Logs', desc: 'System audit trail', href: '/admin/operations/audit', icon: Activity, color: 'var(--tb-orange)' },
@@ -259,7 +258,6 @@ export default function CommandCenter() {
           <div className="card-header"><span className="card-title">Platform Overview</span></div>
           <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {[
-              { label: 'Applications', value: ov?.apps?.total ?? 0, icon: Layers },
               { label: 'Total Roles', value: ov?.roles?.total ?? 0, icon: Shield },
               { label: 'Notifications', value: ov?.notifications?.total ?? 0, icon: MessageSquare },
               { label: 'API Keys', value: ov?.apiKeys?.active ?? 0, icon: Zap },

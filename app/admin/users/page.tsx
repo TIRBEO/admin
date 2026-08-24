@@ -11,14 +11,14 @@ import {
 interface User {
   id: string; name: string; email: string; photoUrl?: string;
   adminRole?: string; verified?: boolean; createdAt?: string;
-  lastActive?: string; suspended?: boolean; isSuspended?: boolean;
+  lastActive?: string; suspended?: boolean; isSuspended?: boolean; suspendedUntil?: string | null; suspendReason?: string | null;
   isBanned?: boolean; twoFactorEnabled?: boolean; is2FAEnabled?: boolean;
   emailVerified?: boolean;
 }
 
 interface UserDetail {
   id: string; email: string; name: string; photoUrl?: string;
-  adminRole?: string; isBanned?: boolean; isSuspended?: boolean;
+  adminRole?: string; isBanned?: boolean; isSuspended?: boolean; suspendedUntil?: string | null; suspendReason?: string | null; banReason?: string | null;
   is2FAEnabled?: boolean; emailVerified?: boolean;
   createdAt?: string; updatedAt?: string; status?: string;
   roles?: { id: string; name: string }[];
@@ -113,10 +113,25 @@ export default function UsersPage() {
   // Close detail
   const closeDetail = () => setDetailUser(null);
 
-  // Suspend user (temporary)
-  const suspendUser = async (id: string, reason?: string, days?: number) => {
-    const res = await apiFetch(`/api/admin/users/${id}/suspend`, { method: 'PATCH', body: JSON.stringify({ reason: reason || 'Suspended by admin' }) });
-    if (res.ok) { showToast('User suspended temporarily'); fetchUsers(); if (detailUser?.id === id) openDetail(id); }
+  // Suspend / ban modal
+  const [actionModal, setActionModal] = useState<null | { mode: 'suspend' | 'ban'; id: string; email?: string }>(null);
+  const [actionReason, setActionReason] = useState('');
+  const [actionDays, setActionDays] = useState('7');
+  const [actionBusy, setActionBusy] = useState(false);
+
+  const submitAction = async () => {
+    if (!actionModal) return;
+    setActionBusy(true);
+    try {
+      if (actionModal.mode === 'suspend') {
+        const res = await apiFetch(`/api/admin/users/${actionModal.id}/suspend`, { method: 'PATCH', body: JSON.stringify({ reason: actionReason || 'No reason provided', days: actionDays ? Number(actionDays) : null }) });
+        if (res.ok) { showToast('User suspended'); fetchUsers(); if (detailUser?.id === actionModal.id) openDetail(actionModal.id); }
+      } else {
+        const res = await apiFetch(`/api/admin/users/${actionModal.id}/ban`, { method: 'PATCH', body: JSON.stringify({ reason: actionReason || 'No reason provided' }) });
+        if (res.ok) { showToast('User permanently banned'); fetchUsers(); if (detailUser?.id === actionModal.id) openDetail(actionModal.id); }
+      }
+    } catch {}
+    setActionBusy(false); setActionModal(null); setActionReason(''); setActionDays('7');
   };
   // Unsuspend user
   const unsuspendUser = async (id: string) => {
@@ -266,6 +281,9 @@ export default function UsersPage() {
                       <span className={`badge ${isBanned ? 'badge-red' : isSuspended ? 'badge-yellow' : 'badge-green'}`}>
                         {isBanned ? 'Banned' : isSuspended ? 'Suspended' : 'Active'}
                       </span>
+                      {!isBanned && isSuspended && user.suspendedUntil && (
+                        <span style={{ fontSize: 11, color: 'var(--tb-text-muted)', marginLeft: 6 }}>until {new Date(user.suspendedUntil).toLocaleDateString()}</span>
+                      )}
                     </td>
                     <td>
                       {user.twoFactorEnabled || user.is2FAEnabled ? (
@@ -296,8 +314,8 @@ export default function UsersPage() {
                             <button className="menu-item" onClick={() => { unsuspendUser(user.id); setContextMenu(null); }}><RotateCcw size={14} /> Unsuspend</button>
                           ) : (
                             <>
-                              <button className="menu-item" onClick={() => { suspendUser(user.id); setContextMenu(null); }}><Clock size={14} /> Suspend (Temporary)</button>
-                              <button className="menu-item danger" onClick={() => { banUser(user.id); setContextMenu(null); }}><Ban size={14} /> Ban (Permanent)</button>
+                              <button className="menu-item" onClick={() => { setActionModal({ mode: 'suspend', id: user.id, email: user.email }); setContextMenu(null); }}><Clock size={14} /> Suspend…</button>
+                              <button className="menu-item danger" onClick={() => { setActionModal({ mode: 'ban', id: user.id, email: user.email }); setContextMenu(null); }}><Ban size={14} /> Ban…</button>
                             </>
                           )}
                         </div>
@@ -358,6 +376,13 @@ export default function UsersPage() {
                       <span className={`badge ${detailUser.isBanned ? 'badge-red' : detailUser.isSuspended ? 'badge-yellow' : 'badge-green'}`}>
                         {detailUser.isBanned ? 'Banned (Permanent)' : detailUser.isSuspended ? 'Suspended (Temporary)' : 'Active'}
                       </span>
+                      {(detailUser.suspendedUntil || detailUser.suspendReason) && (
+                        <span style={{ fontSize: 11.5, color: 'var(--tb-text-muted)' }}>
+                          {detailUser.suspendReason ? `Reason: ${detailUser.suspendReason}` : ''}
+                          {detailUser.suspendReason && detailUser.suspendedUntil ? ' · ' : ''}
+                          {detailUser.suspendedUntil ? `until ${new Date(detailUser.suspendedUntil).toLocaleString()}` : ''}
+                        </span>
+                      )}
                       {detailUser.emailVerified && <span className="badge badge-green"><CheckCircle size={10} /> Verified</span>}
                       {(detailUser.is2FAEnabled) && <span className="badge badge-blue"><Shield size={10} /> 2FA</span>}
                     </div>
@@ -372,8 +397,8 @@ export default function UsersPage() {
                     <button className="btn btn-primary btn-sm" onClick={() => unsuspendUser(detailUser.id)}><RotateCcw size={13} /> Unsuspend</button>
                   ) : (
                     <>
-                      <button className="btn btn-ghost btn-sm" style={{ color: 'var(--tb-yellow)', border: '1px solid var(--tb-yellow)30' }} onClick={() => suspendUser(detailUser.id)}><Clock size={13} /> Suspend (Temporary)</button>
-                      <button className="btn btn-ghost btn-sm" style={{ color: 'var(--tb-red)', border: '1px solid var(--tb-red)30' }} onClick={() => banUser(detailUser.id)}><Ban size={13} /> Ban (Permanent)</button>
+                      <button className="btn btn-ghost btn-sm" style={{ color: 'var(--tb-yellow)', border: '1px solid var(--tb-yellow)30' }} onClick={() => setActionModal({ mode: 'suspend', id: detailUser.id, email: detailUser.email })}><Clock size={13} /> Suspend (Temporary)</button>
+                      <button className="btn btn-ghost btn-sm" style={{ color: 'var(--tb-red)', border: '1px solid var(--tb-red)30' }} onClick={() => setActionModal({ mode: 'ban', id: detailUser.id, email: detailUser.email })}><Ban size={13} /> Ban (Permanent)</button>
                     </>
                   )}
                   <button className="btn btn-ghost btn-sm"><Mail size={13} /> Send Email</button>
@@ -495,7 +520,38 @@ export default function UsersPage() {
           </div>
         </div>
       )}
+
+      {actionModal && (
+        <div onClick={() => !actionBusy && setActionModal(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 420, background: 'var(--tb-surface-1)', borderRadius: 14, border: '1px solid var(--tb-border)', padding: 22 }}>
+            <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700 }}>{actionModal.mode === 'suspend' ? 'Suspend user' : 'Ban user permanently'}</h3>
+            <p style={{ margin: '0 0 16px', fontSize: 12.5, color: 'var(--tb-text-muted)' }}>
+              {actionModal.email ? `${actionModal.email} — ` : ''}{actionModal.mode === 'suspend'
+                ? 'they cannot sign in until the suspension ends. Reason is emailed to them.'
+                : 'permanent — they can never sign in again. Reason is emailed to them.'}
+            </p>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Reason</label>
+            <input value={actionReason} onChange={(e) => setActionReason(e.target.value)} placeholder="e.g. Repeated policy violations" autoFocus
+              style={{ width: '100%', padding: '9px 12px', borderRadius: 9, border: '1px solid var(--tb-border)', background: 'var(--tb-bg)', color: 'var(--tb-text-primary)', fontSize: 13, marginBottom: 14 }} />
+            {actionModal.mode === 'suspend' && (
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Duration (days)</label>
+                <input type="number" min={1} max={365} value={actionDays} onChange={(e) => setActionDays(e.target.value)}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: 9, border: '1px solid var(--tb-border)', background: 'var(--tb-bg)', color: 'var(--tb-text-primary)', fontSize: 13 }} />
+                <p style={{ fontSize: 11, color: 'var(--tb-text-muted)', marginTop: 6 }}>Leave empty for indefinite. Access restores automatically when it ends.</p>
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
+              <button disabled={actionBusy} onClick={() => { setActionModal(null); setActionReason(''); setActionDays('7'); }} className="btn btn-secondary btn-sm">Cancel</button>
+              <button disabled={actionBusy || !actionReason.trim()} onClick={submitAction} className={`btn btn-sm ${actionModal.mode === 'ban' ? 'btn-danger' : 'btn-primary'}`}>
+                {actionBusy ? 'Working…' : actionModal.mode === 'suspend' ? 'Suspend user' : 'Ban user'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+
   );
 }
 

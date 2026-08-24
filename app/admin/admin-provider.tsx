@@ -6,8 +6,8 @@ import { apiFetch } from '../lib';
 import {
   LayoutDashboard, BarChart3, FileText, Users, Shield, Settings,
   Activity, Globe, Key, Bell, Code,
-  Zap, Layers, Lock, FileWarning,
-  Server, HeartPulse, Webhook, Link, Rocket,
+  Zap, Lock, FileWarning,
+  Server, HeartPulse, Webhook, Rocket,
 } from 'lucide-react';
 
 const NAV_SECTIONS: NavSection[] = [
@@ -15,13 +15,11 @@ const NAV_SECTIONS: NavSection[] = [
     { href: '/admin', label: 'Command Center', icon: LayoutDashboard },
   ]},
   { label: 'Platform', items: [
-    { href: '/admin/applications', label: 'Applications', icon: Layers },
     { href: '/admin/users', label: 'Users', icon: Users },
     { href: process.env.NEXT_PUBLIC_FORMS_URL || 'https://forms.tirbeo.app', label: 'Forms', icon: Zap },
   ]},
 
   { label: 'Access', items: [
-    { href: '/admin/access/roles', label: 'Roles', icon: Shield },
     { href: '/admin/access/permissions', label: 'Permissions', icon: Lock },
   ]},
   { label: 'Operations', items: [
@@ -43,7 +41,6 @@ const NAV_SECTIONS: NavSection[] = [
     { href: '/admin/settings/security', label: 'Security', icon: Shield },
     { href: '/admin/settings/notifications', label: 'Notifications', icon: Bell },
     { href: '/admin/settings/product-updates', label: 'Product Updates', icon: Rocket },
-    { href: '/admin/settings/integrations', label: 'Integrations', icon: Link },
   ]},
 ];
 
