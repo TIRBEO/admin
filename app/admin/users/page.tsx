@@ -497,22 +497,14 @@ export default function UsersPage() {
                       )}
                     </div>
 
-                    {/* Assigned Roles */}
+                    {/* Admin Role */}
                     <h4 style={{ fontSize: 13, fontWeight: 600, color: 'var(--tb-text-secondary)', marginBottom: 8 }}>
-                      Assigned Roles ({detailUser.roles?.length || 0})
+                      Admin Role
                     </h4>
-                    {(!detailUser.roles || detailUser.roles.length === 0) ? (
-                      <div style={{ fontSize: 13, color: 'var(--tb-text-muted)', padding: '12px 0' }}>No custom roles assigned</div>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        {detailUser.roles!.map(role => (
-                          <div key={role.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, background: 'var(--tb-surface-1)', border: '1px solid var(--tb-border)' }}>
-                            <Shield size={14} style={{ color: 'var(--tb-brand)' }} />
-                            <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--tb-text-primary)' }}>{role.name}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, background: 'var(--tb-surface-1)', border: '1px solid var(--tb-border)' }}>
+                      <Shield size={14} style={{ color: 'var(--tb-brand)' }} />
+                      <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--tb-text-primary)' }}>{detailUser.adminRole || 'No role assigned'}</span>
+                    </div>
                   </div>
                 )}
               </div>

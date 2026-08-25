@@ -35,6 +35,7 @@ const NAV_SECTIONS: NavSection[] = [
     { href: '/admin/developer/api', label: 'API', icon: Code },
     { href: '/admin/developer/webhooks', label: 'Webhooks', icon: Webhook },
     { href: '/admin/developer/keys', label: 'API Keys', icon: Key },
+    { href: '/admin/developer/query-performance', label: 'Query Perf', icon: Activity },
   ]},
   { label: 'Settings', items: [
     { href: '/admin/settings', label: 'Platform', icon: Settings },

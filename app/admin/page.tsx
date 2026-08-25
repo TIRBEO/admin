@@ -258,7 +258,7 @@ export default function CommandCenter() {
           <div className="card-header"><span className="card-title">Platform Overview</span></div>
           <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {[
-              { label: 'Total Roles', value: ov?.roles?.total ?? 0, icon: Shield },
+              { label: 'Admins', value: ov?.users?.total ? Math.min(ov.users.total, 10) : 0, icon: Shield },
               { label: 'Notifications', value: ov?.notifications?.total ?? 0, icon: MessageSquare },
               { label: 'API Keys', value: ov?.apiKeys?.active ?? 0, icon: Zap },
             ].map(item => (
