@@ -7,7 +7,7 @@ import {
   LayoutDashboard, BarChart3, FileText, Users, Shield, Settings,
   Activity, Globe, Key, Bell, Code,
   Zap, Lock, FileWarning,
-  Server, HeartPulse, Webhook, Rocket,
+  Server, HeartPulse, Webhook, Rocket, Mail, AlertTriangle,
 } from 'lucide-react';
 
 const NAV_SECTIONS: NavSection[] = [
@@ -26,6 +26,7 @@ const NAV_SECTIONS: NavSection[] = [
     { href: '/admin/operations/activity', label: 'Activity', icon: Activity },
     { href: '/admin/operations/audit', label: 'Audit Logs', icon: FileWarning },
     { href: '/admin/operations/logs', label: 'System Logs', icon: Server },
+    { href: '/admin/operations/crashes', label: 'Crash Reports', icon: AlertTriangle },
     { href: '/admin/operations/health', label: 'Health', icon: HeartPulse },
   ]},
   { label: 'Analytics', items: [
@@ -36,6 +37,7 @@ const NAV_SECTIONS: NavSection[] = [
     { href: '/admin/developer/webhooks', label: 'Webhooks', icon: Webhook },
     { href: '/admin/developer/keys', label: 'API Keys', icon: Key },
     { href: '/admin/developer/query-performance', label: 'Query Perf', icon: Activity },
+    { href: '/admin/developer/email-templates', label: 'Email Templates', icon: Mail },
   ]},
   { label: 'Settings', items: [
     { href: '/admin/settings', label: 'Platform', icon: Settings },

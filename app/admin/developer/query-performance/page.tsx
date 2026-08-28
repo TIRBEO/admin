@@ -344,7 +344,7 @@ export default function QueryPerformancePage() {
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--tb-border, #e5e7eb)' }}>
+                  <tr style={{ borderBottom: '1px solid var(--tb-border, #e0e0e0)' }}>
                     <th style={{ textAlign: 'left', padding: '8px 12px', fontWeight: 500, color: 'var(--tb-text-muted)' }}>Query</th>
                     <th style={{ textAlign: 'right', padding: '8px 12px', fontWeight: 500, color: 'var(--tb-text-muted)' }}>Count</th>
                     <th style={{ textAlign: 'right', padding: '8px 12px', fontWeight: 500, color: 'var(--tb-text-muted)' }}>Min</th>
@@ -360,7 +360,7 @@ export default function QueryPerformancePage() {
                     const q = queries[name];
                     if (!q || q.count === 0) return null;
                     return (
-                      <tr key={name} style={{ borderBottom: '1px solid var(--tb-border, #e5e7eb)' }}>
+                      <tr key={name} style={{ borderBottom: '1px solid var(--tb-border, #e0e0e0)' }}>
                         <td style={{ padding: '10px 12px', fontFamily: 'monospace', fontSize: 12 }}>
                           {name.replace(/_/g, ' ')}
                         </td>

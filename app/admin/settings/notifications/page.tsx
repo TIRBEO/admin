@@ -10,12 +10,9 @@ import {
 interface AdminPrefs {
   email: boolean;
   push: boolean;
-  security: boolean;
   forms: boolean;
   product: boolean;
   support: boolean;
-  securityEmail: boolean;
-  securityPush: boolean;
   formsEmail: boolean;
   formsPush: boolean;
   productEmail: boolean;
@@ -39,7 +36,6 @@ interface BroadcastResult {
 
 // ─── Categories & Channels ───────────────────────────────────────
 const CATEGORIES = [
-  { key: 'security', label: 'Security Alerts', icon: Shield, color: 'var(--tb-red)' },
   { key: 'forms', label: 'Forms', icon: BarChart3, color: 'var(--tb-blue)' },
   { key: 'product', label: 'Product Updates', icon: Settings, color: 'var(--tb-brand)' },
   { key: 'support', label: 'Support Tickets', icon: Bell, color: 'var(--tb-green)' },
