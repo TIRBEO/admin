@@ -1,287 +1,229 @@
-'use client';
-import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { apiFetch } from '../lib';
-import { useAdminWs } from './useAdminWs';
-import {
-  Users, Shield, Activity, Globe, ChevronRight, RefreshCw,
-  MessageSquare, Settings, AlertTriangle, CheckCircle,
-  Server, Database, Clock, ArrowUpRight,
-  FileText, Webhook, Zap, Wifi,
-} from 'lucide-react';
+import Link from "next/link";
+import { getDash, type Dash } from "@/lib/dash";
+import { num } from "@/lib/api";
+import { ago } from "@/lib/format";
+import { Card, Stat, State, Badge, DataTable } from "@/components/primitives";
+import { Failure } from "@/components/failure";
 
-export default function CommandCenter() {
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [time, setTime] = useState(new Date());
-  const [statusItems, setStatusItems] = useState<{ label: string; ok: boolean; latency?: number; detail?: string }[]>([]);
-  const [realTimeActivity, setRealTimeActivity] = useState<any[]>([]);
-  const [connectionIndicator, setConnectionIndicator] = useState<'live' | 'syncing' | 'offline'>('offline');
-  const [apiError, setApiError] = useState<string | null>(null);
-  const router = useRouter();
-  const { lastMessage, state: wsState, reconnect } = useAdminWs({ autoReconnect: true });
+/* The dashboard is one read of /admin/dash and everything on it is derived
+   from that single payload, so two tiles can never contradict each other. */
 
-  useEffect(() => {
-    if (wsState === 'connected') setConnectionIndicator('live');
-    else if (wsState === 'connecting') setConnectionIndicator('syncing');
-    else setConnectionIndicator('offline');
-  }, [wsState]);
+export default async function DashboardPage() {
+  const res = await getDash();
+  if (!res.ok) return <Failure result={res} what="the platform dashboard" />;
 
-  // Handle real-time WebSocket messages
-  useEffect(() => {
-    if (!lastMessage) return;
-    if (lastMessage.type === 'server_hints') {
-      const hints = lastMessage.hints as any;
-      if (hints) {
-        setStatusItems(prev => {
-          const updated = [...prev];
-          if (updated[0]) updated[0] = { ...updated[0], ok: hints.health !== 'overloaded' };
-          return updated;
-        });
-      }
-    }
-    if (lastMessage.type === 'maintenance_status') {
-      const maint = lastMessage.maintenance as any;
-      if (maint) setData((prev: any) => ({ ...prev, maintenance: { enabled: maint.enabled, message: maint.message } }));
-    }
-    if (['activity', 'admin_activity', 'security_event', 'user_created', 'ticket_created'].includes(lastMessage.type)) {
-      const event = { id: Date.now().toString(), actor: (lastMessage as any).actor || 'System', action: (lastMessage as any).action || lastMessage.type.replace('_', ' '), resource: (lastMessage as any).resource, createdAt: new Date().toISOString(), isNew: true };
-      setRealTimeActivity(prev => [event, ...prev].slice(0, 20));
-    }
-  }, [lastMessage]);
+  const d: Dash = res.data ?? {};
+  const o = d.overview ?? {};
+  const req = o.requests ?? {};
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setApiError(null);
-    try {
-      const [ov, act, mt, sec] = await Promise.allSettled([
-        apiFetch('/api/admin/analytics/overview').then(r => r.ok ? r.json() : null),
-        apiFetch('/api/admin/activity?limit=12').then(r => r.ok ? r.json() : null),
-        apiFetch('/api/admin/maintenance').then(r => r.ok ? r.json() : null),
-        apiFetch('/api/admin/security/events?limit=1').then(r => r.ok ? r.json() : null),
-      ]);
-
-      const overview = ov.status === 'fulfilled' ? ov.value : null;
-      const activity = act.status === 'fulfilled' ? act.value : null;
-      const maintenance = mt.status === 'fulfilled' ? mt.value : null;
-      const security = sec.status === 'fulfilled' ? sec.value : null;
-
-      if (!overview && !activity && !maintenance) {
-        setApiError('Could not load data. Check if the API server is running on localhost:3000');
-      }
-
-      setData({
-        overview, activity: activity?.logs || [], maintenance, security: security?.stats,
-      });
-
-      setStatusItems([
-        { label: 'API', ok: true, detail: 'Running' },
-        { label: 'Database', ok: true },
-        { label: 'Redis', ok: true },
-        { label: 'WebSocket', ok: wsState === 'connected' },
-      ]);
-    } catch (err: any) {
-      setApiError(`Failed to fetch data: ${err?.message || 'Unknown error'}`);
-      // Set fallback data so the page still renders
-      setData({ overview: null, activity: [], maintenance: null, security: null });
-      setStatusItems([
-        { label: 'API', ok: false, detail: 'Unreachable' },
-        { label: 'Database', ok: false },
-        { label: 'Redis', ok: false },
-        { label: 'WebSocket', ok: wsState === 'connected' },
-      ]);
-    }
-    setLoading(false);
-  }, [wsState]);
-
-  useEffect(() => { fetchData(); }, [fetchData]);
-  useEffect(() => { const t = setInterval(() => setTime(new Date()), 10000); return () => clearInterval(t); }, []);
-  useEffect(() => { const t = setInterval(fetchData, 30000); return () => clearInterval(t); }, [fetchData]);
-
-  const ov = data?.overview;
-  const sec = data?.security;
-  const maintActive = data?.maintenance?.enabled;
-  const hasCritical = (sec?.critical || 0) > 0;
-  const healthColor = hasCritical ? 'var(--tb-red)' : maintActive ? 'var(--tb-yellow)' : 'var(--tb-green)';
-  const healthText = hasCritical ? 'Critical Issues Detected' : maintActive ? 'Maintenance Mode Active' : 'All Systems Operational';
-  const displayActivity = [...realTimeActivity, ...(data?.activity || [])].slice(0, 10);
+  const alerts = (d.alerts?.recentAlerts ?? []).filter(
+    (a) => typeof a?.message === "string",
+  );
 
   return (
-    <div className="page-stack">
-      {/* Error banner */}
-      {apiError && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 10, background: 'var(--tb-yellow-soft)', border: '1px solid var(--tb-yellow)30', fontSize: 13, color: 'var(--tb-yellow)' }}>
-          <AlertTriangle size={16} />
-          <span style={{ flex: 1 }}>{apiError}</span>
-          <button className="btn btn-ghost btn-sm" onClick={fetchData}><RefreshCw size={12} /> Retry</button>
-        </div>
-      )}
+    <div className="flex flex-col gap-6">
+      <section
+        aria-label="Key figures"
+        className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+      >
+        <Stat
+          label="Accounts"
+          value={num(o.users?.total) ?? "—"}
+          hint={`${num(o.users?.newToday) ?? 0} joined today`}
+        />
+        <Stat
+          label="Active sessions"
+          value={num(o.sessions?.active) ?? "—"}
+          hint={`${num(o.users?.activeToday) ?? 0} accounts active today`}
+        />
+        <Stat
+          label="Sign-ins today"
+          value={num(o.logins?.today) ?? "—"}
+          hint={`${num(d.logins?.failedToday) ?? 0} failed`}
+        />
+        <Stat
+          label="Blocked requests"
+          value={
+            <span>
+              {num(req.blocked) ?? "—"}
+              <span className="ml-1.5 text-[14px] font-normal text-[var(--tb-text-muted)]">
+                {typeof req.blockRate === "number" ? `${req.blockRate}%` : "—"}
+              </span>
+            </span>
+          }
+          hint={`of ${num(req.hits) ?? "—"} seen in the window`}
+        />
+      </section>
 
-      {/* Header */}
-      <div className="page-header">
-        <div className="page-header-row">
-          <div className="page-header-left">
-            <h1 className="page-header-title">Command Center</h1>
-            <p className="page-header-description">Tirbeo platform overview — {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-          </div>
-          <div className="page-header-actions">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 500,
-              background: connectionIndicator === 'live' ? 'var(--tb-green-soft)' : 'var(--tb-surface-2)',
-              color: connectionIndicator === 'live' ? 'var(--tb-green)' : 'var(--tb-text-muted)' }}>
-              <div style={{ width: 6, height: 6, borderRadius: '50%', background: connectionIndicator === 'live' ? 'var(--tb-green)' : 'var(--tb-text-muted)' }} />
-              {connectionIndicator === 'live' ? 'Live' : connectionIndicator === 'syncing' ? 'Syncing' : 'Offline'}
-            </div>
-            <button className="btn btn-secondary btn-sm" onClick={() => { fetchData(); if (wsState !== 'connected') reconnect(); }}>
-              <RefreshCw size={13} className={loading ? 'spin' : ''} /> Refresh
-            </button>
-          </div>
-        </div>
-      </div>
+      {alerts.length > 0 || d.alerts?.alertTriggered ? (
+        <Card
+          title="Needs attention"
+          description="Raised by the rate limiter on its own."
+        >
+          <ul className="flex flex-col gap-2">
+            {alerts.slice(0, 5).map((a, i) => (
+              <li
+                key={i}
+                className="flex items-start justify-between gap-3 rounded-lg border border-[var(--tb-danger)] bg-[var(--tb-danger-soft)] px-3 py-2.5"
+              >
+                <span className="text-[13px]">{a.message}</span>
+                <span className="shrink-0 text-[12px] text-[var(--tb-text-muted)]">
+                  {ago(new Date(a.timestamp))}
+                </span>
+              </li>
+            ))}
+            {alerts.length === 0 ? (
+              <li className="text-[13px] text-[var(--tb-text-secondary)]">
+                A block-rate alert is currently latched.
+              </li>
+            ) : null}
+          </ul>
+        </Card>
+      ) : null}
 
-      {/* Health Banner */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', borderRadius: 10, background: `${healthColor}08`, border: `1px solid ${healthColor}25` }}>
-        {hasCritical ? <AlertTriangle size={18} style={{ color: healthColor }} /> : <CheckCircle size={18} style={{ color: healthColor }} />}
-        <div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--tb-text-primary)' }}>{healthText}</div>
-          <div style={{ fontSize: 12, color: 'var(--tb-text-muted)', marginTop: 2 }}>
-            {statusItems.filter(s => s.ok).length}/{statusItems.length} services healthy
-            {data?.maintenance?.enabled && ' · Maintenance scheduled'}
-          </div>
-        </div>
-        <div style={{ flex: 1 }} />
-        <div style={{ display: 'flex', gap: 16, fontSize: 13, color: 'var(--tb-text-secondary)' }}>
-          <span>{ov?.users?.total ?? 0} users</span>
-          <span style={{ color: 'var(--tb-border)' }}>·</span>
-          <span>{ov?.sessions?.active ?? 0} active</span>
-        </div>
-      </div>
-
-      {/* KPI Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
-        {[
-          { label: 'Total Users', value: ov?.users?.total ?? 0, sub: `${ov?.users?.newThisWeek ?? 0} new this week`, icon: Users, color: 'var(--tb-brand)', href: '/admin/users' },
-          { label: 'Active Sessions', value: ov?.sessions?.active ?? 0, sub: `${ov?.sessions?.total ?? 0} total`, icon: Globe, color: 'var(--tb-green)', href: '/admin/users' },
-          { label: 'Open Tickets', value: ov?.tickets?.open ?? 0, sub: `${ov?.tickets?.total ?? 0} total`, icon: MessageSquare, color: 'var(--tb-yellow)', href: '/admin/operations/activity' },
-          { label: 'Audit Events', value: ov?.auditEvents?.last30Days ?? sec?.total ?? 0, sub: 'Last 30 days', icon: Shield, color: 'var(--tb-purple)', href: '/admin/operations/audit' },
-        ].map(k => (
-          <div key={k.label} className="kpi" style={{ cursor: 'pointer' }} onClick={() => router.push(k.href)}>
-            <div className="kpi-header">
-              <span className="kpi-label">{k.label}</span>
-              <div style={{ width: 28, height: 28, borderRadius: 7, background: `${k.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <k.icon size={14} style={{ color: k.color }} />
-              </div>
-            </div>
-            <div className="kpi-value">{k.value.toLocaleString()}</div>
-            <div style={{ fontSize: 11, color: 'var(--tb-text-muted)', marginTop: 4 }}>{k.sub}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* System Status + Activity */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-        {/* System Status */}
-        <div className="card">
-          <div className="card-header">
-            <span className="card-title">System Status</span>
-            <span style={{ fontSize: 11, color: 'var(--tb-text-muted)' }}>{time.toLocaleTimeString()}</span>
-          </div>
-          <div className="card-body" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      <div className="grid gap-4 xl:grid-cols-2">
+        <Card
+          title="Accounts"
+          description="Where the people are, and who is held back."
+          action={
+            <Link
+              href="/admin/users"
+              className="text-[12px] text-[var(--tb-accent)] underline-offset-4 hover:underline"
+            >
+              Open
+            </Link>
+          }
+        >
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-[13px] sm:grid-cols-3">
             {[
-              { label: 'API Server', icon: Server, ok: statusItems[0]?.ok },
-              { label: 'Database', icon: Database, ok: statusItems[1]?.ok },
-              { label: 'Redis Cache', icon: Database, ok: statusItems[2]?.ok },
-              { label: 'WebSocket', icon: Wifi, ok: wsState === 'connected' },
-            ].map(s => (
-              <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 8, background: 'var(--tb-surface-1)', border: '1px solid var(--tb-border)' }}>
-                <div style={{ width: 32, height: 32, borderRadius: 7, background: s.ok !== false ? 'var(--tb-green-soft)' : 'var(--tb-red-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <s.icon size={15} style={{ color: s.ok !== false ? 'var(--tb-green)' : 'var(--tb-red)' }} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--tb-text-primary)' }}>{s.label}</div>
-                  <div style={{ fontSize: 11, color: s.ok !== false ? 'var(--tb-green)' : 'var(--tb-red)' }}>{s.ok !== false ? 'Operational' : 'Down'}</div>
-                </div>
-                <div style={{ width: 7, height: 7, borderRadius: '50%', background: s.ok !== false ? 'var(--tb-green)' : 'var(--tb-red)' }} />
+              ["Total", num(d.users?.total)],
+              ["Active (7d)", num(d.users?.active)],
+              ["New this month", num(d.users?.newThisMonth)],
+              ["Banned", num(d.users?.banned)],
+              ["Suspended", num(d.users?.suspended)],
+              ["Awaiting deletion", num(d.users?.scheduledDeletion)],
+              ["2FA enabled", num(d.users?.twoFA)],
+              ["Email verified", num(d.users?.verifiedEmail)],
+              ["Sessions active", num(d.sessions?.active)],
+            ].map(([label, value]) => (
+              <div key={label as string} className="flex items-baseline justify-between gap-2">
+                <dt className="text-[var(--tb-text-muted)]">{label}</dt>
+                <dd className="font-medium tabular-nums">{value ?? "—"}</dd>
               </div>
             ))}
-          </div>
-        </div>
+          </dl>
+        </Card>
 
-        {/* Activity */}
-        <div className="card">
-          <div className="card-header">
-            <span className="card-title">Activity{realTimeActivity.length > 0 && <span style={{ fontSize: 11, padding: '2px 6px', borderRadius: 8, background: 'var(--tb-green-soft)', color: 'var(--tb-green)', marginLeft: 6, fontWeight: 600 }}>{realTimeActivity.length} new</span>}</span>
-            <button className="btn btn-ghost btn-xs" onClick={() => router.push('/admin/operations/activity')}>View all <ArrowUpRight size={11} /></button>
-          </div>
-          <div style={{ padding: 0, maxHeight: 340, overflow: 'auto' }}>
-            {displayActivity.length === 0 ? (
-              <div className="empty-state" style={{ padding: '40px 16px' }}>
-                <Activity size={24} style={{ color: 'var(--tb-text-muted)' }} />
-                <div className="empty-state-title">No recent activity</div>
-              </div>
-            ) : displayActivity.map((a: any, i: number) => (
-              <div key={a.id || i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 20px', borderBottom: i < displayActivity.length - 1 ? '1px solid var(--tb-border)' : 'none', background: a.isNew ? 'var(--tb-green-soft)' : undefined }}>
-                <div style={{ width: 6, height: 6, borderRadius: '50%', background: a.isNew ? 'var(--tb-green)' : 'var(--tb-brand)', marginTop: 7, flexShrink: 0 }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    <span style={{ fontWeight: 500, color: 'var(--tb-text-primary)' }}>{a.actor || 'System'}</span>{' '}
-                    <span style={{ color: 'var(--tb-text-secondary)' }}>{a.action || 'event'}</span>
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--tb-text-muted)', marginTop: 2 }}>{a.isNew ? 'just now' : timeAgo(a.createdAt)}</div>
-                </div>
+        <Card
+          title="Email"
+          description="Delivery, failures and engagement."
+          action={
+            <Link
+              href="/admin/email"
+              className="text-[12px] text-[var(--tb-accent)] underline-offset-4 hover:underline"
+            >
+              Open
+            </Link>
+          }
+        >
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-[13px] sm:grid-cols-3">
+            {[
+              ["Sent today", num(d.emails?.today)],
+              ["Last hour", num(d.emails?.lastHour)],
+              ["Failures", num(d.emails?.failures)],
+              ["Opened", num(d.emails?.opened)],
+              ["Clicked", num(d.emails?.clicked)],
+              ["Push channels", num(d.push?.total)],
+            ].map(([label, value]) => (
+              <div key={label as string} className="flex items-baseline justify-between gap-2">
+                <dt className="text-[var(--tb-text-muted)]">{label}</dt>
+                <dd className="font-medium tabular-nums">{value ?? "—"}</dd>
               </div>
             ))}
-          </div>
-        </div>
+          </dl>
+          {(d.emails?.byStatus ?? []).length > 0 ? (
+            <ul className="mt-4 flex flex-wrap gap-2">
+              {(d.emails?.byStatus ?? []).map((s) => (
+                <li key={s.status}>
+                  <Badge
+                    tone={
+                      s.status === "failed"
+                        ? "danger"
+                        : s.status === "delivered"
+                          ? "ok"
+                          : "muted"
+                    }
+                  >
+                    {s.status} · {s.count}
+                  </Badge>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </Card>
       </div>
 
-      {/* Quick Access + Platform */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-        <div className="card">
-          <div className="card-header"><span className="card-title">Quick Access</span></div>
-          <div style={{ padding: 6 }}>
-            {[
-              { label: 'Users', desc: 'User management', href: '/admin/users', icon: Users, color: 'var(--tb-green)' },
-              { label: 'Roles', desc: 'Access control', href: '/admin/access/roles', icon: Shield, color: 'var(--tb-yellow)' },
-              { label: 'Audit Logs', desc: 'System audit trail', href: '/admin/operations/audit', icon: Activity, color: 'var(--tb-orange)' },
-              { label: 'Settings', desc: 'Platform config', href: '/admin/settings', icon: Settings, color: 'var(--tb-text-secondary)' },
-            ].map(l => (
-              <button key={l.label} type="button" onClick={() => router.push(l.href)} className="sidebar-item" style={{ borderRadius: 8, marginBottom: 2 }}>
-                <div style={{ width: 28, height: 28, borderRadius: 7, background: `${l.color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><l.icon size={14} style={{ color: l.color }} /></div>
-                <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 500, color: 'var(--tb-text-primary)' }}>{l.label}</div><div style={{ fontSize: 12, color: 'var(--tb-text-muted)' }}>{l.desc}</div></div>
-                <ChevronRight size={14} style={{ color: 'var(--tb-text-muted)' }} />
-              </button>
-            ))}
-          </div>
-        </div>
+      <Card
+        title="Slowest queries"
+        description="p95, measured in the running API process."
+        action={
+          <Link
+            href="/admin/operations/monitor"
+            className="text-[12px] text-[var(--tb-accent)] underline-offset-4 hover:underline"
+          >
+            Monitor
+          </Link>
+        }
+      >
+        <DataTable
+          columns={["Query", "Calls", "Avg", "p95", "Max"]}
+          empty="No query timings have been recorded yet."
+          rows={(d.queryPerf?.slowest ?? []).map((q) => ({
+            Query: <span className="font-mono text-[12px]">{q.name}</span>,
+            Calls: q.count,
+            Avg: `${q.avgMs} ms`,
+            p95: (
+              <span
+                className={q.p95Ms > 500 ? "text-[var(--tb-warn)]" : undefined}
+              >
+                {q.p95Ms} ms
+              </span>
+            ),
+            Max: `${q.maxMs} ms`,
+          }))}
+        />
+      </Card>
 
-        <div className="card">
-          <div className="card-header"><span className="card-title">Platform Overview</span></div>
-          <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {[
-              { label: 'Admins', value: ov?.users?.total ? Math.min(ov.users.total, 10) : 0, icon: Shield },
-              { label: 'Notifications', value: ov?.notifications?.total ?? 0, icon: MessageSquare },
-              { label: 'API Keys', value: ov?.apiKeys?.active ?? 0, icon: Zap },
-            ].map(item => (
-              <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <item.icon size={15} style={{ color: 'var(--tb-text-icon-muted)' }} />
-                <span style={{ flex: 1, fontSize: 13, color: 'var(--tb-text-secondary)' }}>{item.label}</span>
-                <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--tb-text-primary)' }}>{item.value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      <Card title="Where to go next">
+        <ul className="grid gap-2 sm:grid-cols-2">
+          {[
+            { href: "/admin/users", label: "Find or act on an account" },
+            { href: "/admin/security", label: "Check the security posture" },
+            { href: "/admin/operations/health", label: "Is the API healthy?" },
+            { href: "/admin/audit", label: "Review who changed what" },
+          ].map((l) => (
+            <li key={l.href}>
+              <Link
+                href={l.href}
+                className="block rounded-lg border border-[var(--tb-border)] px-3 py-2.5 text-[13px] text-[var(--tb-text-secondary)] transition-colors hover:bg-[var(--tb-surface-2)] hover:text-[var(--tb-text-primary)]"
+              >
+                {l.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </Card>
+
+      <p className="text-[12px] text-[var(--tb-text-muted)]">
+        Read {d.fetchedAt ? ago(d.fetchedAt) : "just now"}
+        {typeof d.uptime === "number"
+          ? ` · API up ${Math.round(d.uptime / 60)} min`
+          : ""}
+      </p>
+
+      {!d.fetchedAt ? (
+        <State title="The API returned no telemetry payload." />
+      ) : null}
     </div>
   );
-}
-
-function timeAgo(dateStr?: string): string {
-  if (!dateStr) return '';
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
 }

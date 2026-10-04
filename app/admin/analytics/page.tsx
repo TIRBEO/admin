@@ -1,164 +1,210 @@
-'use client';
-import { useEffect, useState, useCallback, useMemo } from 'react';
-import { apiFetch } from '../../lib';
-import {
-  BarChart3, Users, Globe, TrendingUp, Clock, RefreshCw,
-  ArrowUpRight, ArrowDownRight, Download, Calendar, Eye, ShieldAlert,
-} from 'lucide-react';
+import { apiGet, num } from "@/lib/api";
+import { getDash } from "@/lib/dash";
+import { Card, Stat, DataTable, Badge, State } from "@/components/primitives";
+import { Failure } from "@/components/failure";
+import { dateOnly, ago } from "@/lib/format";
 
-const DAY_MS = 24 * 60 * 60 * 1000;
+/* Analytics is two questions: how big is the platform, and who consented to
+   be measured. Both endpoints are read here rather than derived from the
+   dashboard, because this page is the one place consent is in view — a
+   consent figure should never be inferred from a count of everything. */
 
-function dayKey(ts: string | number | Date) {
-  const d = new Date(ts);
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-}
+type Overview = {
+  users?: {
+    total?: number;
+    active?: number;
+    newToday?: number;
+    newThisWeek?: number;
+    newThisMonth?: number;
+  };
+  notifications?: { total?: number; unread?: number };
+  sessions?: { total?: number; active?: number };
+  auditEvents?: { last30Days?: number };
+  apiKeys?: { active?: number };
+};
 
-export default function AnalyticsPage() {
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+type Consented = {
+  users?: Array<{
+    id: string;
+    email: string;
+    username?: string | null;
+    name?: string | null;
+    createdAt?: string;
+    lastLoginAt?: string | null;
+    theme?: string | null;
+    language?: string | null;
+    timezone?: string | null;
+    sessionCount?: number;
+    notificationCount?: number;
+    totalLogins?: number;
+  }>;
+  total?: number;
+};
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [overview, analytics] = await Promise.all([
-        apiFetch('/api/admin/analytics/overview').then(r => r.ok ? r.json() : null),
-        apiFetch('/api/admin/analytics').then(r => r.ok ? r.json() : null),
-      ]);
-      setData({ overview, analytics });
-    } catch {}
-    setLoading(false);
-  }, []);
+type AnalyticsDetail = {
+  totalUsers?: number;
+  adminUsers?: number;
+  newToday?: number;
+  topActions?: Array<{ action: string; count: number }>;
+};
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+export default async function AnalyticsPage() {
+  const [overviewRes, consentedRes, detailRes, dashRes] = await Promise.all([
+    apiGet<Overview>("/admin/analytics/overview"),
+    apiGet<Consented>("/admin/analytics/consented-users?take=50"),
+    apiGet<AnalyticsDetail>("/admin/analytics"),
+    getDash(30),
+  ]);
 
-  const ov = data?.overview;
-  const an = data?.analytics;
+  // Consent is the one figure that must never be guessed: if it cannot be
+  // read, this page says so instead of implying nobody opted in.
+  if (!consentedRes.ok) {
+    return <Failure result={consentedRes} what="the analytics consent list" />;
+  }
 
-  const chartData = useMemo(() => {
-    const counts = new Map<number, number>();
-    for (const row of an?.usersByDay ?? []) {
-      const key = dayKey(row.createdAt);
-      counts.set(key, (counts.get(key) ?? 0) + (row._count?.createdAt ?? 1));
-    }
-    const days: { day: string; users: number }[] = [];
-    const today = dayKey(new Date());
-    for (let i = 29; i >= 0; i--) {
-      const key = today - i * DAY_MS;
-      const d = new Date(key);
-      days.push({
-        day: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-        users: counts.get(key) ?? 0,
-      });
-    }
-    return days;
-  }, [an]);
-
-  const maxUsers = Math.max(1, ...chartData.map(d => d.users));
-
-  const topActions = useMemo(() => (an?.topActions ?? []).slice(0, 5), [an]);
-  const maxAction = Math.max(1, ...topActions.map((a: any) => a.count));
-
-  const kpis = [
-    { label: 'Total Users', value: ov?.users?.total ?? 0, icon: Users, color: 'var(--tb-brand)' },
-    { label: 'Active Sessions', value: ov?.sessions?.active ?? 0, icon: Globe, color: 'var(--tb-green)' },
-    { label: 'New This Week', value: ov?.users?.newThisWeek ?? 0, icon: TrendingUp, color: 'var(--tb-blue)' },
-    { label: 'Audit Events (30d)', value: ov?.auditEvents?.last30Days ?? 0, icon: ShieldAlert, color: 'var(--tb-yellow)' },
-  ];
+  const o = overviewRes.data ?? {};
+  const consented = consentedRes.data ?? {};
+  const detail = detailRes.data ?? {};
+  const series = dashRes.data?.series ?? {};
+  const consentedTotal = consented.total ?? consented.users?.length ?? 0;
 
   return (
-    <div className="page-stack">
-      <div className="page-header">
-        <div className="page-header-row">
-          <div className="page-header-left">
-            <h1 className="page-header-title">Analytics</h1>
-            <p className="page-header-description">Platform usage and performance metrics</p>
-          </div>
-          <div className="page-header-actions">
-            <button className="btn btn-ghost btn-sm" onClick={fetchData} disabled={loading}><RefreshCw size={13} className={loading ? 'spin' : ''} /></button>
-            <a className="btn btn-secondary btn-sm" href="https://vercel.com/dashboard" target="_blank" rel="noreferrer"><BarChart3 size={13} /> Vercel Web Analytics</a>
-          </div>
-        </div>
+    <div className="flex flex-col gap-6">
+      <section
+        aria-label="Platform size"
+        className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+      >
+        <Stat
+          label="Accounts"
+          value={num(o.users?.total ?? detail.totalUsers) ?? "—"}
+          hint={`${num(o.users?.newThisMonth) ?? 0} joined in 30 days`}
+        />
+        <Stat
+          label="Active (7 days)"
+          value={num(o.users?.active) ?? "—"}
+          hint="Signed in or otherwise active this week"
+        />
+        <Stat
+          label="Notifications"
+          value={num(o.notifications?.total) ?? "—"}
+          hint={`${num(o.notifications?.unread) ?? 0} unread`}
+        />
+        <Stat
+          label="Analytics consent"
+          value={consentedTotal}
+          hint="Accounts that opted in to measurement"
+        />
+      </section>
+
+      <Card
+        title="Signups, last 30 days"
+        description="One bar per day, from the same series the dashboard charts."
+      >
+        <SeriesBars
+          points={series.users ?? []}
+          label={(l) => l}
+          empty="No signups recorded in this window."
+        />
+      </Card>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <Card
+          title="Activity, last 30 days"
+          description="Every write the platform recorded."
+        >
+          <SeriesBars
+            points={series.activity ?? []}
+            label={(l) => l}
+            empty="No activity recorded in this window."
+          />
+        </Card>
+
+        <Card title="Busiest actions" description="Top of the last 30 days.">
+          <DataTable
+            columns={["Action", "Count"]}
+            empty="No actions recorded."
+            rows={(detail.topActions ?? []).map((a) => ({
+              Action: <span className="font-mono text-[12px]">{a.action}</span>,
+              Count: a.count,
+            }))}
+          />
+        </Card>
       </div>
 
-      {/* Primary KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
-        {kpis.map(k => (
-          <div key={k.label} className="kpi">
-            <div className="kpi-header">
-              <span className="kpi-label">{k.label}</span>
-              <k.icon size={14} style={{ color: k.color }} />
-            </div>
-            <div className="kpi-value">{typeof k.value === 'number' ? k.value.toLocaleString() : k.value}</div>
-          </div>
+      <Card
+        title="Consented accounts"
+        description={`${consentedTotal} in total; the 50 most recent are listed.`}
+      >
+        <DataTable
+          columns={["Email", "Handle", "Joined", "Last login", "Sessions", "Notifications"]}
+          empty="No account has opted in to analytics."
+          rows={(consented.users ?? []).map((u) => ({
+            Email: <span className="font-mono text-[12px]">{u.email}</span>,
+            Handle: u.username ?? u.name ?? "—",
+            Joined: dateOnly(u.createdAt),
+            "Last login": u.lastLoginAt ? ago(u.lastLoginAt) : "never",
+            Sessions: u.sessionCount ?? 0,
+            Notifications: u.notificationCount ?? 0,
+          }))}
+        />
+      </Card>
+
+      {overviewRes.status === 0 ? (
+        <p className="text-[12px] text-[var(--tb-warn)]">
+          The overview counters could not be read; the consent list above is
+          real, the tiles above it may be stale.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+/** A labelled bar per day. Deliberately a table rather than a canvas: the
+ *  numbers stay selectable, screen-readable and printable. */
+function SeriesBars({
+  points,
+  label,
+  empty,
+}: {
+  points: Array<{ label: string; value: number }>;
+  label: (l: string) => string;
+  empty: string;
+}) {
+  if (points.length === 0) return <State title={empty} />;
+  const max = Math.max(...points.map((p) => p.value), 1);
+
+  return (
+    <div>
+      <div
+        role="img"
+        aria-label={`Daily totals, ${points.length} days, peak ${max}`}
+        className="flex h-24 items-end gap-px"
+      >
+        {points.map((p) => (
+          <div
+            key={p.label}
+            title={`${label(p.label)}: ${p.value}`}
+            className="min-w-[3px] flex-1 rounded-t bg-[var(--tb-accent)]"
+            style={{ height: `${Math.max(2, (p.value / max) * 100)}%` }}
+          />
         ))}
       </div>
-
-      {/* User Growth Chart */}
-      <div className="card">
-        <div className="card-header">
-          <span className="card-title">New Users</span>
-          <span style={{ fontSize: 12, color: 'var(--tb-text-muted)' }}>Last 30 days</span>
-        </div>
-        <div className="card-body">
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 160, padding: '0 4px' }}>
-            {chartData.map((d, i) => (
-              <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                <div title={`${d.users} new users on ${d.day}`}
-                  style={{ width: '100%', maxWidth: 20, height: `${Math.max(2, (d.users / maxUsers) * 140)}px`, borderRadius: 3, background: `var(--tb-brand)`, opacity: 0.8, transition: 'opacity 150ms, transform 150ms', cursor: 'pointer' }}
-                  onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'scaleY(1.05)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.opacity = '0.8'; e.currentTarget.style.transform = 'scaleY(1)'; }} />
-              </div>
-            ))}
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: 11, color: 'var(--tb-text-muted)' }}>
-            <span>30 days ago</span><span>Today</span>
-          </div>
-        </div>
+      <div className="mt-2 flex justify-between text-[11px] text-[var(--tb-text-muted)]">
+        <span>{label(points[0]?.label ?? "")}</span>
+        <span>
+          peak {max} · total {points.reduce((a, p) => a + p.value, 0)}
+        </span>
+        <span>{label(points.at(-1)?.label ?? "")}</span>
       </div>
-
-      {/* Secondary Metrics */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-        {/* Top Admin Actions */}
-        <div className="card">
-          <div className="card-header"><span className="card-title">Top Admin Actions</span></div>
-          <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {topActions.length === 0 && <div style={{ fontSize: 13, color: 'var(--tb-text-muted)' }}>No actions recorded in the last 30 days.</div>}
-            {topActions.map((a: any) => (
-              <div key={a.action}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <span style={{ fontSize: 13, color: 'var(--tb-text-primary)' }}>{a.action}</span>
-                  <span style={{ fontSize: 12, color: 'var(--tb-text-muted)' }}>{a.count}</span>
-                </div>
-                <div style={{ height: 6, borderRadius: 3, background: 'var(--tb-surface-2)', overflow: 'hidden' }}>
-                  <div style={{ width: `${(a.count / maxAction) * 100}%`, height: '100%', borderRadius: 3, background: 'var(--tb-brand)', transition: 'width 500ms cubic-bezier(0.16,1,0.3,1)' }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Users & Sessions Summary */}
-        <div className="card">
-          <div className="card-header"><span className="card-title">Users & Sessions</span></div>
-          <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {[
-              { label: 'Total Sessions', value: ov?.sessions?.total ?? 0, icon: Globe },
-              { label: 'Active Sessions', value: ov?.sessions?.active ?? 0, icon: Globe },
-              { label: 'Open Tickets', value: ov?.tickets?.open ?? 0, icon: TrendingUp },
-              { label: 'Total Tickets', value: ov?.tickets?.total ?? 0, icon: TrendingUp },
-              { label: 'Active Users', value: ov?.users?.active ?? 0, icon: Users },
-              { label: 'New Today', value: ov?.users?.newToday ?? 0, icon: Users },
-              { label: 'Unread Notifications', value: ov?.notifications?.unread ?? 0, icon: Clock },
-            ].map(item => (
-              <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <item.icon size={15} style={{ color: 'var(--tb-text-icon-muted)' }} />
-                <span style={{ flex: 1, fontSize: 13, color: 'var(--tb-text-secondary)' }}>{item.label}</span>
-                <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--tb-text-primary)' }}>{typeof item.value === 'number' ? item.value.toLocaleString() : item.value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      <ul className="mt-3 flex flex-wrap gap-1.5">
+        {points.slice(-3).map((p) => (
+          <li key={p.label}>
+            <Badge tone="accent">
+              {label(p.label)} · {p.value}
+            </Badge>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

@@ -1,121 +1,187 @@
-'use client';
-import { useEffect, useState, useCallback } from 'react';
-import { apiFetch } from '../../../lib';
-import { Server, RefreshCw, Search, AlertTriangle, AlertCircle, Info, Filter, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import Link from "next/link";
+import { apiGet } from "@/lib/api";
+import { getDash } from "@/lib/dash";
+import { Card, DataTable, Badge } from "@/components/primitives";
+import { Failure } from "@/components/failure";
+import { dateTime, ago } from "@/lib/format";
 
-interface LogEntry { id?: string; level?: string; service?: string; message?: string; timestamp?: string; requestId?: string; metadata?: any; }
+/* Server output is not something the API can read back — it goes to the
+   process's stdout. What it can read is the three places a problem shows
+   up as data: the activity log the API writes itself, the CAPTCHA blocks
+   it has imposed, and the sign-in failures it has recorded. That is what
+   this page shows, and it says plainly that it is not a log viewer. */
 
-const LEVEL_MAP: Record<string, { color: string; bg: string }> = {
-  error: { color: 'var(--tb-red)', bg: 'var(--tb-red-soft)' },
-  warn: { color: 'var(--tb-yellow)', bg: 'var(--tb-yellow-soft)' },
-  info: { color: 'var(--tb-blue)', bg: 'var(--tb-blue-soft)' },
-  debug: { color: 'var(--tb-text-muted)', bg: 'var(--tb-surface-2)' },
+type Log = {
+  id?: string;
+  kind?: string;
+  title?: string | null;
+  detail?: string | null;
+  severity?: string | null;
+  ipAddress?: string | null;
+  createdAt?: string;
 };
 
-export default function LogsPage() {
-  const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [levelFilter, setLevelFilter] = useState('all');
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const perPage = 20;
+const SIZES = [50, 100, 200, 500];
 
-  const fetchLogs = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await apiFetch('/api/admin/stats');
-      if (res.ok) {
-        const data = await res.json();
-        setLogs(data.logs || data.systemLogs || []);
-      }
-    } catch {}
-    setLoading(false);
-  }, []);
+export default async function LogsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ limit?: string }>;
+}) {
+  const sp = await searchParams;
+  const raw = Number(sp.limit);
+  const limit = SIZES.includes(raw) ? raw : 100;
 
-  useEffect(() => { fetchLogs(); }, [fetchLogs]);
+  const [logsRes, dashRes] = await Promise.all([
+    apiGet<Log[]>(`/admin/monitor/logs?limit=${limit}`),
+    getDash(1),
+  ]);
 
-  const filtered = logs.filter(l => {
-    if (levelFilter !== 'all' && l.level !== levelFilter) return false;
-    if (search) {
-      const q = search.toLowerCase();
-      return (l.message || '').toLowerCase().includes(q) || (l.service || '').toLowerCase().includes(q);
-    }
-    return true;
-  });
+  if (!logsRes.ok) return <Failure result={logsRes} what="the server activity log" />;
 
-  const totalPages = Math.ceil(filtered.length / perPage);
-  const paginated = filtered.slice((page - 1) * perPage, page * perPage);
+  const logs = Array.isArray(logsRes.data) ? logsRes.data : [];
+  const dash = dashRes.data;
+  const captchaBlocks = dash?.recentCaptcha ?? [];
+  const failedLogins = (dash?.recentLogins ?? []).filter(
+    (l) => l.eventType === "login_failed",
+  );
+  const otherLogins = (dash?.recentLogins ?? []).filter(
+    (l) => l.eventType !== "login_failed",
+  );
 
   return (
-    <div className="page-stack">
-      <div className="page-header">
-        <div className="page-header-row">
-          <div className="page-header-left">
-            <h1 className="page-header-title">System Logs</h1>
-            <p className="page-header-description">Application and system log entries</p>
-          </div>
-          <div className="page-header-actions">
-            <button className="btn btn-secondary btn-sm" onClick={fetchLogs}><RefreshCw size={13} /> Refresh</button>
-            <button className="btn btn-ghost btn-sm"><Download size={13} /> Export</button>
-          </div>
-        </div>
-      </div>
+    <div className="flex flex-col gap-4">
+      <Card
+        title="What this is not"
+        description="stdout is not readable over HTTP, so there is no log viewer here."
+      >
+        <p className="text-[13px] text-[var(--tb-text-secondary)]">
+          An admin panel cannot show a process&apos;s console output without
+          shipping that output somewhere queryable, and nothing in the API
+          does that. What it can read is where problems leave a record. The
+          three tables below are those records: what the API wrote about
+          itself, the CAPTCHA blocks it has imposed, and recent sign-ins.
+          For raw output, read the deployment&apos;s log drain.
+        </p>
+      </Card>
 
-      {/* Filters */}
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
-          <Search size={15} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--tb-text-muted)' }} />
-          <input className="input" placeholder="Search logs..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} style={{ paddingLeft: 38 }} />
-        </div>
-        <div style={{ display: 'flex', gap: 4 }}>
-          {['all', 'error', 'warn', 'info', 'debug'].map(l => (
-            <button key={l} className={`btn ${levelFilter === l ? 'btn-primary' : 'btn-ghost'} btn-sm`} onClick={() => { setLevelFilter(l); setPage(1); }}>
-              {l.charAt(0).toUpperCase() + l.slice(1)}
-            </button>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-[12px] text-[var(--tb-text-muted)]">
+          {logs.length} entries, newest first.
+        </span>
+        <nav aria-label="How many entries" className="ml-auto flex gap-1">
+          {SIZES.map((n) => (
+            <a
+              key={n}
+              href={`/admin/operations/logs?limit=${n}`}
+              aria-current={n === limit ? "page" : undefined}
+              className={`rounded-lg border px-2.5 py-1 text-[12px] ${
+                n === limit
+                  ? "border-[var(--tb-accent)] text-[var(--tb-accent)]"
+                  : "border-[var(--tb-border)] text-[var(--tb-text-muted)] hover:bg-[var(--tb-surface-2)]"
+              }`}
+            >
+              {n}
+            </a>
           ))}
-        </div>
+        </nav>
       </div>
 
-      {/* Log Entries */}
-      {loading ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {[1,2,3,4,5,6,7,8].map(i => <div key={i} className="skeleton" style={{ height: 40 }} />)}
-        </div>
-      ) : paginated.length === 0 ? (
-        <div className="empty-state">
-          <Server size={28} style={{ color: 'var(--tb-text-muted)' }} />
-          <div className="empty-state-title">No logs found</div>
-          <div className="empty-state-desc">{search ? 'Try a different search' : 'System logs will appear here'}</div>
-        </div>
-      ) : (
-        <div style={{ borderRadius: 10, border: '1px solid var(--tb-border)', overflow: 'hidden', fontFamily: 'var(--tb-font-mono, monospace)' }}>
-          {paginated.map((log, i) => {
-            const style = LEVEL_MAP[log.level || 'info'] || LEVEL_MAP.info;
-            return (
-              <div key={log.id || i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 16px', borderBottom: i < paginated.length - 1 ? '1px solid var(--tb-border)' : 'none', fontSize: 12, background: 'var(--tb-bg)' }}>
-                <span style={{ width: 50, padding: '2px 6px', borderRadius: 4, background: style.bg, color: style.color, fontSize: 10, fontWeight: 600, textTransform: 'uppercase', textAlign: 'center', flexShrink: 0 }}>
-                  {log.level || 'info'}
-                </span>
-                <span style={{ color: 'var(--tb-text-muted)', width: 140, flexShrink: 0 }}>
-                  {log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : '—'}
-                </span>
-                <span style={{ color: 'var(--tb-brand)', width: 80, flexShrink: 0 }}>{log.service || 'system'}</span>
-                <span style={{ color: 'var(--tb-text-primary)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.message || '—'}</span>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      <Card title="API activity log" description="What the server wrote about itself.">
+        <DataTable
+          columns={["When", "Kind", "Detail", "Severity", "IP"]}
+          empty="The API has written no activity."
+          rows={logs.map((l) => ({
+            When: <span title={dateTime(l.createdAt)}>{ago(l.createdAt)}</span>,
+            Kind: <span className="font-mono text-[12px]">{l.kind ?? "—"}</span>,
+            Detail: l.title ?? l.detail ?? "—",
+            Severity: l.severity ? (
+              <Badge tone={sevTone(l.severity)}>{l.severity}</Badge>
+            ) : (
+              "—"
+            ),
+            IP: l.ipAddress ?? "—",
+          }))}
+        />
+      </Card>
 
-      {totalPages > 1 && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13, color: 'var(--tb-text-muted)' }}>
-          <span>Page {page} of {totalPages} · {filtered.length} entries</span>
-          <div style={{ display: 'flex', gap: 6 }}>
-            <button className="btn btn-ghost btn-sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}><ChevronLeft size={14} /></button>
-            <button className="btn btn-ghost btn-sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}><ChevronRight size={14} /></button>
-          </div>
-        </div>
-      )}
+      <div className="grid gap-4 xl:grid-cols-2">
+        <Card
+          title="Failed sign-ins"
+          description="The most recent refusals, newest first."
+        >
+          <DataTable
+            columns={["When", "IP", "Account"]}
+            empty="No failed sign-in has been recorded."
+            rows={failedLogins.map((l) => ({
+              When: ago(l.createdAt),
+              IP: l.ipAddress ?? "—",
+              Account: l.userId ? (
+                <Link
+                  href={`/admin/users?q=${encodeURIComponent(l.userId)}`}
+                  className="font-mono text-[11px] text-[var(--tb-accent)] underline-offset-4 hover:underline"
+                >
+                  {l.userId.slice(0, 8)}
+                </Link>
+              ) : (
+                "unknown"
+              ),
+            }))}
+          />
+        </Card>
+
+        <Card title="Successful sign-ins" description="The most recent, newest first.">
+          <DataTable
+            columns={["When", "IP", "Account"]}
+            empty="No successful sign-in has been recorded."
+            rows={otherLogins.map((l) => ({
+              When: ago(l.createdAt),
+              IP: l.ipAddress ?? "—",
+              Account: l.userId ? (
+                <Link
+                  href={`/admin/users?q=${encodeURIComponent(l.userId)}`}
+                  className="font-mono text-[11px] text-[var(--tb-accent)] underline-offset-4 hover:underline"
+                >
+                  {l.userId.slice(0, 8)}
+                </Link>
+              ) : (
+                "unknown"
+              ),
+            }))}
+          />
+        </Card>
+      </div>
+
+      <Card
+        title="CAPTCHA blocks"
+        description="Imposed automatically. An operator has not reviewed these."
+      >
+        <DataTable
+          columns={["When", "IP", "Reason", "Difficulty", "State"]}
+          empty="No CAPTCHA block has been imposed."
+          rows={captchaBlocks.map((b) => ({
+            When: ago(b.blockedAt),
+            IP: b.ipAddress ?? "—",
+            Reason: b.reason ?? "—",
+            Difficulty: b.difficulty ?? "—",
+            State: b.unblockedAt ? (
+              <span className="text-[var(--tb-text-muted)]">
+                lifted {ago(b.unblockedAt)}
+              </span>
+            ) : (
+              <Badge tone="danger">in force</Badge>
+            ),
+          }))}
+        />
+      </Card>
     </div>
   );
+}
+
+function sevTone(s: string) {
+  return s === "critical" || s === "error"
+    ? ("danger" as const)
+    : s === "warning"
+      ? ("warn" as const)
+      : ("muted" as const);
 }
