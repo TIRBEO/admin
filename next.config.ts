@@ -1,15 +1,22 @@
-import type { NextConfig } from 'next';
+import type { NextConfig } from "next";
+import path from "node:path";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ['@tirbeo/theme', '@tirbeo/icons'],
-  // Local monorepo only: admin's node_modules links to the repo-root pnpm store,
-  // so Turbopack needs the workspace root. Unset on Vercel (standalone repo).
-  ...(process.env.TURBOPACK_ROOT ? { turbopack: { root: process.env.TURBOPACK_ROOT } } : {}),
-  experimental: {
-    // Disable static generation for all pages
+  reactStrictMode: true,
+  env: {
+    NEXT_PUBLIC_API_URL:
+      process.env.NEXT_PUBLIC_API_URL ??
+      (process.env.NODE_ENV === "development"
+        ? "http://localhost:3000"
+        : "https://api.tirbeo.com"),
   },
-  // Force all pages to be dynamically rendered
-  output: undefined,
+  turbopack: {
+    /* This app is a git submodule, so Turbopack would otherwise set its
+       filesystem root to apps/admin and fail to resolve the hoisted `next`
+       package ("Could not find the Next.js package"). Point it at the
+       workspace root explicitly. */
+    root: path.resolve(__dirname, "../.."),
+  },
 };
 
 export default nextConfig;
