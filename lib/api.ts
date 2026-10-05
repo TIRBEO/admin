@@ -12,11 +12,19 @@
 
 import { cookies } from "next/headers";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ??
-  (process.env.NODE_ENV === "development"
-    ? "http://localhost:3000"
-    : "https://api.tirbeo.com");
+const API_URL = (() => {
+  const fromEnv = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+  // Server-side runtime read: ignore a loopback value outside development so
+  // production never calls (or redirects to) localhost.
+  const loopback = !!fromEnv && /localhost|127\.0\.0\.1/.test(fromEnv);
+  if (loopback && process.env.NODE_ENV !== "development") return "https://api.tirbeo.com";
+  return (
+    fromEnv ??
+    (process.env.NODE_ENV === "development"
+      ? "http://localhost:3000"
+      : "https://api.tirbeo.com")
+  );
+})();
 
 /** The cookie the API reads the session from, and the double-submit
  *  companion every state-changing request has to echo back. */
