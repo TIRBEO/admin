@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { apiGet } from "@/lib/api";
 import { Card, DataTable, Badge } from "@/components/primitives";
+import { CopyId } from "@/components/copy-id";
 import { Failure } from "@/components/failure";
 import { dateTime, ago } from "@/lib/format";
 
@@ -17,7 +18,10 @@ type Log = {
   severity?: string | null;
   ipAddress?: string | null;
   createdAt?: string;
+  /* Anonymous events come back with no actor/account at all. */
   actor?: Actor | null;
+  account?: Actor | null;
+  user?: Actor | null;
 };
 type Online = Actor & { id?: string };
 
@@ -81,9 +85,12 @@ export default async function ActivityPage({
 
       <Card title="Events" description="Newest first.">
         <DataTable
-          columns={["When", "What", "Who", "Severity", "IP"]}
+          columns={["Event ID", "When", "What", "Who", "Severity", "IP"]}
           empty="No activity has been recorded."
-          rows={logs.map((l) => ({
+          rows={logs.map((l) => {
+            const actor = l.actor ?? l.account ?? l.user ?? null;
+            return {
+            "Event ID": <CopyId value={l.id} />,
             When: <span title={dateTime(l.createdAt)}>{ago(l.createdAt)}</span>,
             What: (
               <span>
@@ -95,15 +102,17 @@ export default async function ActivityPage({
                 ) : null}
               </span>
             ),
-            Who: l.actor?.email ? (
+            Who: actor?.email ? (
               <Link
-                href={`/admin/users?q=${encodeURIComponent(l.actor.email)}`}
+                href={`/admin/users?q=${encodeURIComponent(actor.email)}`}
                 className="font-mono text-[12px] text-[var(--tb-accent)] underline-offset-4 hover:underline"
               >
-                {l.actor.email}
+                {actor.email}
               </Link>
+            ) : actor?.id ? (
+              <span className="font-mono text-[11px]">{actor.id.slice(0, 8)}</span>
             ) : (
-              <span className="text-[var(--tb-text-muted)]">system</span>
+              <span className="text-[var(--tb-text-muted)]">anonymous</span>
             ),
             Severity: l.severity ? (
               <Badge tone={severityTone(l.severity)}>{l.severity}</Badge>
@@ -111,7 +120,8 @@ export default async function ActivityPage({
               "—"
             ),
             IP: l.ipAddress ?? "—",
-          }))}
+            };
+          })}
         />
       </Card>
     </div>

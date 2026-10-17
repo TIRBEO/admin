@@ -1,5 +1,6 @@
 import { apiGet } from "@/lib/api";
 import { Card, Stat, DataTable, Badge } from "@/components/primitives";
+import { CopyId } from "@/components/copy-id";
 import { Failure } from "@/components/failure";
 import { dateTime, ago } from "@/lib/format";
 
@@ -19,6 +20,9 @@ type Event = {
   ipAddress?: string | null;
   userAgent?: string | null;
   userId?: string | null;
+  /* Anonymous events may arrive with no account attached at all. */
+  account?: { id?: string; email?: string } | null;
+  user?: { id?: string; email?: string } | null;
   createdAt?: string;
 };
 
@@ -47,6 +51,8 @@ export default async function SecurityEventsPage({
   searchParams: Promise<{
     severity?: string;
     eventType?: string;
+    id?: string;
+    ip?: string;
     page?: string;
     limit?: string;
   }>;
@@ -56,6 +62,8 @@ export default async function SecurityEventsPage({
     ? (sp.severity as string)
     : "";
   const eventType = (sp.eventType ?? "").trim();
+  const eventId = (sp.id ?? "").trim();
+  const ip = (sp.ip ?? "").trim();
   const rawLimit = Number(sp.limit);
   const limit = SIZES.includes(rawLimit) ? rawLimit : 50;
   const page = Math.max(1, Number(sp.page) || 1);
@@ -63,6 +71,8 @@ export default async function SecurityEventsPage({
   const params = new URLSearchParams({ limit: String(limit), page: String(page) });
   if (severity) params.set("severity", severity);
   if (eventType) params.set("eventType", eventType);
+  if (eventId) params.set("id", eventId);
+  if (ip) params.set("ip", ip);
 
   const res = await apiGet<Payload>(`/admin/security/events?${params}`);
   if (!res.ok) return <Failure result={res} what="the security events log" />;
@@ -76,6 +86,8 @@ export default async function SecurityEventsPage({
     `/admin/security/events?${new URLSearchParams({
       ...(severity ? { severity } : {}),
       ...(eventType ? { eventType } : {}),
+      ...(eventId ? { id: eventId } : {}),
+      ...(ip ? { ip } : {}),
       limit: String(limit),
       page: String(p),
     })}`;
@@ -96,7 +108,10 @@ export default async function SecurityEventsPage({
         />
       </section>
 
-      <Card title="Filter" description="Severity, or an exact event type.">
+      <Card
+        title="Filter"
+        description="Severity, an exact event type, an exact event id, or a substring of the IP."
+      >
         <form action="/admin/security/events" method="get" className="flex flex-wrap gap-2">
           <label htmlFor="severity" className="sr-only">
             Severity
@@ -123,6 +138,26 @@ export default async function SecurityEventsPage({
             defaultValue={eventType}
             placeholder="Event type, e.g. login_failed"
             className="w-full max-w-xs rounded-lg border border-[var(--tb-border)] bg-[var(--tb-surface-1)] px-3 py-2 text-[13px] outline-none placeholder:text-[var(--tb-text-muted)] focus:border-[var(--tb-accent)]"
+          />
+          <label htmlFor="id" className="sr-only">
+            Event id
+          </label>
+          <input
+            id="id"
+            name="id"
+            defaultValue={eventId}
+            placeholder="Look up by event id"
+            className="w-full max-w-[14rem] rounded-lg border border-[var(--tb-border)] bg-[var(--tb-surface-1)] px-3 py-2 font-mono text-[13px] outline-none placeholder:font-sans placeholder:text-[var(--tb-text-muted)] focus:border-[var(--tb-accent)]"
+          />
+          <label htmlFor="ip" className="sr-only">
+            IP
+          </label>
+          <input
+            id="ip"
+            name="ip"
+            defaultValue={ip}
+            placeholder="Filter by IP, e.g. 203.0.113"
+            className="w-full max-w-[14rem] rounded-lg border border-[var(--tb-border)] bg-[var(--tb-surface-1)] px-3 py-2 font-mono text-[13px] outline-none placeholder:font-sans placeholder:text-[var(--tb-text-muted)] focus:border-[var(--tb-accent)]"
           />
           <label htmlFor="limit" className="sr-only">
             Rows per page
@@ -153,9 +188,13 @@ export default async function SecurityEventsPage({
         description={`${data.total ?? 0} match. Showing ${events.length}.`}
       >
         <DataTable
-          columns={["When", "Type", "What", "Severity", "IP", "Account"]}
+          columns={["Event ID", "When", "Type", "What", "Severity", "IP", "Account"]}
           empty="No security events match."
-          rows={events.map((e) => ({
+          rows={events.map((e) => {
+            const accountId = e.userId ?? e.account?.id ?? e.user?.id ?? null;
+            const accountEmail = e.account?.email ?? e.user?.email ?? null;
+            return {
+            "Event ID": <CopyId value={e.id} />,
             When: <span title={dateTime(e.createdAt)}>{ago(e.createdAt)}</span>,
             Type: (
               <span className="font-mono text-[12px]">
@@ -169,12 +208,17 @@ export default async function SecurityEventsPage({
               "—"
             ),
             IP: e.ipAddress ?? "—",
-            Account: e.userId ? (
-              <span className="font-mono text-[11px]">{e.userId.slice(0, 8)}</span>
+            Account: accountId ? (
+              accountEmail ? (
+                <span className="font-mono text-[12px]">{accountEmail}</span>
+              ) : (
+                <span className="font-mono text-[11px]">{accountId.slice(0, 8)}</span>
+              )
             ) : (
-              "—"
+              <span className="text-[var(--tb-text-muted)]">anonymous</span>
             ),
-          }))}
+            };
+          })}
         />
 
         {pages > 1 ? (

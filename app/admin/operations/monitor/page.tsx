@@ -44,8 +44,20 @@ export default async function MonitorPage() {
         />
         <Stat
           label="CAPTCHA"
-          value={`${num(captcha.solved) ?? 0} / ${num(captcha.challenges) ?? 0}`}
-          hint={`${num(captcha.solvedRate) ?? 0}% solved · ${num(captcha.activeBlocks) ?? 0} blocks in force`}
+          value={
+            captcha.configured
+              ? 'Turnstile on'
+              : captcha.secretPresent || captcha.siteKeyPresent
+                ? 'Misconfigured'
+                : 'Off'
+          }
+          hint={
+            captcha.configured
+              ? `${num(captcha.challenges) ?? 0} challenges / 24h · ${num(captcha.blocks) ?? 0} blocked`
+              : captcha.secretPresent || captcha.siteKeyPresent
+                ? 'Secret and site key are both required — see the API logs'
+                : 'No Turnstile keys set'
+          }
         />
         <Stat
           label="Blocked IPs"

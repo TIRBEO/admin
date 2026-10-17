@@ -90,6 +90,13 @@ export type Dash = {
     topTemplates?: Array<{ template: string; count: number }>;
   };
   captcha?: {
+    /** CAPTCHA provider — 'turnstile' (Cloudflare). */
+    provider?: string;
+    /** True only when BOTH the secret and a public site key are present. */
+    configured?: boolean;
+    siteKeyPresent?: boolean;
+    secretPresent?: boolean;
+    /** Gate activity, last 24h. */
     challenges?: number;
     solved?: number;
     solvedRate?: number;
