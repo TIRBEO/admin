@@ -37,9 +37,14 @@
 
   --tb-scrim: rgb(0 0 0 / 62%);
   --tb-glass: rgba(28, 28, 30, 0.85);
+  --tb-glass-2: rgba(44, 44, 46, 0.72);
   --tb-sans: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto,
     Helvetica, Arial, sans-serif;
   --tb-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  /* iOS grouped-list depth: a plate floats on the ground with a soft,
+     wide shadow — never a hard border alone. */
+  --tb-shadow-plate: 0 1px 2px rgb(0 0 0 / 0.28), 0 8px 24px -12px rgb(0 0 0 / 0.5);
+  --tb-shadow-pop: 0 24px 60px -12px rgb(0 0 0 / 0.6), 0 2px 8px rgb(0 0 0 / 0.3);
 }
 
 [data-theme="light"] {
@@ -70,6 +75,9 @@
 
   --tb-scrim: rgb(18 19 22 / 45%);
   --tb-glass: rgba(255, 255, 255, 0.86);
+  --tb-glass-2: rgba(255, 255, 255, 0.72);
+  --tb-shadow-plate: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px -12px rgb(0 0 0 / 0.16);
+  --tb-shadow-pop: 0 24px 60px -12px rgb(0 0 0 / 0.22), 0 2px 8px rgb(0 0 0 / 0.08);
 }
 
 @theme inline {
@@ -91,6 +99,8 @@
   --color-ok: var(--tb-ok);
   --color-scrim: var(--tb-scrim);
   --color-glass: var(--tb-glass);
+  --shadow-plate: var(--tb-shadow-plate);
+  --shadow-pop: var(--tb-shadow-pop);
   --radius-lg: 14px;
   --radius-xl: 17px;
   --radius-2xl: 20px;

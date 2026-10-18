@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 
-/* Small presentational primitives. Deliberately dumb: they take data and
-   render it, so a page file is about the thing it shows, not about markup. */
+/* Presentational primitives in the iOS grouped-list voice: each Card is a
+   17px plate floating on the ground with a soft shadow, section labels are
+   13px sentence-case, and rows are hairline-divided. Deliberately dumb —
+   a page file is about the thing it shows, not about markup. */
 
 export function Card({
   title,
@@ -15,21 +17,21 @@ export function Card({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-[var(--tb-border)] bg-[var(--tb-surface-1)]">
+    <section className="rounded-[17px] border border-[var(--tb-border)] bg-[var(--tb-surface-1)] shadow-[var(--tb-shadow-plate)]">
       {title ? (
-        <header className="flex items-start justify-between gap-3 border-b border-[var(--tb-border)] px-4 py-3">
-          <div>
-            <h2 className="text-[14px] font-semibold">{title}</h2>
+        <header className="flex items-start justify-between gap-3 border-b border-[var(--tb-border)] px-5 pb-3 pt-4">
+          <div className="min-w-0">
+            <h2 className="text-[15px] font-semibold tracking-[-0.01em]">{title}</h2>
             {description ? (
-              <p className="mt-0.5 text-[12px] text-[var(--tb-text-muted)]">
+              <p className="mt-0.5 text-[13px] leading-snug text-[var(--tb-text-muted)]">
                 {description}
               </p>
             ) : null}
           </div>
-          {action}
+          {action ? <div className="shrink-0">{action}</div> : null}
         </header>
       ) : null}
-      <div className="p-4">{children}</div>
+      <div className="px-5 py-4">{children}</div>
     </section>
   );
 }
@@ -38,21 +40,35 @@ export function Stat({
   label,
   value,
   hint,
+  tone,
 }: {
   label: string;
   value: ReactNode;
   hint?: string;
+  tone?: "default" | "accent" | "danger" | "warn" | "ok";
 }) {
+  const colour = {
+    default: "text-[var(--tb-text-primary)]",
+    accent: "text-[var(--tb-accent)]",
+    danger: "text-[var(--tb-danger)]",
+    warn: "text-[var(--tb-warn)]",
+    ok: "text-[var(--tb-ok)]",
+  }[tone ?? "default"];
+
   return (
-    <div className="rounded-xl border border-[var(--tb-border)] bg-[var(--tb-surface-1)] p-4">
-      <p className="text-[11px] font-medium uppercase tracking-[0.1em] text-[var(--tb-text-muted)]">
+    <div className="rounded-[17px] border border-[var(--tb-border)] bg-[var(--tb-surface-1)] px-5 py-4 shadow-[var(--tb-shadow-plate)]">
+      <p className="text-[13px] font-medium tracking-[-0.01em] text-[var(--tb-text-muted)]">
         {label}
       </p>
-      <p className="mt-1.5 text-[26px] font-semibold tabular-nums tracking-[-0.02em]">
+      <p
+        className={`mt-1.5 text-[30px] font-semibold leading-none tabular-nums tracking-[-0.03em] ${colour}`}
+      >
         {value}
       </p>
       {hint ? (
-        <p className="mt-0.5 text-[12px] text-[var(--tb-text-muted)]">{hint}</p>
+        <p className="mt-1.5 text-[13px] leading-snug text-[var(--tb-text-muted)]">
+          {hint}
+        </p>
       ) : null}
     </div>
   );
@@ -78,10 +94,10 @@ export function State({
   }[tone];
 
   return (
-    <div className="rounded-xl border border-[var(--tb-border)] bg-[var(--tb-surface-1)] px-6 py-10 text-center">
-      <p className={`text-[14px] font-medium ${colour}`}>{title}</p>
+    <div className="rounded-[17px] border border-[var(--tb-border)] bg-[var(--tb-surface-1)] px-6 py-12 text-center shadow-[var(--tb-shadow-plate)]">
+      <p className={`text-[15px] font-medium tracking-[-0.01em] ${colour}`}>{title}</p>
       {body ? (
-        <p className="mx-auto mt-1 max-w-md text-[13px] text-[var(--tb-text-muted)]">
+        <p className="mx-auto mt-1.5 max-w-md text-[13px] leading-relaxed text-[var(--tb-text-muted)]">
           {body}
         </p>
       ) : null}
@@ -107,10 +123,74 @@ export function Badge({
 
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${styles}`}
+      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[12px] font-medium tracking-[-0.01em] ${styles}`}
     >
       {children}
     </span>
+  );
+}
+
+/** A compact horizontal bar for a single share of a whole. Pure CSS width —
+    no charting library, no client JS. `max` is the value that fills the bar. */
+export function Bar({
+  value,
+  max,
+  tone = "accent",
+}: {
+  value: number;
+  max: number;
+  tone?: "accent" | "danger" | "warn" | "ok" | "muted";
+}) {
+  const pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
+  const fill = {
+    accent: "bg-[var(--tb-accent)]",
+    danger: "bg-[var(--tb-danger)]",
+    warn: "bg-[var(--tb-warn)]",
+    ok: "bg-[var(--tb-ok)]",
+    muted: "bg-[var(--tb-text-muted)]",
+  }[tone];
+
+  return (
+    <div
+      className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--tb-surface-2)]"
+      role="presentation"
+    >
+      <div
+        className={`h-full rounded-full ${fill}`}
+        style={{ width: `${pct}%` }}
+      />
+    </div>
+  );
+}
+
+/** A labelled count breakdown: name, bar, right-aligned tabular number.
+    Reads like the iOS Storage bar — one glance tells you the shape. */
+export function Bars({
+  rows,
+  tone = "accent",
+}: {
+  rows: Array<{ label: string; value: number; tone?: "accent" | "danger" | "warn" | "ok" | "muted" }>;
+  tone?: "accent" | "danger" | "warn" | "ok" | "muted";
+}) {
+  if (rows.length === 0) return null;
+  const max = Math.max(...rows.map((r) => r.value), 1);
+
+  return (
+    <ul className="flex flex-col gap-2.5">
+      {rows.map((r) => (
+        <li key={r.label} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1">
+          <span className="truncate text-[13px] text-[var(--tb-text-secondary)]">
+            {r.label}
+          </span>
+          <span className="text-[13px] font-medium tabular-nums text-[var(--tb-text-primary)]">
+            {r.value.toLocaleString()}
+          </span>
+          <div className="col-span-2">
+            <Bar value={r.value} max={max} tone={r.tone ?? tone} />
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -135,7 +215,7 @@ export function DataTable({
               <th
                 key={c}
                 scope="col"
-                className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--tb-text-muted)]"
+                className="px-3 py-2 text-left text-[12px] font-semibold tracking-[-0.01em] text-[var(--tb-text-muted)] first:pl-0 last:pr-0"
               >
                 {c}
               </th>
@@ -146,10 +226,10 @@ export function DataTable({
           {rows.map((row, i) => (
             <tr
               key={i}
-              className="border-b border-[var(--tb-border)] last:border-0"
+              className="border-b border-[var(--tb-border)] transition-colors last:border-0 hover:bg-[var(--tb-surface-2)]"
             >
               {columns.map((c) => (
-                <td key={c} className="px-3 py-2.5 align-middle">
+                <td key={c} className="px-3 py-2.5 align-middle first:pl-0 last:pr-0">
                   {row[c] ?? "—"}
                 </td>
               ))}

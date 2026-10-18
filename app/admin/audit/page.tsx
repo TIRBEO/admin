@@ -1,15 +1,9 @@
+import Link from "next/link";
 import { apiGet } from "@/lib/api";
 import { Card, Stat, DataTable, Badge } from "@/components/primitives";
+import { CopyId } from "@/components/copy-id";
 import { Failure } from "@/components/failure";
 import { dateTime, ago } from "@/lib/format";
-
-/* GET /api/admin/audit returns { events, total, limit, offset }. Every row
-   carries an `action` (mirrored from the stored `kind`), a severity and the
-   account that caused it — which is the whole point of the table: an
-   operator reading it can answer "was that allowed, and by whom".
-
-   The action filter is a substring match on the stored kind, so a partial
-   word is enough. */
 
 type AuditEvent = {
   id?: string;
@@ -19,17 +13,31 @@ type AuditEvent = {
   detail?: string | null;
   severity?: string | null;
   actorId?: string | null;
-  userId?: string | null;
-  targetType?: string | null;
-  targetId?: string | null;
   metadata?: unknown;
   createdAt?: string;
 };
 
-type Payload = { events?: AuditEvent[]; total?: number; limit?: number; offset?: number };
+type AuditPayload = { events?: AuditEvent[]; total?: number };
 
-const SEVERITIES: string[] = ["", "info", "warning", "error", "critical"];
-const SIZES = [50, 100, 200];
+type Actor = { id?: string; email?: string; name?: string | null };
+type ActivityLog = {
+  id?: string;
+  kind?: string;
+  title?: string | null;
+  detail?: string | null;
+  severity?: string | null;
+  ipAddress?: string | null;
+  createdAt?: string;
+  actor?: Actor | null;
+  account?: Actor | null;
+  user?: Actor | null;
+};
+
+type ActivityPayload = { logs?: ActivityLog[]; onlineUsers?: Actor[] };
+
+const SEVERITIES = ["", "info", "warning", "error", "critical"];
+const AUDIT_SIZES = [50, 100, 200];
+const ACTIVITY_SIZES = [25, 50, 100, 200];
 
 export default async function AuditPage({
   searchParams,
@@ -41,18 +49,19 @@ export default async function AuditPage({
     to?: string;
     page?: string;
     limit?: string;
+    alog?: string;
   }>;
 }) {
   const sp = await searchParams;
   const action = (sp.action ?? "").trim();
-  const severity = SEVERITIES.includes(sp.severity ?? "")
-    ? (sp.severity as string)
-    : "";
+  const severity = SEVERITIES.includes(sp.severity ?? "") ? (sp.severity as string) : "";
   const from = (sp.from ?? "").trim();
   const to = (sp.to ?? "").trim();
   const rawLimit = Number(sp.limit);
-  const limit = SIZES.includes(rawLimit) ? rawLimit : 50;
+  const limit = AUDIT_SIZES.includes(rawLimit) ? rawLimit : 50;
   const page = Math.max(1, Number(sp.page) || 1);
+  const rawALog = Number(sp.alog);
+  const activityLimit = ACTIVITY_SIZES.includes(rawALog) ? rawALog : 50;
 
   const params = new URLSearchParams({
     limit: String(limit),
@@ -63,139 +72,116 @@ export default async function AuditPage({
   if (from) params.set("from", from);
   if (to) params.set("to", to);
 
-  const res = await apiGet<Payload>(`/admin/audit?${params}`);
-  if (!res.ok) return <Failure result={res} what="the audit trail" />;
+  const [auditRes, activityRes] = await Promise.all([
+    apiGet<AuditPayload>(`/admin/audit?${params}`),
+    apiGet<ActivityPayload>(`/admin/activity?limit=${activityLimit}`),
+  ]);
 
-  const data = res.data ?? {};
+  if (!auditRes.ok) return <Failure result={auditRes} what="the audit trail" />;
+
+  const data = auditRes.data ?? {};
   const events = data.events ?? [];
   const total = data.total ?? 0;
   const pages = Math.max(1, Math.ceil(total / limit));
+  const activity = activityRes.data ?? {};
+  const logs = activity.logs ?? [];
+  const online = activity.onlineUsers ?? [];
 
   const href = (p: number) =>
-    `/admin/audit?${new URLSearchParams({
+    `/admin/audit${new URLSearchParams({
       ...(action ? { action } : {}),
       ...(severity ? { severity } : {}),
       ...(from ? { from } : {}),
       ...(to ? { to } : {}),
       limit: String(limit),
       page: String(p),
+      ...(activityLimit !== 50 ? { alog: String(activityLimit) } : {}),
     })}`;
 
   return (
-    <div className="flex flex-col gap-4">
-      <section aria-label="Audit volume" className="grid gap-3 sm:grid-cols-3">
-        <Stat
-          label="Matching entries"
-          value={total}
-          hint={`Page ${page} of ${pages}`}
-        />
-        <Stat
-          label="On this page"
-          value={events.length}
-          hint="Newest first"
-        />
+    <div className="flex flex-col gap-5">
+      <section aria-label="Audit volume" className="grid gap-4 sm:grid-cols-3">
+        <Stat label="Matching entries" value={total} hint={`Page ${page} of ${pages}`} />
         <Stat
           label="Window"
-          value={
-            from || to
-              ? `${from || "beginning"} → ${to || "now"}`
-              : "Everything"
-          }
-          hint={
-            from || to
-              ? "Filtered by the API, not by this page"
-              : "No date filter applied"
-          }
+          value={from || to ? `${from || "beginning"} → ${to || "now"}` : "Everything"}
+          hint={from || to ? "Filtered by the API, not by this page" : "No date filter applied"}
+        />
+        <Stat
+          label="Online now"
+          value={online.length}
+          hint="Active in the last five minutes, deduplicated by account"
         />
       </section>
 
-      <Card title="Filter" description="A substring of the action, or an exact severity.">
-        <form action="/admin/audit" method="get" className="flex flex-wrap gap-2">
-          <label htmlFor="action" className="sr-only">
-            Action contains
-          </label>
-          <input
-            id="action"
-            name="action"
-            defaultValue={action}
-            placeholder="Action contains… e.g. block"
-            className="w-full max-w-[16rem] rounded-lg border border-[var(--tb-border)] bg-[var(--tb-surface-1)] px-3 py-2 text-[13px] outline-none placeholder:text-[var(--tb-text-muted)] focus:border-[var(--tb-accent)]"
-          />
-          <label htmlFor="severity" className="sr-only">
-            Severity
-          </label>
-          <select
-            id="severity"
-            name="severity"
-            defaultValue={severity}
-            className="rounded-lg border border-[var(--tb-border)] bg-[var(--tb-surface-1)] px-3 py-2 text-[13px] outline-none focus:border-[var(--tb-accent)]"
-          >
-            <option value="">Any severity</option>
-            {SEVERITIES.slice(1).map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-          <label htmlFor="from" className="sr-only">
-            From
-          </label>
-          <input
-            id="from"
-            name="from"
-            type="date"
-            defaultValue={from}
-            className="rounded-lg border border-[var(--tb-border)] bg-[var(--tb-surface-1)] px-3 py-2 text-[13px] outline-none focus:border-[var(--tb-accent)]"
-          />
-          <label htmlFor="to" className="sr-only">
-            To
-          </label>
-          <input
-            id="to"
-            name="to"
-            type="date"
-            defaultValue={to}
-            className="rounded-lg border border-[var(--tb-border)] bg-[var(--tb-surface-1)] px-3 py-2 text-[13px] outline-none focus:border-[var(--tb-accent)]"
-          />
-          <label htmlFor="limit" className="sr-only">
-            Rows per page
-          </label>
-          <select
-            id="limit"
-            name="limit"
-            defaultValue={String(limit)}
-            className="rounded-lg border border-[var(--tb-border)] bg-[var(--tb-surface-1)] px-3 py-2 text-[13px] outline-none focus:border-[var(--tb-accent)]"
-          >
-            {SIZES.map((n) => (
-              <option key={n} value={n}>
-                {n} per page
-              </option>
-            ))}
-          </select>
-          <button
-            type="submit"
-            className="rounded-lg bg-[var(--tb-accent)] px-3 py-2 text-[13px] font-medium text-[var(--tb-accent-contrast)]"
-          >
-            Apply
-          </button>
-        </form>
-      </Card>
-
-      <Card title="Trail" description={`${total} entries match. Showing ${events.length}.`}>
+      <Card
+        title="Audit trail"
+        description={`${total} entries match. Showing ${events.length}. A substring of the action, or an exact severity.`}
+        action={
+          <form action="/admin/audit" method="get" className="flex flex-wrap gap-2">
+            <label htmlFor="action" className="sr-only">
+              Action contains
+            </label>
+            <input
+              id="action"
+              name="action"
+              defaultValue={action}
+              placeholder="Action contains… e.g. block"
+              className="w-44 rounded-[10px] border border-[var(--tb-border)] bg-[var(--tb-surface-1)] px-3 py-1.5 text-[13px] outline-none placeholder:text-[var(--tb-text-muted)] focus:border-[var(--tb-accent)]"
+            />
+            <label htmlFor="severity" className="sr-only">
+              Severity
+            </label>
+            <select
+              id="severity"
+              name="severity"
+              defaultValue={severity}
+              className="rounded-[10px] border border-[var(--tb-border)] bg-[var(--tb-surface-1)] px-3 py-1.5 text-[13px] outline-none focus:border-[var(--tb-accent)]"
+            >
+              <option value="">Any severity</option>
+              {SEVERITIES.slice(1).map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+            <label htmlFor="from" className="sr-only">
+              From
+            </label>
+            <input
+              id="from"
+              name="from"
+              type="date"
+              defaultValue={from}
+              className="rounded-[10px] border border-[var(--tb-border)] bg-[var(--tb-surface-1)] px-3 py-1.5 text-[13px] outline-none focus:border-[var(--tb-accent)]"
+            />
+            <label htmlFor="to" className="sr-only">
+              To
+            </label>
+            <input
+              id="to"
+              name="to"
+              type="date"
+              defaultValue={to}
+              className="rounded-[10px] border border-[var(--tb-border)] bg-[var(--tb-surface-1)] px-3 py-1.5 text-[13px] outline-none focus:border-[var(--tb-accent)]"
+            />
+            <button
+              type="submit"
+              className="rounded-[10px] bg-[var(--tb-accent)] px-3 py-1.5 text-[13px] font-medium text-[var(--tb-accent-contrast)]"
+            >
+              Apply
+            </button>
+          </form>
+        }
+      >
         <DataTable
           columns={["When", "Action", "What", "Severity", "Actor"]}
           empty="No audit entry matches."
           rows={events.map((e) => ({
             When: <span title={dateTime(e.createdAt)}>{ago(e.createdAt)}</span>,
-            Action: (
-              <span className="font-mono text-[12px]">{e.action ?? e.kind ?? "—"}</span>
-            ),
+            Action: <span className="font-mono text-[12px]">{e.action ?? e.kind ?? "—"}</span>,
             What: e.title ?? e.detail ?? describeMetadata(e) ?? "—",
-            Severity: e.severity ? (
-              <Badge tone={severityTone(e.severity)}>{e.severity}</Badge>
-            ) : (
-              "—"
-            ),
+            Severity: e.severity ? <Badge tone={severityTone(e.severity)}>{e.severity}</Badge> : "—",
             Actor: e.actorId ? (
               <span className="font-mono text-[11px]">{e.actorId.slice(0, 8)}</span>
             ) : (
@@ -207,7 +193,7 @@ export default async function AuditPage({
         {pages > 1 ? (
           <nav aria-label="Pagination" className="mt-4 flex items-center justify-between text-[13px]">
             {page > 1 ? (
-              <a href={href(page - 1)} className="rounded-lg border border-[var(--tb-border)] px-3 py-1.5 hover:bg-[var(--tb-surface-2)]">
+              <a href={href(page - 1)} className="rounded-[10px] border border-[var(--tb-border)] px-3 py-1.5 hover:bg-[var(--tb-surface-2)]">
                 ← Previous
               </a>
             ) : (
@@ -217,7 +203,7 @@ export default async function AuditPage({
               Page {page} of {pages}
             </span>
             {page < pages ? (
-              <a href={href(page + 1)} className="rounded-lg border border-[var(--tb-border)] px-3 py-1.5 hover:bg-[var(--tb-surface-2)]">
+              <a href={href(page + 1)} className="rounded-[10px] border border-[var(--tb-border)] px-3 py-1.5 hover:bg-[var(--tb-surface-2)]">
                 Next →
               </a>
             ) : (
@@ -226,12 +212,85 @@ export default async function AuditPage({
           </nav>
         ) : null}
       </Card>
+
+      <Card
+        title="Activity feed"
+        description={`${logs.length} most recent events, newest first. Online users are derived from sessions used in the last five minutes.`}
+        action={
+          <nav aria-label="How many events" className="flex gap-1">
+            {ACTIVITY_SIZES.map((n) => (
+              <a
+                key={n}
+                href={`/admin/audit?${new URLSearchParams({
+                  ...(action ? { action } : {}),
+                  ...(severity ? { severity } : {}),
+                  ...(from ? { from } : {}),
+                  ...(to ? { to } : {}),
+                  limit: String(limit),
+                  alog: String(n),
+                })}`}
+                aria-current={n === activityLimit ? "page" : undefined}
+                className={`rounded-[8px] border px-2.5 py-1 text-[12px] ${
+                  n === activityLimit
+                    ? "border-[var(--tb-accent)] text-[var(--tb-accent)]"
+                    : "border-[var(--tb-border)] text-[var(--tb-text-muted)] hover:bg-[var(--tb-surface-2)]"
+                }`}
+              >
+                {n}
+              </a>
+            ))}
+          </nav>
+        }
+      >
+        <DataTable
+          columns={["Event ID", "When", "What", "Who", "Severity", "IP"]}
+          empty={activityRes.ok ? "No activity has been recorded." : "The activity feed could not be read."}
+          rows={logs.map((l) => {
+            const actor = l.actor ?? l.account ?? l.user ?? null;
+            return {
+              "Event ID": <CopyId value={l.id} />,
+              When: <span title={dateTime(l.createdAt)}>{ago(l.createdAt)}</span>,
+              What: (
+                <span>
+                  <span className="font-medium">{l.title ?? l.kind ?? "—"}</span>
+                  {l.detail ? (
+                    <span className="block text-[12px] text-[var(--tb-text-muted)]">{l.detail}</span>
+                  ) : null}
+                </span>
+              ),
+              Who: actor?.email ? (
+                <Link
+                  href={`/admin/people?q=${encodeURIComponent(actor.email)}`}
+                  className="font-mono text-[12px] text-[var(--tb-accent)] underline-offset-4 hover:underline"
+                >
+                  {actor.email}
+                </Link>
+              ) : actor?.id ? (
+                <span className="font-mono text-[11px]">{actor.id.slice(0, 8)}</span>
+              ) : (
+                <span className="text-[var(--tb-text-muted)]">anonymous</span>
+              ),
+              Severity: l.severity ? <Badge tone={severityTone(l.severity)}>{l.severity}</Badge> : "—",
+              IP: l.ipAddress ?? "—",
+            };
+          })}
+        />
+      </Card>
+
+      <Card title="Online now" description="Accounts active in the last five minutes.">
+        <DataTable
+          columns={["Account", "Name"]}
+          empty="Nobody has been active in the last five minutes."
+          rows={online.map((u) => ({
+            Account: <span className="font-mono text-[12px]">{u.email ?? u.id ?? "—"}</span>,
+            Name: u.name ?? "—",
+          }))}
+        />
+      </Card>
     </div>
   );
 }
 
-/** An entry with no title still carries its metadata; show its keys rather
- *  than an em dash that reads like missing data. */
 function describeMetadata(e: AuditEvent): string | null {
   const m = e.metadata;
   if (!m || typeof m !== "object" || Array.isArray(m)) return null;

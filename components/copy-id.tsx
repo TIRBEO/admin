@@ -29,7 +29,7 @@ export function CopyId({ value }: { value?: string | null }) {
     >
       {value.slice(0, 8)}
       {copied ? (
-        <span className="text-[10px] font-medium text-[var(--tb-ok)]>">
+        <span className="text-[10px] font-medium text-[var(--tb-ok)]">
           copied
         </span>
       ) : null}

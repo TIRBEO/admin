@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getDash, type Dash } from "@/lib/dash";
 import { num } from "@/lib/api";
 import { ago } from "@/lib/format";
-import { Card, Stat, State, Badge, DataTable } from "@/components/primitives";
+import { Card, Stat, State, DataTable, Bars } from "@/components/primitives";
 import { Failure } from "@/components/failure";
 
 /* The dashboard is one read of /admin/dash and everything on it is derived
@@ -20,11 +20,31 @@ export default async function DashboardPage() {
     (a) => typeof a?.message === "string",
   );
 
+  const loginByMethod = (d.logins?.byMethod ?? [])
+    .filter((m) => typeof m?.method === "string")
+    .map((m) => ({ label: m.method, value: num(m.count) ?? 0 }));
+
+  const securityBySeverity = (d.security?.bySeverity ?? [])
+    .filter((s) => typeof s?.severity === "string")
+    .map((s) => ({
+      label: s.severity,
+      value: num(s.count) ?? 0,
+      tone: s.severity === "critical" || s.severity === "high" ? ("danger" as const) : ("warn" as const),
+    }));
+
+  const emailByStatus = (d.emails?.byStatus ?? [])
+    .filter((s) => typeof s?.status === "string")
+    .map((s) => ({
+      label: s.status,
+      value: num(s.count) ?? 0,
+      tone: s.status === "failed" ? ("danger" as const) : s.status === "delivered" ? ("ok" as const) : ("muted" as const),
+    }));
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <section
         aria-label="Key figures"
-        className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
       >
         <Stat
           label="Accounts"
@@ -40,18 +60,20 @@ export default async function DashboardPage() {
           label="Sign-ins today"
           value={num(o.logins?.today) ?? "—"}
           hint={`${num(d.logins?.failedToday) ?? 0} failed`}
+          tone={num(d.logins?.failedToday) ? "warn" : "default"}
         />
         <Stat
           label="Blocked requests"
           value={
             <span>
               {num(req.blocked) ?? "—"}
-              <span className="ml-1.5 text-[14px] font-normal text-[var(--tb-text-muted)]">
+              <span className="ml-1.5 text-[15px] font-normal text-[var(--tb-text-muted)]">
                 {typeof req.blockRate === "number" ? `${req.blockRate}%` : "—"}
               </span>
             </span>
           }
           hint={`of ${num(req.hits) ?? "—"} seen in the window`}
+          tone={num(req.blocked) ? "danger" : "default"}
         />
       </section>
 
@@ -64,9 +86,9 @@ export default async function DashboardPage() {
             {alerts.slice(0, 5).map((a, i) => (
               <li
                 key={i}
-                className="flex items-start justify-between gap-3 rounded-lg border border-[var(--tb-danger)] bg-[var(--tb-danger-soft)] px-3 py-2.5"
+                className="flex items-start justify-between gap-3 rounded-[10px] border border-[var(--tb-danger)] bg-[var(--tb-danger-soft)] px-3.5 py-2.5"
               >
-                <span className="text-[13px]">{a.message}</span>
+                <span className="text-[13px] leading-snug">{a.message}</span>
                 <span className="shrink-0 text-[12px] text-[var(--tb-text-muted)]">
                   {ago(new Date(a.timestamp))}
                 </span>
@@ -81,28 +103,32 @@ export default async function DashboardPage() {
         </Card>
       ) : null}
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid gap-5 xl:grid-cols-2">
         <Card
           title="Accounts"
           description="Where the people are, and who is held back."
           action={
             <Link
-              href="/admin/users"
-              className="text-[12px] text-[var(--tb-accent)] underline-offset-4 hover:underline"
+              href="/admin/people"
+              className="text-[13px] font-medium text-[var(--tb-accent)] underline-offset-4 hover:underline"
             >
               Open
             </Link>
           }
         >
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-[13px] sm:grid-cols-3">
+          <Bars
+            rows={[
+              { label: "Total", value: num(d.users?.total) ?? 0 },
+              { label: "Active (7d)", value: num(d.users?.active) ?? 0, tone: "ok" },
+              { label: "New this month", value: num(d.users?.newThisMonth) ?? 0, tone: "accent" },
+              { label: "Banned", value: num(d.users?.banned) ?? 0, tone: "danger" },
+              { label: "Suspended", value: num(d.users?.suspended) ?? 0, tone: "warn" },
+              { label: "2FA enabled", value: num(d.users?.twoFA) ?? 0, tone: "muted" },
+            ]}
+          />
+          <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-[var(--tb-border)] pt-3.5 text-[13px] sm:grid-cols-3">
             {[
-              ["Total", num(d.users?.total)],
-              ["Active (7d)", num(d.users?.active)],
-              ["New this month", num(d.users?.newThisMonth)],
-              ["Banned", num(d.users?.banned)],
-              ["Suspended", num(d.users?.suspended)],
               ["Awaiting deletion", num(d.users?.scheduledDeletion)],
-              ["2FA enabled", num(d.users?.twoFA)],
               ["Email verified", num(d.users?.verifiedEmail)],
               ["Sessions active", num(d.sessions?.active)],
             ].map(([label, value]) => (
@@ -119,14 +145,17 @@ export default async function DashboardPage() {
           description="Delivery, failures and engagement."
           action={
             <Link
-              href="/admin/email"
-              className="text-[12px] text-[var(--tb-accent)] underline-offset-4 hover:underline"
+              href="/admin/messaging"
+              className="text-[13px] font-medium text-[var(--tb-accent)] underline-offset-4 hover:underline"
             >
               Open
             </Link>
           }
         >
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-[13px] sm:grid-cols-3">
+          {emailByStatus.length > 0 ? (
+            <Bars rows={emailByStatus} />
+          ) : null}
+          <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-[var(--tb-border)] pt-3.5 text-[13px] sm:grid-cols-3">
             {[
               ["Sent today", num(d.emails?.today)],
               ["Last hour", num(d.emails?.lastHour)],
@@ -141,26 +170,32 @@ export default async function DashboardPage() {
               </div>
             ))}
           </dl>
-          {(d.emails?.byStatus ?? []).length > 0 ? (
-            <ul className="mt-4 flex flex-wrap gap-2">
-              {(d.emails?.byStatus ?? []).map((s) => (
-                <li key={s.status}>
-                  <Badge
-                    tone={
-                      s.status === "failed"
-                        ? "danger"
-                        : s.status === "delivered"
-                          ? "ok"
-                          : "muted"
-                    }
-                  >
-                    {s.status} · {s.count}
-                  </Badge>
-                </li>
-              ))}
-            </ul>
-          ) : null}
         </Card>
+      </div>
+
+      <div className="grid gap-5 xl:grid-cols-2">
+        {loginByMethod.length > 0 ? (
+          <Card title="Sign-ins by method" description="How people reached the platform.">
+            <Bars rows={loginByMethod} />
+          </Card>
+        ) : null}
+
+        {securityBySeverity.length > 0 ? (
+          <Card
+            title="Security events by severity"
+            description="What the platform flagged, ranked."
+            action={
+              <Link
+                href="/admin/security"
+                className="text-[13px] font-medium text-[var(--tb-accent)] underline-offset-4 hover:underline"
+              >
+                Events
+              </Link>
+            }
+          >
+            <Bars rows={securityBySeverity} />
+          </Card>
+        ) : null}
       </div>
 
       <Card
@@ -168,8 +203,8 @@ export default async function DashboardPage() {
         description="p95, measured in the running API process."
         action={
           <Link
-            href="/admin/operations/monitor"
-            className="text-[12px] text-[var(--tb-accent)] underline-offset-4 hover:underline"
+            href="/admin/operations"
+            className="text-[13px] font-medium text-[var(--tb-accent)] underline-offset-4 hover:underline"
           >
             Monitor
           </Link>
@@ -184,7 +219,7 @@ export default async function DashboardPage() {
             Avg: `${q.avgMs} ms`,
             p95: (
               <span
-                className={q.p95Ms > 500 ? "text-[var(--tb-warn)]" : undefined}
+                className={q.p95Ms > 500 ? "font-medium text-[var(--tb-warn)]" : undefined}
               >
                 {q.p95Ms} ms
               </span>
@@ -197,15 +232,15 @@ export default async function DashboardPage() {
       <Card title="Where to go next">
         <ul className="grid gap-2 sm:grid-cols-2">
           {[
-            { href: "/admin/users", label: "Find or act on an account" },
+            { href: "/admin/people", label: "Find or act on an account" },
             { href: "/admin/security", label: "Check the security posture" },
-            { href: "/admin/operations/health", label: "Is the API healthy?" },
+            { href: "/admin/operations", label: "Is the API healthy?" },
             { href: "/admin/audit", label: "Review who changed what" },
           ].map((l) => (
             <li key={l.href}>
               <Link
                 href={l.href}
-                className="block rounded-lg border border-[var(--tb-border)] px-3 py-2.5 text-[13px] text-[var(--tb-text-secondary)] transition-colors hover:bg-[var(--tb-surface-2)] hover:text-[var(--tb-text-primary)]"
+                className="block rounded-[10px] border border-[var(--tb-border)] px-3.5 py-2.5 text-[14px] text-[var(--tb-text-secondary)] transition-colors hover:bg-[var(--tb-surface-2)] hover:text-[var(--tb-text-primary)]"
               >
                 {l.label}
               </Link>
