@@ -1,6 +1,7 @@
 import { apiGet, num } from "@/lib/api";
 import { getDash } from "@/lib/dash";
 import { Card, Stat, DataTable, Badge, State } from "@/components/primitives";
+import { CopyId } from "@/components/copy-id";
 import { Failure } from "@/components/failure";
 import { dateTime, ago } from "@/lib/format";
 
@@ -26,6 +27,7 @@ type SentEmail = {
   toEmail?: string;
   subject?: string | null;
   eventKey?: string | null;
+  eventId?: string | null;
   status?: string | null;
   openedAt?: string | null;
   createdAt?: string;
@@ -48,11 +50,12 @@ type Inbox = {
 export default async function MessagingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ to?: string; status?: string; page?: string }>;
+  searchParams: Promise<{ to?: string; status?: string; eventKey?: string; page?: string }>;
 }) {
   const sp = await searchParams;
   const to = (sp.to ?? "").trim();
   const status = (sp.status ?? "").trim();
+  const eventKey = (sp.eventKey ?? "").trim();
   const page = Math.max(1, Number(sp.page) || 1);
 
   const [configRes, templatesRes, sentRes, dashRes, inboxRes, prefsRes, reachRes] =
@@ -62,7 +65,9 @@ export default async function MessagingPage({
       apiGet<SentPayload>(
         `/admin/emails?limit=50&page=${page}${
           to ? `&to=${encodeURIComponent(to)}` : ""
-        }${status ? `&status=${encodeURIComponent(status)}` : ""}`,
+        }${status ? `&status=${encodeURIComponent(status)}` : ""}${
+          eventKey ? `&eventKey=${encodeURIComponent(eventKey)}` : ""
+        }`,
       ),
       getDash(7),
       apiGet<Inbox>("/admin/notifications?limit=25"),
@@ -88,6 +93,7 @@ export default async function MessagingPage({
     `/admin/messaging${new URLSearchParams({
       ...(to ? { to } : {}),
       ...(status ? { status } : {}),
+      ...(eventKey ? { eventKey } : {}),
       page: String(p),
     })}`;
 
@@ -119,9 +125,19 @@ export default async function MessagingPage({
 
       <Card
         title="Send log"
-        description={`${total} message${total === 1 ? "" : "s"} matched. Showing ${sent.length}.`}
+        description={`${total} message${total === 1 ? "" : "s"} matched. Showing ${sent.length}. The event field is the reference id of whatever caused the mail.`}
         action={
           <form action="/admin/messaging" method="get" className="flex flex-wrap gap-2">
+            <label htmlFor="eventKey" className="sr-only">
+              Event ID
+            </label>
+            <input
+              id="eventKey"
+              name="eventKey"
+              defaultValue={eventKey}
+              placeholder="Event ID — exact"
+              className="w-48 rounded-[10px] border border-[var(--tb-border)] bg-[var(--tb-surface-1)] px-3 py-1.5 font-mono text-[13px] outline-none placeholder:font-sans placeholder:text-[var(--tb-text-muted)] focus:border-[var(--tb-accent)]"
+            />
             <label htmlFor="to" className="sr-only">
               Recipient
             </label>
@@ -158,13 +174,18 @@ export default async function MessagingPage({
         }
       >
         <DataTable
-          columns={["Sent", "To", "Subject", "Template", "Status", "Opened"]}
-          empty={to || status ? "No message matches." : "No email has been sent."}
+          columns={["Sent", "To", "Subject", "Template", "Event", "Status", "Opened"]}
+          empty={to || status || eventKey ? "No message matches." : "No email has been sent."}
           rows={sent.map((e) => ({
             Sent: <span title={dateTime(e.createdAt)}>{ago(e.createdAt)}</span>,
             To: <span className="font-mono text-[12px]">{e.toEmail ?? "—"}</span>,
             Subject: e.subject ?? "—",
             Template: e.eventKey ? <span className="font-mono text-[11px]">{e.eventKey}</span> : "—",
+            Event: e.eventId ? (
+              <CopyId value={e.eventId} />
+            ) : (
+              <span className="text-[var(--tb-text-muted)]">—</span>
+            ),
             Status: e.status ? <Badge tone={statusTone(e.status)}>{e.status}</Badge> : "—",
             Opened: e.openedAt ? <span className="text-[var(--tb-ok)]">yes</span> : "—",
           }))}

@@ -1,6 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { apiGet, apiSend, errorMessage } from "@/lib/api";
+import { apiGet, apiSend, apiPut, errorMessage } from "@/lib/api";
 import { Card, Stat, Badge, DataTable, State } from "@/components/primitives";
 import { CopyId } from "@/components/copy-id";
 import { Failure } from "@/components/failure";
@@ -74,8 +74,26 @@ type EventsPayload = {
   };
 };
 
+type Appeal = {
+  id?: string;
+  decision?: string;
+  note?: string;
+  createdAt?: string;
+  decidedAt?: string | null;
+  user?: { id?: string; email?: string; name?: string | null } | null;
+  restriction?: {
+    id?: string;
+    title?: string;
+    severity?: string;
+    endsAt?: string | null;
+  } | null;
+};
+
+type AppealsPayload = { appeals?: Appeal[]; total?: number; pending?: number };
+
 const SEVERITIES = ["", "info", "warning", "error", "critical"];
 const BLOCK_TYPES = ["", "ip", "user", "email"];
+const APPEAL_DECISIONS = ["", "pending", "upheld", "overturned"];
 const EVENT_SIZES = [50, 100, 200];
 
 async function unblock(formData: FormData) {
@@ -100,6 +118,28 @@ async function unblock(formData: FormData) {
   );
 }
 
+async function decideAppeal(formData: FormData) {
+  "use server";
+  const appealId = String(formData.get("appealId") ?? "");
+  const decision = String(formData.get("decision") ?? "");
+  const back = String(formData.get("back") ?? "/admin/security");
+
+  if (!appealId || (decision !== "upheld" && decision !== "overturned")) {
+    redirect(`${back}${back.includes("?") ? "&" : "?"}error=bad-decision`);
+  }
+
+  const res = await apiPut<{ ok?: boolean }>("/admin/appeals", {
+    id: appealId,
+    decision,
+  });
+  revalidatePath("/admin/security");
+  redirect(
+    `${back}${back.includes("?") ? "&" : "?"}${
+      res.ok ? `decided=${encodeURIComponent(appealId)}` : "error=appeal-failed"
+    }`,
+  );
+}
+
 export default async function SecurityPage({
   searchParams,
 }: {
@@ -110,9 +150,13 @@ export default async function SecurityPage({
     severity?: string;
     eventType?: string;
     ip?: string;
+    id?: string;
     page?: string;
     limit?: string;
+    appealDecision?: string;
+    appealQ?: string;
     removed?: string;
+    decided?: string;
     error?: string;
   }>;
 }) {
@@ -123,23 +167,43 @@ export default async function SecurityPage({
   const severity = SEVERITIES.includes(sp.severity ?? "") ? (sp.severity as string) : "";
   const eventType = (sp.eventType ?? "").trim();
   const eventIp = (sp.ip ?? "").trim();
+  const eventId = (sp.id ?? "").trim();
+  const appealDecision = APPEAL_DECISIONS.includes(sp.appealDecision ?? "")
+    ? (sp.appealDecision as string)
+    : "";
+  const appealQ = (sp.appealQ ?? "").trim();
   const rawLimit = Number(sp.limit);
   const eventLimit = EVENT_SIZES.includes(rawLimit) ? rawLimit : 50;
   const eventPage = Math.max(1, Number(sp.page) || 1);
 
-  const blockParams = new URLSearchParams({ limit: "100" });
-  if (targetType) blockParams.set("targetType", targetType);
-  if (blockQuery) blockParams.set("q", blockQuery);
-  if (!showAll) blockParams.set("activeOnly", "true");
-
-  const blockBack = `/admin/security${new URLSearchParams({
+  // Every filter this page understands — one source for return links, so an
+  // unblock or a decided appeal lands back on the same filtered view.
+  const all: Record<string, string> = {
     ...(targetType ? { type: targetType } : {}),
     ...(blockQuery ? { q: blockQuery } : {}),
     ...(showAll ? { all: "1" } : {}),
     ...(severity ? { severity } : {}),
     ...(eventType ? { eventType } : {}),
     ...(eventIp ? { ip: eventIp } : {}),
-  })}`;
+    ...(eventId ? { id: eventId } : {}),
+    ...(appealDecision ? { appealDecision } : {}),
+    ...(appealQ ? { appealQ } : {}),
+    limit: String(eventLimit),
+    page: String(eventPage),
+  };
+  /** Hidden mirrors of every filter a form does not own, so submitting it
+      keeps the rest of the page's state (pagination resets on purpose). */
+  const hiddenInputs = (own: string[]) =>
+    Object.entries(all)
+      .filter(([k]) => !own.includes(k) && k !== "page")
+      .map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />);
+
+  const blockBack = `/admin/security${new URLSearchParams(all)}`;
+
+  const blockParams = new URLSearchParams({ limit: "100" });
+  if (targetType) blockParams.set("targetType", targetType);
+  if (blockQuery) blockParams.set("q", blockQuery);
+  if (!showAll) blockParams.set("activeOnly", "true");
 
   const eventParams = new URLSearchParams({
     limit: String(eventLimit),
@@ -148,23 +212,20 @@ export default async function SecurityPage({
   if (severity) eventParams.set("severity", severity);
   if (eventType) eventParams.set("eventType", eventType);
   if (eventIp) eventParams.set("ip", eventIp);
+  if (eventId) eventParams.set("id", eventId);
+
+  const appealParams = new URLSearchParams({ limit: "50" });
+  if (appealDecision) appealParams.set("decision", appealDecision);
+  if (appealQ) appealParams.set("q", appealQ);
 
   const eventHref = (p: number) =>
-    `/admin/security${new URLSearchParams({
-      ...(targetType ? { type: targetType } : {}),
-      ...(blockQuery ? { q: blockQuery } : {}),
-      ...(showAll ? { all: "1" } : {}),
-      ...(severity ? { severity } : {}),
-      ...(eventType ? { eventType } : {}),
-      ...(eventIp ? { ip: eventIp } : {}),
-      limit: String(eventLimit),
-      page: String(p),
-    })}`;
+    `/admin/security${new URLSearchParams({ ...all, page: String(p) })}`;
 
-  const [scoreRes, blocksRes, eventsRes] = await Promise.all([
+  const [scoreRes, blocksRes, eventsRes, appealsRes] = await Promise.all([
     apiGet<Score>("/admin/security/score"),
     apiGet<BlocksPayload>(`/admin/security/blocks?${blockParams}`),
     apiGet<EventsPayload>(`/admin/security/events?${eventParams}`),
+    apiGet<AppealsPayload>(`/admin/appeals?${appealParams}`),
   ]);
 
   if (!scoreRes.ok) return <Failure result={scoreRes} what="the security score" />;
@@ -178,6 +239,8 @@ export default async function SecurityPage({
   const events = eventsData.events ?? [];
   const eventStats = eventsData.stats ?? {};
   const eventPages = Math.max(1, Math.ceil((eventsData.total ?? 0) / eventLimit));
+  const appealsData = appealsRes.data ?? {};
+  const appeals = appealsData.appeals ?? [];
 
   return (
     <div className="flex flex-col gap-5">
@@ -189,12 +252,24 @@ export default async function SecurityPage({
           {sp.removed} was removed from the blocklist and the removal was written to the audit trail.
         </p>
       ) : null}
+      {sp.decided ? (
+        <p
+          role="status"
+          className="rounded-[10px] border border-[var(--tb-ok)] bg-[var(--tb-ok-soft)] px-3.5 py-2.5 text-[13px] text-[var(--tb-ok)]"
+        >
+          Appeal decided — the account was notified with its reference id, and the answer is written to the audit trail.
+        </p>
+      ) : null}
       {sp.error ? (
         <p
           role="alert"
           className="rounded-[10px] border border-[var(--tb-danger)] bg-[var(--tb-danger-soft)] px-3.5 py-2.5 text-[13px] text-[var(--tb-danger)]"
         >
-          The API refused that change. Nothing was removed.
+          {sp.error === "appeal-failed"
+            ? "The API refused that decision. The appeal is unchanged."
+            : sp.error === "bad-decision"
+              ? "That was not a valid decision."
+              : "The API refused that change. Nothing was removed."}
         </p>
       ) : null}
 
@@ -248,6 +323,7 @@ export default async function SecurityPage({
         description={`${blocksTotal} entr${blocksTotal === 1 ? "y" : "ies"}${showAll ? "" : " currently in force"}. Unblock is a DELETE and writes a security.block_removed audit event.`}
       >
         <form action="/admin/security" method="get" className="mb-4 flex flex-wrap gap-2">
+          {hiddenInputs(["q", "type", "all"])}
           <label htmlFor="q" className="sr-only">
             Search blocks
           </label>
@@ -331,6 +407,17 @@ export default async function SecurityPage({
         description={`${eventsData.total ?? 0} match. Showing ${events.length}.`}
       >
         <form action="/admin/security" method="get" className="mb-4 flex flex-wrap gap-2">
+          {hiddenInputs(["severity", "eventType", "ip", "id", "limit"])}
+          <label htmlFor="eventId" className="sr-only">
+            Event ID
+          </label>
+          <input
+            id="eventId"
+            name="id"
+            defaultValue={eventId}
+            placeholder="Event ID — exact"
+            className="w-56 rounded-[10px] border border-[var(--tb-border)] bg-[var(--tb-surface-1)] px-3 py-2 font-mono text-[13px] outline-none placeholder:font-sans placeholder:text-[var(--tb-text-muted)] focus:border-[var(--tb-accent)]"
+          />
           <label htmlFor="severity" className="sr-only">
             Severity
           </label>
@@ -439,6 +526,138 @@ export default async function SecurityPage({
             )}
           </nav>
         ) : null}
+      </Card>
+
+      <Card
+        title="Appeals"
+        description={
+          appealsRes.ok
+            ? `${appealsData.pending ?? 0} waiting · ${appealsData.total ?? appeals.length} on record. One answer per appeal; overturning lifts the strike it argues with.`
+            : "Reviews filed against a restriction on an account."
+        }
+        action={
+          <form action="/admin/security" method="get" className="flex flex-wrap gap-2">
+            {hiddenInputs(["appealQ", "appealDecision"])}
+            <label htmlFor="appealQ" className="sr-only">
+              Search appeals
+            </label>
+            <input
+              id="appealQ"
+              name="appealQ"
+              defaultValue={appealQ}
+              placeholder="Account, appeal id or note…"
+              className="w-52 rounded-[10px] border border-[var(--tb-border)] bg-[var(--tb-surface-1)] px-3 py-1.5 text-[13px] outline-none placeholder:text-[var(--tb-text-muted)] focus:border-[var(--tb-accent)]"
+            />
+            <label htmlFor="appealDecision" className="sr-only">
+              Decision
+            </label>
+            <select
+              id="appealDecision"
+              name="appealDecision"
+              defaultValue={appealDecision}
+              className="rounded-[10px] border border-[var(--tb-border)] bg-[var(--tb-surface-1)] px-3 py-1.5 text-[13px] outline-none focus:border-[var(--tb-accent)]"
+            >
+              <option value="">Any decision</option>
+              <option value="pending">Waiting</option>
+              <option value="overturned">Overturned</option>
+              <option value="upheld">Upheld</option>
+            </select>
+            <button
+              type="submit"
+              className="rounded-[10px] bg-[var(--tb-accent)] px-3 py-1.5 text-[13px] font-medium text-[var(--tb-accent-contrast)]"
+            >
+              Apply
+            </button>
+          </form>
+        }
+      >
+        {appealsRes.ok ? null : <State tone="warn" title={errorMessage(appealsRes)} />}
+
+        <DataTable
+          columns={["Appeal ID", "Filed", "Account", "Decision", "Decision appealed", "Note", ""]}
+          empty={
+            appealsRes.ok
+              ? appealDecision || appealQ
+                ? "No appeal matches."
+                : "No appeal has been filed."
+              : "The appeals list could not be read."
+          }
+          rows={appeals.map((a) => {
+            const waiting = !a.decision || a.decision === "pending";
+            return {
+              "Appeal ID": <CopyId value={a.id} />,
+              Filed: <span title={dateTime(a.createdAt)}>{ago(a.createdAt)}</span>,
+              Account: a.user?.email ? (
+                <span className="font-mono text-[12px]" title={a.user.id}>
+                  {a.user.email}
+                </span>
+              ) : (
+                <span className="font-mono text-[11px]">{a.user?.id?.slice(0, 8) ?? "—"}</span>
+              ),
+              Decision: a.decision ? (
+                <Badge tone={a.decision === "overturned" ? "ok" : a.decision === "upheld" ? "warn" : "accent"}>
+                  {a.decision}
+                </Badge>
+              ) : (
+                <Badge tone="accent">pending</Badge>
+              ),
+              "Decision appealed": a.restriction ? (
+                <span>
+                  <span className="font-medium">{a.restriction.title}</span>
+                  <span className="block text-[12px] text-[var(--tb-text-muted)]">
+                    {a.restriction.severity ?? "—"}
+                    {a.restriction.endsAt ? ` · until ${dateTime(a.restriction.endsAt)}` : ""}
+                  </span>
+                </span>
+              ) : (
+                "—"
+              ),
+              Note: (
+                <span className="line-clamp-2" title={a.note}>
+                  {a.note ?? "—"}
+                </span>
+              ),
+              "": waiting && a.id ? (
+                <span className="flex items-center justify-end gap-1.5">
+                  <form action={decideAppeal}>
+                    <input type="hidden" name="appealId" value={a.id} />
+                    <input type="hidden" name="decision" value="overturned" />
+                    <input type="hidden" name="back" value={blockBack} />
+                    <button
+                      type="submit"
+                      className="rounded-[8px] border border-[var(--tb-border)] px-2 py-1 text-[12px] text-[var(--tb-text-secondary)] hover:bg-[var(--tb-surface-2)] hover:text-[var(--tb-ok)]"
+                    >
+                      Overturn
+                    </button>
+                  </form>
+                  <form action={decideAppeal}>
+                    <input type="hidden" name="appealId" value={a.id} />
+                    <input type="hidden" name="decision" value="upheld" />
+                    <input type="hidden" name="back" value={blockBack} />
+                    <button
+                      type="submit"
+                      className="rounded-[8px] border border-[var(--tb-border)] px-2 py-1 text-[12px] text-[var(--tb-text-secondary)] hover:bg-[var(--tb-surface-2)] hover:text-[var(--tb-danger)]"
+                    >
+                      Uphold
+                    </button>
+                  </form>
+                </span>
+              ) : a.decidedAt ? (
+                <span
+                  className="text-right text-[12px] text-[var(--tb-text-muted)]"
+                  title={dateTime(a.decidedAt)}
+                >
+                  decided {ago(a.decidedAt)}
+                </span>
+              ) : (
+                <span />
+              ),
+            };
+          })}
+        />
+        <p className="mt-3 text-[12px] text-[var(--tb-text-muted)]">
+          Overturning sets the strike&apos;s endsAt to now and notifies the account with the appeal id as its reference — paste that id here, in Audit trail or in Messaging to see every side of it. A suspended account also needs its status restored under People.
+        </p>
       </Card>
 
       <div className="grid gap-5 xl:grid-cols-3">

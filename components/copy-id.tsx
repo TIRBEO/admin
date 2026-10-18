@@ -12,6 +12,10 @@ export function CopyId({ value }: { value?: string | null }) {
 
   if (!value) return <span className="text-[var(--tb-text-muted)]">—</span>;
 
+  // Short references (xxxx-xxxx-xxxx) show in full; raw uuids keep the
+  // 8-char preview with the whole id one click away.
+  const shown = value.length > 20 ? value.slice(0, 8) : value;
+
   return (
     <button
       type="button"
@@ -27,7 +31,7 @@ export function CopyId({ value }: { value?: string | null }) {
       }}
       className="inline-flex items-center gap-1.5 rounded px-1 py-0.5 font-mono text-[11px] text-[var(--tb-text-secondary)] hover:bg-[var(--tb-surface-2)] hover:text-[var(--tb-accent)]"
     >
-      {value.slice(0, 8)}
+      {shown}
       {copied ? (
         <span className="text-[10px] font-medium text-[var(--tb-ok)]">
           copied

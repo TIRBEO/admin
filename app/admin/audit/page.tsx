@@ -7,6 +7,7 @@ import { dateTime, ago } from "@/lib/format";
 
 type AuditEvent = {
   id?: string;
+  ref?: string | null;
   action?: string;
   kind?: string;
   title?: string | null;
@@ -22,6 +23,7 @@ type AuditPayload = { events?: AuditEvent[]; total?: number };
 type Actor = { id?: string; email?: string; name?: string | null };
 type ActivityLog = {
   id?: string;
+  ref?: string | null;
   kind?: string;
   title?: string | null;
   detail?: string | null;
@@ -43,6 +45,7 @@ export default async function AuditPage({
   searchParams,
 }: {
   searchParams: Promise<{
+    id?: string;
     action?: string;
     severity?: string;
     from?: string;
@@ -53,6 +56,7 @@ export default async function AuditPage({
   }>;
 }) {
   const sp = await searchParams;
+  const eventId = (sp.id ?? "").trim();
   const action = (sp.action ?? "").trim();
   const severity = SEVERITIES.includes(sp.severity ?? "") ? (sp.severity as string) : "";
   const from = (sp.from ?? "").trim();
@@ -67,6 +71,7 @@ export default async function AuditPage({
     limit: String(limit),
     offset: String((page - 1) * limit),
   });
+  if (eventId) params.set("id", eventId);
   if (action) params.set("action", action);
   if (severity) params.set("severity", severity);
   if (from) params.set("from", from);
@@ -89,6 +94,7 @@ export default async function AuditPage({
 
   const href = (p: number) =>
     `/admin/audit${new URLSearchParams({
+      ...(eventId ? { id: eventId } : {}),
       ...(action ? { action } : {}),
       ...(severity ? { severity } : {}),
       ...(from ? { from } : {}),
@@ -116,9 +122,19 @@ export default async function AuditPage({
 
       <Card
         title="Audit trail"
-        description={`${total} entries match. Showing ${events.length}. A substring of the action, or an exact severity.`}
+        description={`${total} entries match. Showing ${events.length}. An exact event id, a reference code (xxxx-xxxx-xxxx), a substring of the action, or an exact severity.`}
         action={
           <form action="/admin/audit" method="get" className="flex flex-wrap gap-2">
+            <label htmlFor="id" className="sr-only">
+              Event ID
+            </label>
+            <input
+              id="id"
+              name="id"
+              defaultValue={eventId}
+              placeholder="Event ID or ref — xxxx-xxxx-xxxx"
+              className="w-48 rounded-[10px] border border-[var(--tb-border)] bg-[var(--tb-surface-1)] px-3 py-1.5 font-mono text-[13px] outline-none placeholder:font-sans placeholder:text-[var(--tb-text-muted)] focus:border-[var(--tb-accent)]"
+            />
             <label htmlFor="action" className="sr-only">
               Action contains
             </label>
@@ -175,9 +191,10 @@ export default async function AuditPage({
         }
       >
         <DataTable
-          columns={["When", "Action", "What", "Severity", "Actor"]}
-          empty="No audit entry matches."
+          columns={["Event ID", "When", "Action", "What", "Severity", "Actor"]}
+          empty={eventId || action ? "No audit entry matches." : "No audit entry exists."}
           rows={events.map((e) => ({
+            "Event ID": <CopyId value={e.ref ?? e.id} />,
             When: <span title={dateTime(e.createdAt)}>{ago(e.createdAt)}</span>,
             Action: <span className="font-mono text-[12px]">{e.action ?? e.kind ?? "—"}</span>,
             What: e.title ?? e.detail ?? describeMetadata(e) ?? "—",
@@ -222,6 +239,7 @@ export default async function AuditPage({
               <a
                 key={n}
                 href={`/admin/audit?${new URLSearchParams({
+                  ...(eventId ? { id: eventId } : {}),
                   ...(action ? { action } : {}),
                   ...(severity ? { severity } : {}),
                   ...(from ? { from } : {}),
@@ -248,7 +266,7 @@ export default async function AuditPage({
           rows={logs.map((l) => {
             const actor = l.actor ?? l.account ?? l.user ?? null;
             return {
-              "Event ID": <CopyId value={l.id} />,
+              "Event ID": <CopyId value={l.ref ?? l.id} />,
               When: <span title={dateTime(l.createdAt)}>{ago(l.createdAt)}</span>,
               What: (
                 <span>
