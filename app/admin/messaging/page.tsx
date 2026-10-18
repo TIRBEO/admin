@@ -166,7 +166,7 @@ export default async function MessagingPage({
             </select>
             <button
               type="submit"
-              className="rounded-[10px] bg-[var(--tb-accent)] px-3 py-1.5 text-[13px] font-medium text-[var(--tb-accent-contrast)]"
+              className="rounded-[10px] bg-[var(--tb-accent-solid)] px-3 py-1.5 text-[13px] font-medium text-[var(--tb-accent-contrast)]"
             >
               Filter
             </button>

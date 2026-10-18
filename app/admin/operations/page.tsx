@@ -191,7 +191,7 @@ export default async function OperationsPage({
                 aria-current={n === logLimit ? "page" : undefined}
                 className={`rounded-[8px] border px-2.5 py-1 text-[12px] ${
                   n === logLimit
-                    ? "border-[var(--tb-accent)] text-[var(--tb-accent)]"
+                    ? "border-[var(--tb-accent)] text-[var(--tb-accent-text)]"
                     : "border-[var(--tb-border)] text-[var(--tb-text-muted)] hover:bg-[var(--tb-surface-2)]"
                 }`}
               >
@@ -225,7 +225,7 @@ export default async function OperationsPage({
               Account: l.userId ? (
                 <Link
                   href={`/admin/people?q=${encodeURIComponent(l.userId)}`}
-                  className="font-mono text-[11px] text-[var(--tb-accent)] underline-offset-4 hover:underline"
+                  className="font-mono text-[11px] text-[var(--tb-accent-text)] underline-offset-4 hover:underline"
                 >
                   {l.userId.slice(0, 8)}
                 </Link>
@@ -245,7 +245,7 @@ export default async function OperationsPage({
               Account: l.userId ? (
                 <Link
                   href={`/admin/people?q=${encodeURIComponent(l.userId)}`}
-                  className="font-mono text-[11px] text-[var(--tb-accent)] underline-offset-4 hover:underline"
+                  className="font-mono text-[11px] text-[var(--tb-accent-text)] underline-offset-4 hover:underline"
                 >
                   {l.userId.slice(0, 8)}
                 </Link>

@@ -69,7 +69,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                     aria-current={active ? "page" : undefined}
                     className={`flex items-center gap-2.5 rounded-[10px] px-3 py-2 text-[14px] tracking-[-0.01em] transition-colors ${
                       active
-                        ? "bg-[var(--tb-accent-soft)] font-medium text-[var(--tb-accent)]"
+                        ? "bg-[var(--tb-accent-soft)] font-medium text-[var(--tb-accent-text)]"
                         : "text-[var(--tb-text-secondary)] hover:bg-[var(--tb-surface-2)] hover:text-[var(--tb-text-primary)]"
                     }`}
                   >
@@ -115,7 +115,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           className="flex items-baseline gap-2 rounded-lg font-semibold tracking-[-0.03em]"
         >
           <span className="text-[17px]">
-            Tirbeo<span className="text-[var(--tb-accent)]">.</span>
+            Tirbeo<span className="text-[var(--tb-accent-text)]">.</span>
           </span>
           <span className="text-[13px] font-medium tracking-[-0.01em] text-[var(--tb-text-muted)]">
             Admin
@@ -155,7 +155,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <div className="absolute inset-y-0 left-0 flex w-72 flex-col overflow-y-auto border-r border-[var(--tb-border)] bg-[var(--tb-bg)] shadow-[var(--tb-shadow-pop)]">
               <div className="flex h-16 shrink-0 items-center justify-between border-b border-[var(--tb-border)] px-4">
                 <span className="text-[17px] font-semibold tracking-[-0.03em]">
-                  Tirbeo<span className="text-[var(--tb-accent)]">.</span>
+                  Tirbeo<span className="text-[var(--tb-accent-text)]">.</span>
                 </span>
                 <button
                   type="button"

@@ -18,14 +18,19 @@
 
   --tb-text-primary: #ffffff;
   --tb-text-secondary: #ebeaf0;
-  /* 4.7:1 on --tb-surface-3 — iOS secondary label on the deepest plate. */
-  --tb-text-muted: #a1a1a8;
+  /* 4.5:1 on --tb-surface-3, the lightest plate muted text ever sits on. */
+  --tb-text-muted: #b6b6bd;
 
   --tb-border: #38383a;
   --tb-border-strong: #48484a;
 
   --tb-accent: #0a84ff;
   --tb-accent-contrast: #ffffff;
+  /* Fills carrying white text need 4.5:1 — #0a84ff is 3.65. Text-on-background
+     needs it too — hence --tb-accent-text. */
+  --tb-accent-solid: #0a63e5;
+  --tb-accent-solid-hover: #0a52c9;
+  --tb-accent-text: #64a5ff;
   --tb-accent-soft: rgba(10, 132, 255, 0.18);
 
   --tb-danger: #ff6961;
@@ -64,6 +69,9 @@
 
   --tb-accent: #007aff;
   --tb-accent-contrast: #ffffff;
+  --tb-accent-solid: #0062cc;
+  --tb-accent-solid-hover: #004fb8;
+  --tb-accent-text: #0068d6;
   --tb-accent-soft: rgba(0, 122, 255, 0.12);
 
   --tb-danger: #c9261f;
@@ -93,6 +101,8 @@
   --color-line: var(--tb-border);
   --color-line-strong: var(--tb-border-strong);
   --color-accent: var(--tb-accent);
+  --color-accent-solid: var(--tb-accent-solid);
+  --color-accent-text: var(--tb-accent-text);
   --color-accent-contrast: var(--tb-accent-contrast);
   --color-danger: var(--tb-danger);
   --color-warn: var(--tb-warn);

@@ -49,7 +49,7 @@ export function Stat({
 }) {
   const colour = {
     default: "text-[var(--tb-text-primary)]",
-    accent: "text-[var(--tb-accent)]",
+    accent: "text-[var(--tb-accent-text)]",
     danger: "text-[var(--tb-danger)]",
     warn: "text-[var(--tb-warn)]",
     ok: "text-[var(--tb-ok)]",
@@ -118,7 +118,7 @@ export function Badge({
     danger: "bg-[var(--tb-danger-soft)] text-[var(--tb-danger)]",
     warn: "bg-[var(--tb-warn-soft)] text-[var(--tb-warn)]",
     ok: "bg-[var(--tb-ok-soft)] text-[var(--tb-ok)]",
-    accent: "bg-[var(--tb-accent-soft)] text-[var(--tb-accent)]",
+    accent: "bg-[var(--tb-accent-soft)] text-[var(--tb-accent-text)]",
   }[tone];
 
   return (
@@ -143,7 +143,7 @@ export function Bar({
 }) {
   const pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
   const fill = {
-    accent: "bg-[var(--tb-accent)]",
+    accent: "bg-[var(--tb-accent-solid)]",
     danger: "bg-[var(--tb-danger)]",
     warn: "bg-[var(--tb-warn)]",
     ok: "bg-[var(--tb-ok)]",

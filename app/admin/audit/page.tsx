@@ -183,7 +183,7 @@ export default async function AuditPage({
             />
             <button
               type="submit"
-              className="rounded-[10px] bg-[var(--tb-accent)] px-3 py-1.5 text-[13px] font-medium text-[var(--tb-accent-contrast)]"
+              className="rounded-[10px] bg-[var(--tb-accent-solid)] px-3 py-1.5 text-[13px] font-medium text-[var(--tb-accent-contrast)]"
             >
               Apply
             </button>
@@ -250,7 +250,7 @@ export default async function AuditPage({
                 aria-current={n === activityLimit ? "page" : undefined}
                 className={`rounded-[8px] border px-2.5 py-1 text-[12px] ${
                   n === activityLimit
-                    ? "border-[var(--tb-accent)] text-[var(--tb-accent)]"
+                    ? "border-[var(--tb-accent)] text-[var(--tb-accent-text)]"
                     : "border-[var(--tb-border)] text-[var(--tb-text-muted)] hover:bg-[var(--tb-surface-2)]"
                 }`}
               >
@@ -279,7 +279,7 @@ export default async function AuditPage({
               Who: actor?.email ? (
                 <Link
                   href={`/admin/people?q=${encodeURIComponent(actor.email)}`}
-                  className="font-mono text-[12px] text-[var(--tb-accent)] underline-offset-4 hover:underline"
+                  className="font-mono text-[12px] text-[var(--tb-accent-text)] underline-offset-4 hover:underline"
                 >
                   {actor.email}
                 </Link>

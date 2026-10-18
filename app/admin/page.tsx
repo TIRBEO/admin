@@ -110,7 +110,7 @@ export default async function DashboardPage() {
           action={
             <Link
               href="/admin/people"
-              className="text-[13px] font-medium text-[var(--tb-accent)] underline-offset-4 hover:underline"
+              className="text-[13px] font-medium text-[var(--tb-accent-text)] underline-offset-4 hover:underline"
             >
               Open
             </Link>
@@ -146,7 +146,7 @@ export default async function DashboardPage() {
           action={
             <Link
               href="/admin/messaging"
-              className="text-[13px] font-medium text-[var(--tb-accent)] underline-offset-4 hover:underline"
+              className="text-[13px] font-medium text-[var(--tb-accent-text)] underline-offset-4 hover:underline"
             >
               Open
             </Link>
@@ -187,7 +187,7 @@ export default async function DashboardPage() {
             action={
               <Link
                 href="/admin/security"
-                className="text-[13px] font-medium text-[var(--tb-accent)] underline-offset-4 hover:underline"
+                className="text-[13px] font-medium text-[var(--tb-accent-text)] underline-offset-4 hover:underline"
               >
                 Events
               </Link>
@@ -204,7 +204,7 @@ export default async function DashboardPage() {
         action={
           <Link
             href="/admin/operations"
-            className="text-[13px] font-medium text-[var(--tb-accent)] underline-offset-4 hover:underline"
+            className="text-[13px] font-medium text-[var(--tb-accent-text)] underline-offset-4 hover:underline"
           >
             Monitor
           </Link>

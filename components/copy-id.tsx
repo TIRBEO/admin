@@ -29,7 +29,7 @@ export function CopyId({ value }: { value?: string | null }) {
           /* clipboard blocked — leave the id visible, nothing else to do */
         }
       }}
-      className="inline-flex items-center gap-1.5 rounded px-1 py-0.5 font-mono text-[11px] text-[var(--tb-text-secondary)] hover:bg-[var(--tb-surface-2)] hover:text-[var(--tb-accent)]"
+      className="inline-flex items-center gap-1.5 rounded px-1 py-0.5 font-mono text-[11px] text-[var(--tb-text-secondary)] hover:bg-[var(--tb-surface-2)] hover:text-[var(--tb-accent-text)]"
     >
       {shown}
       {copied ? (

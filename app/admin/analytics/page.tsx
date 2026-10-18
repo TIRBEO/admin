@@ -184,7 +184,7 @@ function SeriesBars({
           <div
             key={p.label}
             title={`${label(p.label)}: ${p.value}`}
-            className="min-w-[3px] flex-1 rounded-t bg-[var(--tb-accent)]"
+            className="min-w-[3px] flex-1 rounded-t bg-[var(--tb-accent-solid)]"
             style={{ height: `${Math.max(2, (p.value / max) * 100)}%` }}
           />
         ))}
