@@ -285,7 +285,7 @@ export default async function MessagingPage({
       </Card>
 
       <p className="text-[12px] text-[var(--tb-text-muted)]">
-        There is no broadcast history: a broadcast writes one notification per recipient and one email per opted-in address, then logs a single line to the API&apos;s stdout. The reach figure above is what a broadcast would reach now. Adding a block or changing limits lives under Security and Limits.
+        There is no broadcast history: a broadcast writes one notification per recipient and one email per opted-in address, then logs a single line to the API&apos;s stdout. The reach figure above is what a broadcast would reach now — the messages themselves are visible in each recipient&apos;s inbox, not in a platform-wide list.
       </p>
     </div>
   );

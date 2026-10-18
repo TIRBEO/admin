@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { State } from "@/components/primitives";
 import { errorMessage, type ApiResult } from "@/lib/api";
+import { signInUrl } from "@/lib/sign-in";
 
 /** One place that decides what a failed read looks like.
  *
@@ -9,7 +10,7 @@ import { errorMessage, type ApiResult } from "@/lib/api";
  *  Collapsing them into "request failed" tells the reader nothing, and
  *  shows zeros nowhere — a failed read says so rather than implying the
  *  platform has nothing. */
-export function Failure({
+export async function Failure({
   result,
   what,
 }: {
@@ -22,13 +23,13 @@ export function Failure({
       <State
         tone="warn"
         title="You are not signed in"
-        body={`The API refused to describe ${what} because this browser sent no session. Sign in through the API origin and reload.`}
+        body={`The API refused to describe ${what} because this browser sent no session. Sign in and you will come straight back here.`}
         action={
           <Link
-            href="/admin"
-            className="text-[13px] text-[var(--tb-accent)] underline-offset-4 hover:underline"
+            href={await signInUrl()}
+            className="inline-flex items-center rounded-[10px] bg-[var(--tb-accent)] px-4 py-2 text-[13px] font-medium text-[var(--tb-accent-contrast)]"
           >
-            Back to the dashboard
+            Sign in
           </Link>
         }
       />
