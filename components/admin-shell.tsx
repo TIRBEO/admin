@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Search, X } from "lucide-react";
 import { searchNav, titleFor, type NavItem } from "@/lib/nav";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 /* ── Shell ──────────────────────────────────────────────────────
    Sidebar on desktop, drawer on small screens, and a ⌘K palette.
@@ -127,6 +128,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             ⌘K
           </kbd>
         </button>
+
+        <ThemeToggle />
       </header>
 
       <div className="flex">
@@ -141,7 +144,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <button
               type="button"
               aria-label="Close navigation"
-              className="absolute inset-0 bg-black/60"
+              className="absolute inset-0 bg-scrim"
               onClick={() => setDrawerOpen(false)}
             />
             <div className="absolute inset-y-0 left-0 w-72 overflow-y-auto border-r border-[var(--tb-border)] bg-[var(--tb-bg)]">
@@ -171,7 +174,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <button
             type="button"
             aria-label="Close search"
-            className="absolute inset-0 bg-black/60"
+            className="absolute inset-0 bg-scrim"
             onClick={() => setPaletteOpen(false)}
           />
           <div

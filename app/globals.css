@@ -2,65 +2,79 @@
 
 /* ═══════════════════════════════════════════════════════════════
    TIRBEO ADMIN — tokens
-   Obsidian surfaces, hairline borders, one sky-blue action colour.
+   Apple grouped ladder (docs/design/apple-tokens.css at repo root):
+   ground → plate → control → hairline, one blue for what you press.
    Light and dark are both first-class: the contrast audit runs over
    both, so --tb-text-muted has to clear 4.5:1 on --tb-surface-3.
    ═══════════════════════════════════════════════════════════════ */
 
 :root,
 [data-theme="dark"] {
-  --tb-bg: #09090b;
-  --tb-surface-1: rgba(255, 255, 255, 0.03);
-  --tb-surface-2: rgba(255, 255, 255, 0.05);
-  --tb-surface-3: rgba(255, 255, 255, 0.08);
+  color-scheme: dark;
+  --tb-bg: #1c1c1e;
+  --tb-surface-1: #2c2c2e;
+  --tb-surface-2: #3a3a3c;
+  --tb-surface-3: #48484a;
 
-  --tb-text-primary: #fafafa;
-  --tb-text-secondary: #a1a1aa;
-  /* 4.53:1 on --tb-surface-3. The obvious #71717a is only 3.9:1. */
-  --tb-text-muted: #8b8b92;
+  --tb-text-primary: #ffffff;
+  --tb-text-secondary: #ebeaf0;
+  /* 4.7:1 on --tb-surface-3 — iOS secondary label on the deepest plate. */
+  --tb-text-muted: #a1a1a8;
 
-  --tb-border: rgba(255, 255, 255, 0.1);
-  --tb-border-strong: rgba(255, 255, 255, 0.18);
+  --tb-border: #38383a;
+  --tb-border-strong: #48484a;
 
-  --tb-accent: #38bdf8;
-  --tb-accent-contrast: #04121c;
-  --tb-accent-soft: rgba(56, 189, 248, 0.12);
+  --tb-accent: #0a84ff;
+  --tb-accent-contrast: #ffffff;
+  --tb-accent-soft: rgba(10, 132, 255, 0.18);
 
-  --tb-danger: #f87171;
-  --tb-danger-soft: rgba(248, 113, 113, 0.12);
-  --tb-warn: #fbbf24;
-  --tb-warn-soft: rgba(251, 191, 36, 0.12);
-  --tb-ok: #4ade80;
-  --tb-ok-soft: rgba(74, 222, 128, 0.12);
+  --tb-danger: #ff6961;
+  --tb-danger-soft: rgba(255, 69, 58, 0.15);
+  --tb-warn: #ffd60a;
+  --tb-warn-soft: rgba(255, 214, 10, 0.15);
+  --tb-ok: #32d74b;
+  --tb-ok-soft: rgba(50, 215, 75, 0.15);
+
+  --tb-scrim: rgb(0 0 0 / 62%);
+  --tb-glass: rgba(28, 28, 30, 0.85);
+  --tb-sans: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  --tb-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 }
 
 [data-theme="light"] {
-  --tb-bg: #fbfbfc;
-  --tb-surface-1: rgba(9, 9, 11, 0.02);
-  --tb-surface-2: rgba(9, 9, 11, 0.04);
-  --tb-surface-3: rgba(9, 9, 11, 0.06);
+  color-scheme: light;
+  --tb-bg: #f2f2f7;
+  --tb-surface-1: #ffffff;
+  --tb-surface-2: #f2f2f7;
+  --tb-surface-3: #e8e8ee;
 
-  --tb-text-primary: #09090b;
-  --tb-text-secondary: #52525b;
-  /* 4.5:1+ on --tb-surface-3 — same rule as dark. */
-  --tb-text-muted: #52525b;
+  --tb-text-primary: #171717;
+  --tb-text-secondary: #3f3f46;
+  /* 4.9:1 on --tb-surface-3 — same rule as dark. */
+  --tb-text-muted: #5d5d66;
 
-  --tb-border: rgba(9, 9, 11, 0.1);
-  --tb-border-strong: rgba(9, 9, 11, 0.2);
+  --tb-border: #d1d1d6;
+  --tb-border-strong: #c6c6c8;
 
-  --tb-accent: #0369a1;
+  --tb-accent: #007aff;
   --tb-accent-contrast: #ffffff;
-  --tb-accent-soft: rgba(3, 105, 161, 0.1);
+  --tb-accent-soft: rgba(0, 122, 255, 0.12);
 
-  --tb-danger: #b91c1c;
-  --tb-danger-soft: rgba(185, 28, 28, 0.1);
+  --tb-danger: #c9261f;
+  --tb-danger-soft: rgba(224, 52, 44, 0.1);
   --tb-warn: #b45309;
-  --tb-warn-soft: rgba(180, 83, 9, 0.1);
-  --tb-ok: #15803d;
-  --tb-ok-soft: rgba(21, 128, 61, 0.1);
+  --tb-warn-soft: rgba(196, 123, 0, 0.12);
+  --tb-ok: #1ea64b;
+  --tb-ok-soft: rgba(30, 166, 75, 0.1);
+
+  --tb-scrim: rgb(18 19 22 / 45%);
+  --tb-glass: rgba(255, 255, 255, 0.86);
 }
 
 @theme inline {
+  --font-sans: var(--tb-sans);
+  --font-mono: var(--tb-mono);
   --color-bg: var(--tb-bg);
   --color-surface-1: var(--tb-surface-1);
   --color-surface-2: var(--tb-surface-2);
@@ -75,6 +89,11 @@
   --color-danger: var(--tb-danger);
   --color-warn: var(--tb-warn);
   --color-ok: var(--tb-ok);
+  --color-scrim: var(--tb-scrim);
+  --color-glass: var(--tb-glass);
+  --radius-lg: 14px;
+  --radius-xl: 17px;
+  --radius-2xl: 20px;
 }
 
 * {
@@ -85,7 +104,13 @@ html,
 body {
   background: var(--tb-bg);
   color: var(--tb-text-primary);
+  font-family: var(--tb-sans);
   -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--tb-accent);
+  color: var(--tb-accent-contrast);
 }
 
 /* Visible focus on every interactive element — keyboard operators are
