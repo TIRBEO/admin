@@ -744,13 +744,22 @@ export type UserDetail = {
   audit: AuditEvent[];
 };
 
-export type PeopleFilter = {
-  q?: string;
-  status?: UserStatus | "";
-  admin?: "yes" | "no" | "";
-  sort?: "newest" | "oldest" | "active" | "name";
-  page?: number;
-  perPage?: number;
+/** admin/account — the console's view of the operator reading it. */
+export type OperatorAccount = {
+  user: User;
+  profile: UserProfile | null;
+  security: UserSecurity | null;
+  emails: UserEmailRow[];
+  phone: UserPhone | null;
+  sessions: UserSession[];
+  devices: UserDevice[];
+  logins: UserLogin[];
+  /** What this operator did from the console, newest first — the trail's own
+      account of them. */
+  actions: AuditEvent[];
+  /** The admin column is one boolean, so two things are all a level can say
+      today; a ladder above it is an API decision, not a fixture. */
+  level: "admin" | "none";
 };
 
 export type Page<T> = { items: T[]; total: number; page: number; perPage: number };

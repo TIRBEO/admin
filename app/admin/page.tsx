@@ -8,7 +8,7 @@ import {
   Users,
 } from "lucide-react";
 
-import { PageHeader, PageState } from "@/components/page-header";
+import { Metric, PageHeader, PageState, Panel } from "@/components/page-header";
 import { dash, securityScore } from "@/lib/mock";
 import { present, readState } from "@/lib/load-state";
 import { ago, dateTime, duration } from "@/lib/format";
@@ -51,7 +51,11 @@ export default async function DashboardPage({
         }
       />
 
-      <PageState load={load} rows={6} />
+      <PageState
+        load={load}
+        rows={6}
+        empty="Every table behind the dashboard answered zero rows — either the platform is brand new or the snapshot query ran against an empty schema."
+      />
 
       {load.status !== "ready" ? null : (
         <>
@@ -243,48 +247,12 @@ function StatRow({ d }: { d: Awaited<ReturnType<typeof dash>> }) {
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
       {stats.map((s) => (
-        <Link
-          key={s.label}
-          href={s.href}
-          className="rounded-[17px] border border-[var(--border)] bg-[var(--card)] px-4 py-3.5 shadow-[var(--shadow-plate)] transition-colors hover:bg-[var(--hover)]"
-        >
-          <p className="text-[12px] font-medium uppercase tracking-[0.05em] text-[var(--muted)]">
-            {s.label}
-          </p>
-          <p className="mt-1.5 text-[28px] font-semibold leading-none tabular-nums tracking-[-0.03em]">
-            {s.value.toLocaleString()}
-          </p>
-          <p className="mt-2 text-[12px] leading-snug text-[var(--muted)]">{s.hint}</p>
-        </Link>
+        <Metric key={s.label} label={s.label} value={s.value.toLocaleString()} hint={s.hint} href={s.href} />
       ))}
     </div>
   );
 }
 
-function Panel({
-  title,
-  hint,
-  action,
-  children,
-}: {
-  title: string;
-  hint?: string;
-  action?: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="rounded-[17px] border border-[var(--border)] bg-[var(--card)] shadow-[var(--shadow-plate)]">
-      <header className="flex items-center justify-between gap-3 border-b border-[var(--divider)] px-4 py-3">
-        <div className="min-w-0">
-          <h2 className="text-[13px] font-semibold tracking-[-0.01em] text-[var(--fg)]">{title}</h2>
-          {hint ? <p className="mt-0.5 text-[12px] text-[var(--muted)]">{hint}</p> : null}
-        </div>
-        {action}
-      </header>
-      <div className="px-4 py-3.5">{children}</div>
-    </section>
-  );
-}
 
 /** A column chart in CSS. No charting library: a scaffold that cannot be
     read without a canvas is a scaffold you cannot review offline. */

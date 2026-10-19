@@ -1,16 +1,33 @@
-/* Every screen in this build is fed by fixtures, so there is no request to
-   fail, no latency to wait on and no empty table to reach by chance. Rather
-   than invent a data layer to fake those states, a page reads which one it
-   should draw off the URL: `?state=error`. That keeps the branches real,
-   reviewable and linkable, and costs nothing to delete once fetches return.
-   See page-header.tsx for the dev-only pills that write this param. */
+/* A screen can be waiting, legitimately empty, or failed — and the three need
+   drawing, because a table that renders nothing cannot tell an operator
+   whether the filter matched nobody or the API never answered.
+
+   `?state=` still drives those branches on the screens fed by fixtures: with
+   no request to fail, the URL is the only honest way to reach an error. A
+   wired screen drops it and reports what actually happened instead. See
+   page-header.tsx for the dev-only pills that write the param. */
+
+import type { ReactNode } from "react";
 
 export type LoadState = "ready" | "loading" | "empty" | "error";
+
+/** Which kind of failure this is. A signed-out operator, an operator who is
+    not an admin, and an API that never answered are three different problems
+    with three different fixes, so the screen gets to say which one it is
+    showing rather than guessing from the message text. */
+export type FailureReason = "signed-out" | "not-admin" | "unreachable";
+
+export type LoadError = {
+  status: "error";
+  message: string;
+  reason?: FailureReason;
+  action?: ReactNode;
+};
 
 export type Load<T> =
   | { status: "loading" }
   | { status: "empty" }
-  | { status: "error"; message: string }
+  | LoadError
   | { status: "ready"; data: T };
 
 const STATES: LoadState[] = ["ready", "loading", "empty", "error"];

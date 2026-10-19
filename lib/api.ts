@@ -1,0 +1,98 @@
+/** Server-side calls to the Tirbeo API.
+ *
+ * Every wired admin page reads through here so that the origin lives in one
+ * place, the operator's own session is what proves they may read, and a
+ * non-2xx arrives as a typed result rather than a blank screen.
+ *
+ * The session matters more than it looks. The API authenticates admin routes
+ * from the httpOnly `__session` cookie, and a server component has no browser
+ * to send it for us — without the forwarding below every page renders the
+ * same 401 while the API is perfectly fine. */
+
+import { cookies } from "next/headers";
+
+/** The API refuses a cookie-authed write that does not echo `__csrf` back in
+ *  a header, so both names belong here and nowhere else. */
+const SESSION_COOKIE = "__session";
+const CSRF_COOKIE = "__csrf";
+
+const API_URL = (() => {
+  const fromEnv = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+  // A loopback value is a development setting. Ignoring it outside development
+  // is what keeps a preview build from calling (or redirecting to) localhost.
+  const loopback = !!fromEnv && /localhost|127\.0\.0\.1/.test(fromEnv);
+  if (loopback && process.env.NODE_ENV !== "development") return "https://api.tirbeo.com";
+  return (
+    fromEnv ??
+    (process.env.NODE_ENV === "development" ? "http://localhost:3000" : "https://api.tirbeo.com")
+  );
+})();
+
+export type ApiResult<T> = {
+  ok: boolean;
+  /** 0 means the request never got an answer — the API is down or unreachable,
+      which is a different problem from a refusal and reads differently. */
+  status: number;
+  data: T | null;
+};
+
+async function authHeaders(method: string): Promise<Record<string, string>> {
+  const jar = await cookies();
+  const headers: Record<string, string> = {};
+
+  const session = jar.get(SESSION_COOKIE)?.value;
+  if (session) headers.Cookie = `${SESSION_COOKIE}=${session}`;
+
+  // Reads need nothing else. Writes are cookie-authed too, so the CSRF cookie
+  // has to come back as a header or any other origin could ride this session.
+  if (method !== "GET" && method !== "HEAD") {
+    const csrf = jar.get(CSRF_COOKIE)?.value;
+    if (csrf) headers["x-csrf-token"] = csrf;
+  }
+
+  return headers;
+}
+
+/** Call the API. Never throws: an operator should read "cannot reach the API",
+ *  not a stack trace. */
+export async function apiSend<T>(path: string, init: RequestInit = {}): Promise<ApiResult<T>> {
+  const method = init.method ?? "GET";
+  try {
+    const res = await fetch(`${API_URL}/api${path}`, {
+      ...init,
+      method,
+      headers: {
+        Accept: "application/json",
+        ...(await authHeaders(method)),
+        ...(init.headers ?? {}),
+      },
+      // Admin data is per-request truth — never served from a cache.
+      cache: "no-store",
+    });
+
+    const text = await res.text();
+    let data: T | null = null;
+    if (text) {
+      try {
+        data = JSON.parse(text) as T;
+      } catch {
+        data = null;
+      }
+    }
+    return { ok: res.ok, status: res.status, data };
+  } catch {
+    return { ok: false, status: 0, data: null };
+  }
+}
+
+export function apiGet<T>(path: string, init: RequestInit = {}) {
+  return apiSend<T>(path, { ...init, method: "GET" });
+}
+
+/** The first human-readable message in an unknown API payload. */
+export function errorMessage(result: ApiResult<unknown>): string {
+  if (result.status === 0) return "Cannot reach the API.";
+  const d = result.data as { error?: unknown } | null;
+  if (d && typeof d.error === "string" && d.error) return d.error;
+  return `The API answered ${result.status}.`;
+}

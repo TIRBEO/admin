@@ -32,6 +32,7 @@ import type {
   MaintenanceState,
   Notification,
   OnlineUser,
+  OperatorAccount,
   Page,
   PushSubscription,
   ReservedAddress,
@@ -46,11 +47,10 @@ import type {
   UserDetail,
   UserAppeal,
   UserRestriction,
-  UserStatus,
   VerificationLimit,
   WaitlistEntry,
 } from "./types";
-import { NOW, daysAgo } from "./world";
+import { NOW } from "./world";
 import * as usersFixtures from "./users";
 import * as safety from "./safety";
 import * as support from "./support";
@@ -101,41 +101,6 @@ export async function slowQueries() {
 }
 
 // ── people ─────────────────────────────────────────────────────────────────
-
-export async function listPeople(filter: {
-  q?: string;
-  status?: UserStatus | "";
-  admin?: "yes" | "no" | "";
-  sort?: "newest" | "oldest" | "active" | "name";
-  page?: number;
-  perPage?: number;
-} = {}): Promise<Page<User>> {
-  let rows = usersFixtures.users;
-
-  if (filter.status) rows = rows.filter((u) => u.status === filter.status);
-  if (filter.admin === "yes") rows = rows.filter((u) => u.isAdmin);
-  if (filter.admin === "no") rows = rows.filter((u) => !u.isAdmin);
-  if (filter.q) {
-    rows = rows.filter((u) =>
-      matches([u.id, u.email, u.username, profileName(u.id), String(u.status)], filter.q!),
-    );
-  }
-
-  rows = [...rows].sort((a, b) => {
-    switch (filter.sort) {
-      case "oldest":
-        return a.createdAt < b.createdAt ? -1 : 1;
-      case "active":
-        return (b.lastActiveAt ?? "") < (a.lastActiveAt ?? "") ? -1 : 1;
-      case "name":
-        return (profileName(a.id) ?? a.email).localeCompare(profileName(b.id) ?? b.email);
-      default:
-        return a.createdAt < b.createdAt ? 1 : -1;
-    }
-  });
-
-  return paginate(rows, filter.page, filter.perPage);
-}
 
 export async function listRecentPeople(days = 7): Promise<User[]> {
   return usersFixtures.users
@@ -193,8 +158,13 @@ export async function listReservedAddresses(): Promise<ReservedAddress[]> {
   return usersFixtures.reservedAddresses;
 }
 
-export async function listExportRequests(): Promise<Page<DataExportRequest>> {
-  return paginate(sorted(usersFixtures.exportRequests, (r) => r.requestedAt));
+export async function listExportRequests(
+  filter: { status?: string; q?: string } = {},
+): Promise<Page<DataExportRequest>> {
+  let rows = usersFixtures.exportRequests;
+  if (filter.status) rows = rows.filter((r) => r.status === filter.status);
+  if (filter.q) rows = rows.filter((r) => matches([r.id, r.userId, r.fileName, r.format], filter.q!));
+  return paginate(sorted(rows, (r) => r.requestedAt));
 }
 
 export async function listSubscribers(): Promise<Subscriber[]> {
@@ -341,6 +311,17 @@ export async function previewBroadcast(input: BroadcastInput): Promise<Broadcast
   return email.previewBroadcast(input);
 }
 
+/** A finished render, so the compose screen can show what a template send
+    looks like without a provider in the loop. */
+export async function sampleRender(): Promise<string> {
+  return support.SAMPLE_PREVIEW_HTML;
+}
+
+/** Where abuse mail is routed — the one address the console tells a person. */
+export async function abuseMailbox(): Promise<string> {
+  return support.ABUSE_INBOX;
+}
+
 export async function listInbox(filter: { kind?: string } = {}): Promise<InboundEmail[]> {
   const rows = filter.kind ? email.inboundEmails.filter((m) => m.kind === filter.kind) : email.inboundEmails;
   return sorted(rows, (m) => m.receivedAt);
@@ -417,6 +398,17 @@ export async function listAudit(
   return paginate(sorted(rows, (a) => a.createdAt), filter.page);
 }
 
+/** The filter choices a page offers, counted over the whole log rather than
+    the page currently on screen — a select that only lists what is visible
+    cannot express “show me the failures I paged past”. */
+export async function auditActions(): Promise<Array<{ action: string; count: number }>> {
+  const counts = new Map<string, number>();
+  for (const a of ops.auditEvents) counts.set(a.action, (counts.get(a.action) ?? 0) + 1);
+  return [...counts.entries()]
+    .map(([action, count]) => ({ action, count }))
+    .sort((x, y) => y.count - x.count);
+}
+
 function actorName(actorId: string): string | null {
   const u = usersFixtures.users.find((x) => x.id === actorId);
   return u ? `${u.username} · ${u.email}` : null;
@@ -429,14 +421,31 @@ export const OPERATOR = {
   username: usersFixtures.users[0]!.username!,
   email: usersFixtures.users[0]!.email,
   name: profileName(usersFixtures.users[0]!.id),
-  level: "admin" as const,
-  totpEnabled: true,
-  lastLoginAt: daysAgo(0),
-  sessions: usersFixtures.sessions.filter((s) => s.userId === usersFixtures.users[0]!.id),
 };
 
-export async function operatorAccount() {
-  return OPERATOR;
+export async function operatorAccount(): Promise<OperatorAccount> {
+  const user = usersFixtures.users[0]!;
+  const byUser = <T extends { userId: string }>(rows: T[]) =>
+    rows.filter((r) => r.userId === user.id);
+
+  return {
+    user,
+    profile: usersFixtures.profiles.find((p) => p.userId === user.id) ?? null,
+    security: usersFixtures.security.find((s) => s.userId === user.id) ?? null,
+    emails: byUser(usersFixtures.userEmails),
+    phone: usersFixtures.userPhones.find((p) => p.userId === user.id) ?? null,
+    sessions: sorted(
+      byUser(usersFixtures.sessions),
+      (s) => s.lastUsedAt ?? s.createdAt,
+    ),
+    devices: sorted(byUser(usersFixtures.devices), (d) => d.lastUsedAt ?? d.createdAt),
+    logins: sorted(byUser(usersFixtures.logins), (l) => l.createdAt),
+    actions: sorted(
+      ops.auditEvents.filter((a) => a.actorId === user.id),
+      (a) => a.createdAt,
+    ),
+    level: user.isAdmin ? "admin" : "none",
+  };
 }
 
 // ── the world's own integrity ──────────────────────────────────────────────

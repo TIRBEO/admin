@@ -121,6 +121,7 @@ export const NAV_GROUPS: NavGroup[] = [
         description: "Paid plans, renewals and entitlements",
         icon: CreditCard,
         keywords: "billing plan subscription renew entitlement pro",
+        unwired: true,
       },
       {
         href: "/admin/export-requests",
@@ -197,6 +198,7 @@ export const NAV_GROUPS: NavGroup[] = [
         description: "The inbox: priority, owner, SLA and status",
         icon: Inbox,
         keywords: "support helpdesk conversation owner sla priority open",
+        unwired: true,
       },
       {
         href: "/admin/tickets/t_2001",
@@ -204,6 +206,7 @@ export const NAV_GROUPS: NavGroup[] = [
         description: "One conversation, its history and its replies",
         icon: MessagesSquare,
         keywords: "thread reply message customer detail close resolve",
+        unwired: true,
       },
     ],
   },
