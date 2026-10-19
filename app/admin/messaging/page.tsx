@@ -166,7 +166,7 @@ export default async function MessagingPage({
             </select>
             <button
               type="submit"
-              className="rounded-[10px] bg-[var(--tb-accent-solid)] px-3 py-1.5 text-[13px] font-medium text-[var(--tb-accent-contrast)]"
+              className="btn btn-primary btn-sm"
             >
               Filter
             </button>
@@ -194,7 +194,7 @@ export default async function MessagingPage({
         {total > sent.length ? (
           <nav aria-label="Pagination" className="mt-4 flex items-center justify-between text-[13px]">
             {page > 1 ? (
-              <a href={emailHref(page - 1)} className="rounded-[10px] border border-[var(--tb-border)] px-3 py-1.5 hover:bg-[var(--tb-surface-2)]">
+              <a href={emailHref(page - 1)} className="btn btn-secondary btn-sm">
                 ← Previous
               </a>
             ) : (
@@ -202,7 +202,7 @@ export default async function MessagingPage({
             )}
             <span className="text-[var(--tb-text-muted)]">Page {page}</span>
             {page * 50 < total ? (
-              <a href={emailHref(page + 1)} className="rounded-[10px] border border-[var(--tb-border)] px-3 py-1.5 hover:bg-[var(--tb-surface-2)]">
+              <a href={emailHref(page + 1)} className="btn btn-secondary btn-sm">
                 Next →
               </a>
             ) : (

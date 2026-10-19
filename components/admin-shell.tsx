@@ -125,7 +125,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         <button
           type="button"
           onClick={() => setPaletteOpen(true)}
-          className="ml-auto flex items-center gap-2 rounded-full border border-[var(--tb-border)] bg-[var(--tb-surface-1)]/60 px-3 py-1.5 text-[13px] text-[var(--tb-text-muted)] transition-colors hover:bg-[var(--tb-surface-2)] hover:text-[var(--tb-text-secondary)]"
+          className="btn btn-secondary btn-sm ml-auto"
         >
           <Search size={14} aria-hidden />
           <span className="hidden sm:inline">Search sections</span>

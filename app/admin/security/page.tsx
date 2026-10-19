@@ -354,7 +354,7 @@ export default async function SecurityPage({
           </label>
           <button
             type="submit"
-            className="rounded-[10px] bg-[var(--tb-accent-solid)] px-3 py-2 text-[13px] font-medium text-[var(--tb-accent-contrast)]"
+            className="btn btn-primary"
           >
             Apply
           </button>
@@ -387,7 +387,7 @@ export default async function SecurityPage({
                 <input type="hidden" name="back" value={blockBack} />
                 <button
                   type="submit"
-                  className="rounded-[8px] border border-[var(--tb-border)] px-2 py-1 text-[12px] text-[var(--tb-text-secondary)] hover:bg-[var(--tb-surface-2)] hover:text-[var(--tb-danger)]"
+                  className="btn btn-secondary btn-sm btn-danger-hover"
                 >
                   Unblock
                 </button>
@@ -471,7 +471,7 @@ export default async function SecurityPage({
           </select>
           <button
             type="submit"
-            className="rounded-[10px] bg-[var(--tb-accent-solid)] px-3 py-2 text-[13px] font-medium text-[var(--tb-accent-contrast)]"
+            className="btn btn-primary"
           >
             Apply
           </button>
@@ -508,7 +508,7 @@ export default async function SecurityPage({
         {eventPages > 1 ? (
           <nav aria-label="Pagination" className="mt-4 flex items-center justify-between text-[13px]">
             {eventPage > 1 ? (
-              <a href={eventHref(eventPage - 1)} className="rounded-[10px] border border-[var(--tb-border)] px-3 py-1.5 hover:bg-[var(--tb-surface-2)]">
+              <a href={eventHref(eventPage - 1)} className="btn btn-secondary btn-sm">
                 ← Previous
               </a>
             ) : (
@@ -518,7 +518,7 @@ export default async function SecurityPage({
               Page {eventPage} of {eventPages}
             </span>
             {eventPage < eventPages ? (
-              <a href={eventHref(eventPage + 1)} className="rounded-[10px] border border-[var(--tb-border)] px-3 py-1.5 hover:bg-[var(--tb-surface-2)]">
+              <a href={eventHref(eventPage + 1)} className="btn btn-secondary btn-sm">
                 Next →
               </a>
             ) : (
@@ -564,7 +564,7 @@ export default async function SecurityPage({
             </select>
             <button
               type="submit"
-              className="rounded-[10px] bg-[var(--tb-accent-solid)] px-3 py-1.5 text-[13px] font-medium text-[var(--tb-accent-contrast)]"
+              className="btn btn-primary btn-sm"
             >
               Apply
             </button>
@@ -625,7 +625,7 @@ export default async function SecurityPage({
                     <input type="hidden" name="back" value={blockBack} />
                     <button
                       type="submit"
-                      className="rounded-[8px] border border-[var(--tb-border)] px-2 py-1 text-[12px] text-[var(--tb-text-secondary)] hover:bg-[var(--tb-surface-2)] hover:text-[var(--tb-ok)]"
+                      className="btn btn-secondary btn-sm btn-ok-hover"
                     >
                       Overturn
                     </button>
@@ -636,7 +636,7 @@ export default async function SecurityPage({
                     <input type="hidden" name="back" value={blockBack} />
                     <button
                       type="submit"
-                      className="rounded-[8px] border border-[var(--tb-border)] px-2 py-1 text-[12px] text-[var(--tb-text-secondary)] hover:bg-[var(--tb-surface-2)] hover:text-[var(--tb-danger)]"
+                      className="btn btn-secondary btn-sm btn-danger-hover"
                     >
                       Uphold
                     </button>

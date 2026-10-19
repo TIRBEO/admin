@@ -303,7 +303,7 @@ export default async function LimitsPage({
           </div>
           <button
             type="submit"
-            className="rounded-[10px] bg-[var(--tb-accent-solid)] px-3 py-2 text-[13px] font-medium text-[var(--tb-accent-contrast)]"
+            className="btn btn-primary"
           >
             Save limit
           </button>

@@ -37,9 +37,9 @@ export function ThemeToggle() {
       onClick={cycle}
       aria-label={`Theme: ${LABEL[theme]}. Click to change.`}
       title={`Theme: ${LABEL[theme]}`}
-      className="inline-flex items-center gap-1.5 rounded-full border border-[var(--tb-border)] bg-[var(--tb-surface-1)]/60 py-1 pl-2.5 pr-3 text-[13px] font-medium text-[var(--tb-text-secondary)] transition-colors hover:bg-[var(--tb-surface-2)]"
+      className="btn btn-secondary btn-sm"
     >
-      <Icon size={14} aria-hidden className="text-[var(--tb-text-muted)]" />
+      <Icon size={14} aria-hidden />
       <span className="hidden sm:inline">{LABEL[theme]}</span>
     </button>
   );

@@ -31,6 +31,9 @@
   --tb-accent-solid: #0a63e5;
   --tb-accent-solid-hover: #0a52c9;
   --tb-accent-text: #64a5ff;
+  /* iOS systemFill — the grey a secondary button is filled with. */
+  --tb-fill: rgba(120, 120, 128, 0.24);
+  --tb-fill-hover: rgba(120, 120, 128, 0.34);
   --tb-accent-soft: rgba(10, 132, 255, 0.18);
 
   --tb-danger: #ff6961;
@@ -72,6 +75,8 @@
   --tb-accent-solid: #0062cc;
   --tb-accent-solid-hover: #004fb8;
   --tb-accent-text: #0068d6;
+  --tb-fill: rgba(120, 120, 128, 0.16);
+  --tb-fill-hover: rgba(120, 120, 128, 0.24);
   --tb-accent-soft: rgba(0, 122, 255, 0.12);
 
   --tb-danger: #c9261f;
@@ -135,10 +140,81 @@ body {
 
 /* Visible focus on every interactive element — keyboard operators are
    a first-class audience for an admin tool. */
+/* No border-radius here: an outline follows the element's own corners, and
+   forcing 4px squared off every pill the moment it took focus. */
 :focus-visible {
   outline: 2px solid var(--tb-accent);
   outline-offset: 2px;
-  border-radius: 4px;
+}
+
+/* ── Buttons ────────────────────────────────────────────────────────
+   Same pill the rest of Tirbeo draws, at console scale: this is a dense
+   tool, so the height is what a table row can hold, not the 42px the
+   account surfaces use. Two fills, and the quiet one is grey-filled
+   rather than outlined — an outlined pill beside a blue one reads as
+   disabled, which is the wrong thing for "Apply".
+   ───────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease, transform 140ms ease;
+}
+
+.btn:active {
+  transform: scale(0.99);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--tb-accent-solid);
+  color: var(--tb-accent-contrast);
+}
+
+.btn-primary:hover {
+  background: var(--tb-accent-solid-hover);
+}
+
+.btn-secondary {
+  background: var(--tb-fill);
+  color: var(--tb-accent-text);
+}
+
+.btn-secondary:hover {
+  background: var(--tb-fill-hover);
+}
+
+/* Row-level actions and pagination, where 36px would push the row apart. */
+.btn-sm {
+  min-height: 28px;
+  padding: 0 11px;
+  font-size: 12px;
+}
+
+/* A quiet action that means business once you hover it. */
+.btn-danger-hover:hover {
+  background: var(--tb-danger-soft);
+  color: var(--tb-danger);
+}
+
+.btn-ok-hover:hover {
+  background: var(--tb-ok-soft);
+  color: var(--tb-ok);
 }
 
 @media (prefers-reduced-motion: reduce) {

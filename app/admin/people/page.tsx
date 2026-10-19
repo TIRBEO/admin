@@ -151,7 +151,7 @@ export default async function PeoplePage({
             />
             <button
               type="submit"
-              className="rounded-[10px] bg-[var(--tb-accent-solid)] px-3 py-1.5 text-[13px] font-medium text-[var(--tb-accent-contrast)]"
+              className="btn btn-primary btn-sm"
             >
               Search
             </button>
@@ -200,7 +200,7 @@ export default async function PeoplePage({
                   ...(query ? { q: query } : {}),
                   page: String(page - 1),
                 })}`}
-                className="rounded-[10px] border border-[var(--tb-border)] px-3 py-1.5 hover:bg-[var(--tb-surface-2)]"
+                className="btn btn-secondary btn-sm"
               >
                 ← Previous
               </a>
@@ -216,7 +216,7 @@ export default async function PeoplePage({
                   ...(query ? { q: query } : {}),
                   page: String(page + 1),
                 })}`}
-                className="rounded-[10px] border border-[var(--tb-border)] px-3 py-1.5 hover:bg-[var(--tb-surface-2)]"
+                className="btn btn-secondary btn-sm"
               >
                 Next →
               </a>
@@ -244,7 +244,7 @@ export default async function PeoplePage({
           />
           <button
             type="submit"
-            className="rounded-[10px] bg-[var(--tb-accent-solid)] px-3 py-2 text-[13px] font-medium text-[var(--tb-accent-contrast)]"
+            className="btn btn-primary"
           >
             Look up
           </button>
@@ -299,7 +299,7 @@ export default async function PeoplePage({
             </div>
             <button
               type="submit"
-              className="rounded-[10px] bg-[var(--tb-accent-solid)] px-3 py-2 text-[13px] font-medium text-[var(--tb-accent-contrast)]"
+              className="btn btn-primary"
             >
               Set level
             </button>

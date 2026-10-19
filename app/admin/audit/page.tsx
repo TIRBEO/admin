@@ -183,7 +183,7 @@ export default async function AuditPage({
             />
             <button
               type="submit"
-              className="rounded-[10px] bg-[var(--tb-accent-solid)] px-3 py-1.5 text-[13px] font-medium text-[var(--tb-accent-contrast)]"
+              className="btn btn-primary btn-sm"
             >
               Apply
             </button>
@@ -210,7 +210,7 @@ export default async function AuditPage({
         {pages > 1 ? (
           <nav aria-label="Pagination" className="mt-4 flex items-center justify-between text-[13px]">
             {page > 1 ? (
-              <a href={href(page - 1)} className="rounded-[10px] border border-[var(--tb-border)] px-3 py-1.5 hover:bg-[var(--tb-surface-2)]">
+              <a href={href(page - 1)} className="btn btn-secondary btn-sm">
                 ← Previous
               </a>
             ) : (
@@ -220,7 +220,7 @@ export default async function AuditPage({
               Page {page} of {pages}
             </span>
             {page < pages ? (
-              <a href={href(page + 1)} className="rounded-[10px] border border-[var(--tb-border)] px-3 py-1.5 hover:bg-[var(--tb-surface-2)]">
+              <a href={href(page + 1)} className="btn btn-secondary btn-sm">
                 Next →
               </a>
             ) : (

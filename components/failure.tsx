@@ -27,7 +27,7 @@ export async function Failure({
         action={
           <Link
             href={await signInUrl()}
-            className="inline-flex items-center rounded-[10px] bg-[var(--tb-accent-solid)] px-4 py-2 text-[13px] font-medium text-[var(--tb-accent-contrast)]"
+            className="btn btn-primary"
           >
             Sign in
           </Link>

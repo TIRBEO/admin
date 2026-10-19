@@ -11,7 +11,7 @@ export default function NotFound() {
       </p>
       <Link
         href="/admin"
-        className="mt-2 rounded-lg bg-[var(--tb-accent-solid)] px-3 py-2 text-[13px] font-medium text-[var(--tb-accent-contrast)]"
+        className="btn btn-primary mt-2"
       >
         Back to dashboard
       </Link>
