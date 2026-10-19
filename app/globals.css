@@ -1,159 +1,260 @@
 @import "tailwindcss";
 
-/* ═══════════════════════════════════════════════════════════════
-   TIRBEO ADMIN — tokens
-   Apple grouped ladder (docs/design/apple-tokens.css at repo root):
-   ground → plate → control → hairline, one blue for what you press.
-   Light and dark are both first-class: the contrast audit runs over
-   both, so --tb-text-muted has to clear 4.5:1 on --tb-surface-3.
-   ═══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════════
+   Tirbeo Admin — tokens
+   ───────────────────────────────────────────────────────────────────────
+   The canonical Apple spec, replicated from docs/design/apple-tokens.css
+   at the repo root. This app deploys standalone on Vercel, so it cannot
+   import a shared package — the block is copied, and a change to the spec
+   means a change here in the same pass.
+
+   Ladder: ground (--bg) → plate (--card/--surface) → control
+   (--surface-2/--field) → hairline (--divider). Dark gets lighter as it
+   comes forward; light is white plates on a #f2f2f7 canvas. Both themes
+   are first-class — the contrast audit runs over both.
+   ═══════════════════════════════════════════════════════════════════════ */
 
 :root,
-[data-theme="dark"] {
+:root[data-theme="dark"] {
   color-scheme: dark;
-  --tb-bg: #1c1c1e;
-  --tb-surface-1: #2c2c2e;
-  --tb-surface-2: #3a3a3c;
-  --tb-surface-3: #48484a;
-
-  --tb-text-primary: #ffffff;
-  --tb-text-secondary: #ebeaf0;
-  /* 4.5:1 on --tb-surface-3, the lightest plate muted text ever sits on. */
-  --tb-text-muted: #b6b6bd;
-
-  --tb-border: #38383a;
-  --tb-border-strong: #48484a;
-
-  --tb-accent: #0a84ff;
-  --tb-accent-contrast: #ffffff;
-  /* Fills carrying white text need 4.5:1 — #0a84ff is 3.65. Text-on-background
-     needs it too — hence --tb-accent-text. */
-  --tb-accent-solid: #0a63e5;
-  --tb-accent-solid-hover: #0a52c9;
-  --tb-accent-text: #64a5ff;
+  --bg: #1c1c1e;
+  --card: #2c2c2e;
+  --surface: #2c2c2e;
+  --surface-2: #3a3a3c;
+  --surface-3: #48484a;
+  --fg: #ffffff;
+  --muted: #b6b6bd;
+  --link: #64a5ff;
+  --text-2: #ebeaf0;
+  /* 4.5:1 on --surface-3, the lightest plate muted text ever sits on. */
+  --text-3: #b6b6bd;
+  --text-4: #a8a8af;
+  --placeholder: #a8a8af;
+  --border: #48484a;
+  --border-strong: #5a5a5e;
+  --divider: #38383a;
+  --hover: #3a3a3c;
+  --accent: #0a84ff;
+  --accent-hover: #409cff;
+  --accent-press: #0060c9;
+  /* Fills carrying white text need 4.5:1 — iOS #0a84ff is 3.65:1. Text on a
+     background needs it too, hence --accent-text. */
+  --accent-solid: #0a63e5;
+  --accent-solid-hover: #0a52c9;
+  --accent-soft: rgba(10, 132, 255, 0.18);
+  --accent-soft-ring: rgba(10, 132, 255, 0.35);
+  --accent-text: #64a5ff;
+  --accent-fg: #ffffff;
+  --danger: #ff453a;
+  --danger-hover: #e0342c;
+  --danger-text: #ff6961;
+  --success: #32d74b;
+  --success-text: #5ce070;
+  --warn: #ffd60a;
+  --warn-text: #e5c209;
   /* iOS systemFill — the grey a secondary button is filled with. */
-  --tb-fill: rgba(120, 120, 128, 0.24);
-  --tb-fill-hover: rgba(120, 120, 128, 0.34);
-  --tb-accent-soft: rgba(10, 132, 255, 0.18);
-
-  --tb-danger: #ff6961;
-  --tb-danger-soft: rgba(255, 69, 58, 0.15);
-  --tb-warn: #ffd60a;
-  --tb-warn-soft: rgba(255, 214, 10, 0.15);
-  --tb-ok: #32d74b;
-  --tb-ok-soft: rgba(50, 215, 75, 0.15);
-
-  --tb-scrim: rgb(0 0 0 / 62%);
-  --tb-glass: rgba(28, 28, 30, 0.85);
-  --tb-glass-2: rgba(44, 44, 46, 0.72);
-  --tb-sans: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto,
+  --fill: rgba(120, 120, 128, 0.24);
+  --fill-hover: rgba(120, 120, 128, 0.34);
+  --fill-press: rgba(120, 120, 128, 0.42);
+  --btn-disabled-bg: rgba(255, 255, 255, 0.12);
+  --btn-disabled-fg: rgba(255, 255, 255, 0.45);
+  --field: #3a3a3c;
+  --field-hover: #454549;
+  --field-focus: #4b4b4f;
+  --hairline: #38383a;
+  --glass: rgba(28, 28, 30, 0.85);
+  --glass-2: rgba(28, 28, 30, 0.94);
+  --glass-3: #1c1c1e;
+  --rail: #161618;
+  --scrim: rgb(0 0 0 / 62%);
+  --track: #48484a;
+  --focus-ring: #0a84ff;
+  --ink: #ffffff;
+  --ink-fg: #000000;
+  --ambient: rgba(255, 255, 255, 0.05);
+  --faint: rgba(255, 255, 255, 0.06);
+  --shadow-sheet: 0 -20px 60px -12px rgb(0 0 0 / 68%);
+  --stack-sans: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto,
     Helvetica, Arial, sans-serif;
-  --tb-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
-  /* iOS grouped-list depth: a plate floats on the ground with a soft,
-     wide shadow — never a hard border alone. */
-  --tb-shadow-plate: 0 1px 2px rgb(0 0 0 / 0.28), 0 8px 24px -12px rgb(0 0 0 / 0.5);
-  --tb-shadow-pop: 0 24px 60px -12px rgb(0 0 0 / 0.6), 0 2px 8px rgb(0 0 0 / 0.3);
+  --stack-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+  --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-exit: cubic-bezier(0.32, 0, 0.67, 0);
+  --chart-1: #0a84ff;
+  --chart-2: #32d74b;
+  --chart-3: #ffd60a;
+  --chart-4: #ff453a;
+  --chart-5: #64aaff;
+
+  /* iOS grouped-list depth: a plate floats on the ground with a soft, wide
+     shadow — never a hard border alone. */
+  --shadow-plate: 0 1px 2px rgb(0 0 0 / 28%), 0 8px 24px -12px rgb(0 0 0 / 50%);
+  --shadow-pop: 0 24px 60px -12px rgb(0 0 0 / 60%), 0 2px 8px rgb(0 0 0 / 30%);
+
+  /* App-local. The spec carries no tinted status backgrounds because no
+     other Tirbeo surface shows a severity pill; a console is built out of
+     them, so they live here rather than in the shared ladder. */
+  --danger-soft: rgba(255, 69, 58, 0.16);
+  --warn-soft: rgba(255, 214, 10, 0.16);
+  --success-soft: rgba(50, 215, 75, 0.16);
 }
 
-[data-theme="light"] {
+:root[data-theme="light"] {
   color-scheme: light;
-  --tb-bg: #f2f2f7;
-  --tb-surface-1: #ffffff;
-  --tb-surface-2: #f2f2f7;
-  --tb-surface-3: #e8e8ee;
+  --bg: #f2f2f7;
+  --card: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f2f2f7;
+  --surface-3: #e8e8ee;
+  --fg: #171717;
+  --muted: #5d5d66;
+  --link: #0068d6;
+  --text-2: #3f3f46;
+  /* 4.9:1 on --surface-3 — same rule as dark. */
+  --text-3: #5d5d66;
+  --text-4: #6e6e76;
+  --placeholder: #6e6e76;
+  --border: #eaeaea;
+  --border-strong: #d1d1d6;
+  --divider: #c6c6c8;
+  --hover: #ececf1;
+  --accent: #007aff;
+  --accent-hover: #0066d6;
+  --accent-press: #0062cc;
+  --accent-solid: #0062cc;
+  --accent-solid-hover: #004fb8;
+  --accent-soft: rgba(0, 122, 255, 0.12);
+  --accent-soft-ring: rgba(0, 122, 255, 0.32);
+  --accent-text: #0068d6;
+  --accent-fg: #ffffff;
+  --danger: #e0342c;
+  --danger-hover: #c9261f;
+  --danger-text: #c9261f;
+  --success: #1ea64b;
+  --success-text: #188a3e;
+  --warn: #c47b00;
+  --warn-text: #9d6300;
+  --fill: rgba(120, 120, 128, 0.16);
+  --fill-hover: rgba(120, 120, 128, 0.24);
+  --fill-press: rgba(120, 120, 128, 0.32);
+  --btn-disabled-bg: rgba(18, 19, 22, 0.08);
+  --btn-disabled-fg: rgba(18, 19, 22, 0.42);
+  --field: #ffffff;
+  --field-hover: #f2f2f7;
+  --field-focus: #ececf1;
+  --hairline: #c6c6c8;
+  --glass: rgba(255, 255, 255, 0.86);
+  --glass-2: rgba(255, 255, 255, 0.95);
+  --glass-3: #ffffff;
+  --rail: #ffffff;
+  --scrim: rgb(18 19 22 / 45%);
+  --track: #c6c6c8;
+  --focus-ring: #007aff;
+  --ink: #171717;
+  --ink-fg: #ffffff;
+  --ambient: rgba(18, 19, 22, 0.04);
+  --faint: rgba(18, 19, 22, 0.05);
+  --shadow-sheet: 0 -20px 56px -12px rgb(18 19 22 / 26%),
+    0 2px 8px rgb(18 19 22 / 12%);
+  --chart-1: #0a84ff;
+  --chart-2: #1ea64b;
+  --chart-3: #c47b00;
+  --chart-4: #e0342c;
+  --chart-5: #8b93b0;
 
-  --tb-text-primary: #171717;
-  --tb-text-secondary: #3f3f46;
-  /* 4.9:1 on --tb-surface-3 — same rule as dark. */
-  --tb-text-muted: #5d5d66;
+  --shadow-plate: 0 1px 2px rgb(0 0 0 / 4%), 0 8px 24px -12px rgb(0 0 0 / 16%);
+  --shadow-pop: 0 24px 60px -12px rgb(0 0 0 / 22%), 0 2px 8px rgb(0 0 0 / 8%);
 
-  --tb-border: #d1d1d6;
-  --tb-border-strong: #c6c6c8;
-
-  --tb-accent: #007aff;
-  --tb-accent-contrast: #ffffff;
-  --tb-accent-solid: #0062cc;
-  --tb-accent-solid-hover: #004fb8;
-  --tb-accent-text: #0068d6;
-  --tb-fill: rgba(120, 120, 128, 0.16);
-  --tb-fill-hover: rgba(120, 120, 128, 0.24);
-  --tb-accent-soft: rgba(0, 122, 255, 0.12);
-
-  --tb-danger: #c9261f;
-  --tb-danger-soft: rgba(224, 52, 44, 0.1);
-  --tb-warn: #b45309;
-  --tb-warn-soft: rgba(196, 123, 0, 0.12);
-  --tb-ok: #1ea64b;
-  --tb-ok-soft: rgba(30, 166, 75, 0.1);
-
-  --tb-scrim: rgb(18 19 22 / 45%);
-  --tb-glass: rgba(255, 255, 255, 0.86);
-  --tb-glass-2: rgba(255, 255, 255, 0.72);
-  --tb-shadow-plate: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px -12px rgb(0 0 0 / 0.16);
-  --tb-shadow-pop: 0 24px 60px -12px rgb(0 0 0 / 0.22), 0 2px 8px rgb(0 0 0 / 0.08);
+  --danger-soft: rgba(224, 52, 44, 0.1);
+  --warn-soft: rgba(196, 123, 0, 0.12);
+  --success-soft: rgba(30, 166, 75, 0.1);
 }
 
+/* Tailwind v4 mapping — the utilities the screens are written with. */
 @theme inline {
-  --font-sans: var(--tb-sans);
-  --font-mono: var(--tb-mono);
-  --color-bg: var(--tb-bg);
-  --color-surface-1: var(--tb-surface-1);
-  --color-surface-2: var(--tb-surface-2);
-  --color-surface-3: var(--tb-surface-3);
-  --color-fg: var(--tb-text-primary);
-  --color-fg-secondary: var(--tb-text-secondary);
-  --color-fg-muted: var(--tb-text-muted);
-  --color-line: var(--tb-border);
-  --color-line-strong: var(--tb-border-strong);
-  --color-accent: var(--tb-accent);
-  --color-accent-solid: var(--tb-accent-solid);
-  --color-accent-text: var(--tb-accent-text);
-  --color-accent-contrast: var(--tb-accent-contrast);
-  --color-danger: var(--tb-danger);
-  --color-warn: var(--tb-warn);
-  --color-ok: var(--tb-ok);
-  --color-scrim: var(--tb-scrim);
-  --color-glass: var(--tb-glass);
-  --shadow-plate: var(--tb-shadow-plate);
-  --shadow-pop: var(--tb-shadow-pop);
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-link: var(--link);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-text-4: var(--text-4);
+  --color-placeholder: var(--placeholder);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-divider: var(--divider);
+  --color-hairline: var(--hairline);
+  --color-hover: var(--hover);
+  --color-accent: var(--accent);
+  --color-accent-solid: var(--accent-solid);
+  --color-accent-solid-hover: var(--accent-solid-hover);
+  --color-accent-press: var(--accent-press);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-text: var(--accent-text);
+  --color-accent-fg: var(--accent-fg);
+  --color-danger: var(--danger);
+  --color-danger-text: var(--danger-text);
+  --color-danger-soft: var(--danger-soft);
+  --color-success: var(--success);
+  --color-success-text: var(--success-text);
+  --color-success-soft: var(--success-soft);
+  --color-warn: var(--warn);
+  --color-warn-text: var(--warn-text);
+  --color-warn-soft: var(--warn-soft);
+  --color-fill: var(--fill);
+  --color-fill-hover: var(--fill-hover);
+  --color-fill-press: var(--fill-press);
+  --color-field: var(--field);
+  --color-glass: var(--glass);
+  --color-glass-2: var(--glass-2);
+  --color-rail: var(--rail);
+  --color-scrim: var(--scrim);
+  --color-ink: var(--ink);
+  --color-ink-fg: var(--ink-fg);
+  --font-sans: var(--stack-sans);
+  --font-mono: var(--stack-mono);
   --radius-lg: 14px;
   --radius-xl: 17px;
   --radius-2xl: 20px;
 }
 
 * {
-  border-color: var(--tb-border);
+  border-color: var(--border);
 }
 
 html,
 body {
-  background: var(--tb-bg);
-  color: var(--tb-text-primary);
-  font-family: var(--tb-sans);
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--stack-sans);
   -webkit-font-smoothing: antialiased;
 }
 
 ::selection {
-  background: var(--tb-accent);
-  color: var(--tb-accent-contrast);
+  background: var(--accent);
+  color: var(--accent-fg);
 }
 
-/* Visible focus on every interactive element — keyboard operators are
-   a first-class audience for an admin tool. */
-/* No border-radius here: an outline follows the element's own corners, and
-   forcing 4px squared off every pill the moment it took focus. */
+/* Keyboard operators are a first-class audience here. No border-radius on
+   the outline — an outline follows the element's own corners, and forcing
+   one squared off every pill the moment it took focus. */
 :focus-visible {
-  outline: 2px solid var(--tb-accent);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
-/* ── Buttons ────────────────────────────────────────────────────────
-   Same pill the rest of Tirbeo draws, at console scale: this is a dense
-   tool, so the height is what a table row can hold, not the 42px the
-   account surfaces use. Two fills, and the quiet one is grey-filled
-   rather than outlined — an outlined pill beside a blue one reads as
-   disabled, which is the wrong thing for "Apply".
-   ───────────────────────────────────────────────────────────────── */
+/* ── Buttons ────────────────────────────────────────────────────────────
+   The Tirbeo pill at console scale: a dense tool, so the height is what a
+   table row can hold rather than the 42px the account surfaces use. Two
+   fills — the quiet one is grey-filled with an accent label, never an
+   outline, because an outlined pill beside a solid blue one reads as a
+   disabled pair. Unlayered, so a stray utility cannot re-shape one call
+   site and leave the rest behind.
+   ───────────────────────────────────────────────────────────────────── */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -177,26 +278,54 @@ body {
 }
 
 .btn:disabled {
-  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .btn-primary {
-  background: var(--tb-accent-solid);
-  color: var(--tb-accent-contrast);
+  background: var(--accent-solid);
+  color: var(--accent-fg);
 }
 
 .btn-primary:hover {
-  background: var(--tb-accent-solid-hover);
+  background: var(--accent-solid-hover);
+}
+
+/* A disabled fill is not an enabled one seen through glass — iOS mutes the
+   plate and the label; half-transparent blue reads as "loading", not "off". */
+.btn-primary:disabled {
+  background: var(--btn-disabled-bg);
+  color: var(--btn-disabled-fg);
 }
 
 .btn-secondary {
-  background: var(--tb-fill);
-  color: var(--tb-accent-text);
+  background: var(--fill);
+  color: var(--accent-text);
 }
 
 .btn-secondary:hover {
-  background: var(--tb-fill-hover);
+  background: var(--fill-hover);
+}
+
+.btn-secondary:active {
+  background: var(--fill-press);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.5;
+}
+
+.btn-quiet {
+  background: transparent;
+  color: var(--text-3);
+}
+
+.btn-quiet:hover {
+  background: var(--fill);
+  color: var(--fg);
+}
+
+.btn-quiet:disabled {
+  opacity: 0.5;
 }
 
 /* Row-level actions and pagination, where 36px would push the row apart. */
@@ -208,13 +337,13 @@ body {
 
 /* A quiet action that means business once you hover it. */
 .btn-danger-hover:hover {
-  background: var(--tb-danger-soft);
-  color: var(--tb-danger);
+  background: var(--danger-soft);
+  color: var(--danger-text);
 }
 
 .btn-ok-hover:hover {
-  background: var(--tb-ok-soft);
-  color: var(--tb-ok);
+  background: var(--success-soft);
+  color: var(--success-text);
 }
 
 @media (prefers-reduced-motion: reduce) {

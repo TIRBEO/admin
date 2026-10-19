@@ -22,11 +22,14 @@ export function dateOnly(v: unknown): string {
   return d ? d.toLocaleDateString() : "—";
 }
 
-/** "3 days ago" / "in 2 hours" / "just now". */
-export function ago(v: unknown): string {
+/** "3 days ago" / "in 2 hours" / "just now".
+ *  `from` pins the comparison to a fixed clock — the fixtures all measure
+ *  against one NOW so an age cannot drift between two renders of a page. */
+export function ago(v: unknown, from?: unknown): string {
   const d = toDate(v);
   if (!d) return "—";
-  const secs = Math.round((Date.now() - d.getTime()) / 1000);
+  const now = toDate(from)?.getTime() ?? Date.now();
+  const secs = Math.round((now - d.getTime()) / 1000);
   const future = secs < 0;
   const abs = Math.abs(secs);
 
@@ -64,6 +67,21 @@ export function duration(seconds: unknown): string {
   if (h < 24) return `${h} h ${m % 60} m`;
   const d = Math.floor(h / 24);
   return `${d} d ${h % 24} h`;
+}
+
+/** Byte counts as an operator reads them: 1.4 GB, never 1498316800. */
+export function bytes(v: unknown): string {
+  const n = typeof v === "number" ? v : Number(v);
+  if (!Number.isFinite(n) || n < 0) return "—";
+  const units = ["B", "KB", "MB", "GB", "TB", "PB"];
+  let value = n;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  const digits = unit === 0 || value >= 100 ? 0 : value >= 10 ? 1 : 2;
+  return `${value.toFixed(digits)} ${units[unit]}`;
 }
 
 function toDate(v: unknown): Date | null {
