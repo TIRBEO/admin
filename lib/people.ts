@@ -1,7 +1,7 @@
-import { apiGet, errorMessage, type ApiResult } from "@/lib/api";
+import { apiFailure, apiGet } from "@/lib/api";
 import type { Load, LoadError } from "@/lib/load-state";
 
-import type { Page, User, UserStatus } from "@/lib/mock/types";
+import type { Page, User, UserStatus } from "@/lib/types";
 
 /** The People screen's one read: GET /api/admin/users.
  *
@@ -80,7 +80,7 @@ function query(f: PeopleFilter): string {
 export async function readPeople(f: PeopleFilter): Promise<Load<Page<User>>> {
   const result = await apiGet<ApiList>(`/admin/users?${query(f)}`);
 
-  if (!result.ok) return failure(result);
+  if (!result.ok) return apiFailure(result);
   if (!Array.isArray(result.data?.users)) {
     return { status: "error", message: "The API answered with no user list in it." };
   }
@@ -93,31 +93,6 @@ export async function readPeople(f: PeopleFilter): Promise<Load<Page<User>>> {
     perPage: data.limit ?? PER_PAGE,
   };
   return page.items.length === 0 ? { status: "empty" } : { status: "ready", data: page };
-}
-
-/** Three refusals, three sentences. A signed-out operator can fix this by
- *  signing in; an operator who is not an admin cannot, and must be told that
- *  rather than offered a sign-in loop they will not escape. */
-function failure(result: ApiResult<unknown>): LoadError {
-  const message =
-    result.status === 0
-      ? "The API never answered. It is either stopped or this host cannot reach it."
-      : result.status === 401
-        ? "The API refused this read because no session came with the request."
-        : result.status === 403
-          ? "You are signed in, but this account is not an administrator."
-          : errorMessage(result);
-
-  const reason =
-    result.status === 0
-      ? "unreachable"
-      : result.status === 401
-        ? "signed-out"
-        : result.status === 403
-          ? "not-admin"
-          : undefined;
-
-  return { status: "error", message, reason };
 }
 
 /** What the platform already says about one account. Enough to name a person
@@ -158,7 +133,7 @@ export async function readPersonSummary(id: string): Promise<PersonLookup> {
 
   const d = result.data;
   if (!result.ok || !d?.id || !d.email || !d.createdAt) {
-    return { kind: "error", load: failure(result) };
+    return { kind: "error", load: apiFailure(result) };
   }
 
   return {

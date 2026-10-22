@@ -1,19 +1,30 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ShieldAlert } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 import { DataTable } from "@/components/data-table";
 import { Field, PageHeader, PageState, Panel, Pill } from "@/components/page-header";
-import { getUser, restrictionState } from "@/lib/mock";
-import { readPersonSummary } from "@/lib/people";
+import { PersonActionControls } from "@/components/person-action";
+import { PersonDetailsForm } from "@/components/person-details-form";
+import { ago, dateOnly, dateTime, device } from "@/lib/format";
+import { readPerson } from "@/lib/person";
+import { readRoster } from "@/lib/staff";
+import { can, readMe } from "@/lib/permissions";
 import { signInUrl } from "@/lib/sign-in";
-import { MOCK_ERROR, present, readState } from "@/lib/load-state";
-import { ago, bytes, dateOnly, dateTime } from "@/lib/format";
-import { NOW_ISO } from "@/lib/mock/world";
 
-import type { UserStatus } from "@/lib/mock/types";
+import type { UserStatus } from "@/lib/types";
 
-type Params = Record<string, string | string[] | undefined>;
+/* One account, as far as the account door can describe it.
+ *
+ *  The read is GET /api/admin/users/{id} and it is the only read on this
+ *  screen, so what it does not return is simply not drawn: there is no
+ *  last-seen or last sign-in, no enforcement reason or end date, and no history
+ *  for the account. The ledger door takes a severity and a limit but no account
+ *  filter, so a timeline here would be a fabrication and there isn't one.
+ *
+ *  Reference codes are the identifiers a person quotes and an operator searches
+ *  for, so they are printed where they exist and an account's own id is used
+ *  only as a link. */
 
 const TONE: Record<UserStatus, "success" | "warn" | "danger" | "muted"> = {
   active: "success",
@@ -25,363 +36,281 @@ const TONE: Record<UserStatus, "success" | "warn" | "danger" | "muted"> = {
   deleted: "muted",
 };
 
-export default async function PersonPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ id: string }>;
-  searchParams: Promise<Params>;
-}) {
-  const [{ id }, query] = await Promise.all([params, searchParams]);
-  const state = readState(query);
-  const person = await getUser(id);
+export default async function PersonPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const read = await readPerson(id);
 
-  /* The list reads real accounts and this screen still reads the fixture
-     world, so a real id arrives here and 404s. Say which of the two it is
-     instead of telling an operator a person does not exist. */
-  if (!person) return <RealAccount id={id} />;
+  if (read.kind === "absent") notFound();
 
-  const load = present(state, person);
-  const { user, profile } = person;
-  const name = profile?.name ?? user.username ?? user.email;
-  const active = person.restrictions.filter((r) => restrictionState(r) !== "expired");
+  if (read.kind === "error") {
+    /* The one refusal an operator can end themselves: a missing session. A
+       refusal because the role does not cover this screen gets no button —
+       sending somebody who is signed in to the sign-in page starts a loop they
+       cannot leave. */
+    const load =
+      read.load.reason === "signed-out"
+        ? {
+            ...read.load,
+            action: (
+              <Link href={await signInUrl(`/admin/people/${id}`)} className="btn btn-primary btn-sm">
+                Sign in
+              </Link>
+            ),
+          }
+        : read.load;
+
+    return (
+      <>
+        <PageHeader title="Person" description="An account on this platform" />
+        <PageState load={load} />
+      </>
+    );
+  }
+
+  const p = read.person;
+  const name = p.name ?? p.username ?? p.email;
+  const identity = p.username ? `@${p.username}` : p.email;
+  const reference = p.banRefCode ?? p.suspendRefCode;
+
+  /* Two different writes live on this screen and they are not gated together:
+     enforcing on an account needs `people.manage`, while changing who is staff
+     is an owner's act wherever the roster says so. An Administrator may ban
+     this person and may not make them an administrator. */
+  const [mayAct, me] = await Promise.all([can("people.manage"), readMe()]);
+  const maySetRole = me.ok && me.data ? me.data.canManageStaff : false;
+  /* An owner picking a role needs the list the roster publishes rather than a
+     second copy of it typed into the console, so the picker is filled from the
+     same read the Staff screen uses. */
+  const roster = maySetRole ? await readRoster() : null;
+  const roleChoices = roster?.status === "ready"
+    ? roster.data.roles.map((r) => ({ key: r.key, label: r.label }))
+    : [];
 
   return (
     <>
       <PageHeader
         title={name}
-        description={`${user.email} · ${user.username ? `@${user.username}` : "no handle"} · ${user.id}`}
-        params={query}
-        state={state}
+        description={`${p.email} · ${p.username ? `@${p.username}` : "no handle"}`}
         actions={
-          <>
-            <Link href="/admin/people" className="btn btn-quiet btn-sm">
-              <ArrowLeft size={13} aria-hidden />
-              All people
-            </Link>
-            {/* No endpoint can act on an account yet, so the buttons are the
-                brief for one: rendered, labelled, and honest about being off. */}
-            <button type="button" className="btn btn-secondary btn-sm" disabled title={MOCK_ERROR}>
-              Message
-            </button>
-            <button type="button" className="btn btn-primary btn-sm" disabled title={MOCK_ERROR}>
-              Change status
-            </button>
-          </>
+          <Link href="/admin/people" className="btn btn-quiet btn-sm">
+            <ArrowLeft size={13} aria-hidden />
+            All people
+          </Link>
         }
       />
 
-      <PageState load={load} rows={8} />
-
-      {load.status !== "ready" ? null : (
-        <>
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-            <Panel>
-              <div className="flex flex-wrap items-start gap-4">
-                <Monogram name={name} url={profile?.photoUrl ?? null} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-[17px] font-semibold tracking-[-0.02em] text-[var(--fg)]">
-                      {name}
-                    </h2>
-                    <Pill tone={TONE[user.status]}>{user.status.replaceAll("_", " ")}</Pill>
-                    {user.isAdmin ? <Pill tone="accent">admin</Pill> : null}
-                    {person.security?.totpEnabled ? <Pill tone="success">2FA</Pill> : null}
-                  </div>
-                  {profile?.bio ? (
-                    <p className="mt-2 max-w-prose text-[13px] leading-relaxed text-[var(--text-2)]">
-                      {profile.bio}
-                    </p>
-                  ) : null}
-                  <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-[12px] text-[var(--muted)]">
-                    {profile?.location ? <span>{profile.location}</span> : null}
-                    {profile?.pronouns ? <span>{profile.pronouns}</span> : null}
-                    {profile?.website ? (
-                      <span className="break-all">{profile.website}</span>
-                    ) : null}
-                    {profile?.jobRole ? (
-                      <span>
-                        {profile.jobRole}
-                        {profile.jobCompany ? ` · ${profile.jobCompany}` : ""}
-                      </span>
-                    ) : null}
-                  </dl>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <div className="flex flex-col gap-4">
+          <Panel>
+            <div className="flex flex-wrap items-start gap-4">
+              <Monogram name={name} url={p.photoUrl} />
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-[17px] font-semibold tracking-[-0.02em] text-[var(--fg)]">
+                    {name}
+                  </h2>
+                  <Pill tone={TONE[p.statusKind]}>{p.statusKind.replaceAll("_", " ")}</Pill>
+                  {p.adminRole ? <Pill tone="accent">{p.adminRole.replaceAll("_", " ")}</Pill> : null}
+                  <Pill tone={p.is2FAEnabled ? "success" : "muted"}>
+                    {p.is2FAEnabled ? "two-factor on" : "no two-factor"}
+                  </Pill>
+                  <Pill tone={p.emailVerified ? "success" : "warn"}>
+                    {p.emailVerified ? "address verified" : "address unverified"}
+                  </Pill>
                 </div>
+                <dl className="mt-3 grid gap-x-6 text-[13px] sm:grid-cols-2">
+                  <Field label="Signs in as">{p.email}</Field>
+                  <Field label="Handle">{p.username ? `@${p.username}` : "none"}</Field>
+                  <Field label="Joined">{dateOnly(p.createdAt)}</Field>
+                  <Field label="Last changed">{ago(p.updatedAt)}</Field>
+                  <Field label="Sessions held">
+                    {p.sessionCount.toLocaleString()}
+                    {p.sessions.length < p.sessionCount ? ` · ${p.sessions.length} newest listed` : ""}
+                  </Field>
+                  <Field label="Notifications">{p.notificationCount.toLocaleString()}</Field>
+                  {reference ? (
+                    <Field label="Reference code">
+                      <code className="text-[var(--danger-text)]">{reference}</code>
+                    </Field>
+                  ) : null}
+                </dl>
               </div>
-            </Panel>
+            </div>
+          </Panel>
 
-            <Panel title="Account">
-              <dl className="-my-1">
-                <Field label="Joined">{dateOnly(user.createdAt)}</Field>
-                <Field label="Last seen">
-                  {user.lastActiveAt ? ago(user.lastActiveAt, NOW_ISO) : "never"}
-                </Field>
-                <Field label="Last sign-in">
-                  {user.lastLoginAt ? ago(user.lastLoginAt, NOW_ISO) : "—"}
-                </Field>
-                <Field label="Updated">{ago(user.updatedAt, NOW_ISO)}</Field>
-                <Field label="Two-factor">
-                  {person.security ? (
-                    <Pill tone={person.security.totpEnabled ? "success" : "muted"}>
-                      {person.security.totpEnabled ? "enabled" : "not enabled"}
-                    </Pill>
-                  ) : (
-                    "—"
-                  )}
-                </Field>
-                <Field label="Passkeys">{person.security?.passkeys ?? 0}</Field>
-                <Field label="Backup codes">
-                  {person.security?.backupCodes.length ?? 0} left
-                </Field>
-              </dl>
-            </Panel>
-          </div>
-
-          {active.length > 0 || person.deletion ? (
-            <Panel title="Enforcement">
-              <ul className="flex flex-col gap-3">
-                {active.map((r) => (
-                  <li
-                    key={r.id}
-                    className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 rounded-[12px] bg-[var(--surface-2)] px-3.5 py-2.5"
-                  >
-                    <span className="flex items-center gap-2 text-[13px] font-medium tracking-[-0.01em] text-[var(--fg)]">
-                      <ShieldAlert
-                        size={14}
-                        aria-hidden
-                        className={
-                          r.severity === "strike"
-                            ? "text-[var(--danger-text)]"
-                            : r.severity === "warning"
-                              ? "text-[var(--warn-text)]"
-                              : "text-[var(--muted)]"
-                        }
-                      />
-                      {r.title}
-                    </span>
-                    <span className="text-[12px] text-[var(--muted)]">
-                      {restrictionState(r) === "permanent"
-                        ? "no end date"
-                        : `until ${dateOnly(r.endsAt)}`}
-                      {` · ${r.severity}`}
-                    </span>
-                    {r.detail ? (
-                      <p className="w-full text-[12px] leading-snug text-[var(--text-2)]">
-                        {r.detail}
-                      </p>
-                    ) : null}
-                  </li>
-                ))}
-                {person.deletion ? (
-                  <li className="rounded-[12px] border border-[var(--danger-text)]/40 bg-[var(--danger-soft)] px-3.5 py-2.5 text-[13px] text-[var(--danger-text)]">
-                    Deletion requested {ago(person.deletion.requestedAt, NOW_ISO)} · scheduled{" "}
-                    {dateOnly(person.deletion.finalAt)}
-                    {person.deletion.cancelledAt ? " · cancelled" : ""}
-                    {person.deletion.executedAt ? " · executed" : ""}
-                  </li>
-                ) : null}
-              </ul>
+          {p.isBanned || p.isSuspended ? (
+            <Panel
+              title={p.isBanned ? "Banned" : "Suspended"}
+              hint="The code the account was mailed. What the restriction says and when it ends are not in this read."
+            >
+              <div className="flex flex-wrap items-center gap-3">
+                <code className="rounded-[10px] bg-[var(--danger-soft)] px-3 py-2 text-[15px] font-semibold tracking-[0.02em] text-[var(--danger-text)]">
+                  {reference ?? "no code returned"}
+                </code>
+                <p className="text-[13px] leading-relaxed text-[var(--text-2)]">
+                  Quote this in anything written about the account — it is what the block screen and
+                  the notice both carry. Lifting it below leaves the code in place, so an appeal
+                  still resolves to the same enforcement.
+                </p>
+              </div>
             </Panel>
           ) : null}
 
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Panel title="Addresses" flush>
-              <div className="px-4 py-1">
-                <DataTable
-                  columns={[
-                    { key: "address", label: "Address" },
-                    { key: "kind", label: "Kind", hideBelow: "sm" },
-                    { key: "verified", label: "Verified", align: "right" },
-                  ]}
-                  rows={[
-                    ...person.emails.map((e) => ({
-                      address: (
-                        <span className="flex items-center gap-2">
-                          <code className="text-[12px]">{e.address}</code>
-                          {e.isDefault ? <Pill tone="accent">primary</Pill> : null}
-                        </span>
-                      ),
-                      kind: e.kind,
-                      verified: e.verifiedAt ? dateOnly(e.verifiedAt) : <span className="text-[var(--warn-text)]">unverified</span>,
-                    })),
-                    ...(person.phone?.number
-                      ? [
-                          {
-                            address: <code className="text-[12px]">{person.phone.number}</code>,
-                            kind: "phone",
-                            verified: person.phone.verifiedAt
-                              ? dateOnly(person.phone.verifiedAt)
-                              : "unverified",
-                          },
-                        ]
-                      : []),
-                  ]}
-                  empty="This account has no verified address on file."
-                />
-              </div>
-            </Panel>
-
-            <Panel
-              title="Sessions"
-              flush
-              hint="A token is never shown — only what it was used from."
-            >
-              <div className="px-4 py-1">
-                <DataTable
-                  columns={[
-                    { key: "device", label: "Device" },
-                    { key: "where", label: "Where", hideBelow: "md" },
-                    { key: "status", label: "Status" },
-                    { key: "used", label: "Last used", align: "right", hideBelow: "sm" },
-                  ]}
-                  rows={person.sessions.map((s) => ({
-                    device: s.deviceName ?? <span className="text-[var(--muted)]">unknown</span>,
-                    where: (
-                      <span className="block truncate text-[12px]">
-                        {s.ipAddress ?? "—"}
-                        {s.location ? ` · ${s.location}` : ""}
-                      </span>
-                    ),
-                    status: (
-                      <Pill
-                        tone={s.status === "active" ? "success" : s.status === "revoked" ? "danger" : "muted"}
-                      >
-                        {s.status}
-                      </Pill>
-                    ),
-                    used: s.lastUsedAt ? ago(s.lastUsedAt, NOW_ISO) : "—",
-                  }))}
-                  empty="No device holds a session for this account."
-                />
-              </div>
-            </Panel>
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Panel title="Sign-ins" flush>
-              <div className="px-4 py-1">
-                <DataTable
-                  columns={[
-                    { key: "at", label: "When" },
-                    { key: "method", label: "Method", hideBelow: "sm" },
-                    { key: "result", label: "Result" },
-                    { key: "ip", label: "From", hideBelow: "md" },
-                  ]}
-                  rows={person.logins.slice(0, 10).map((l) => ({
-                    at: dateTime(l.createdAt),
-                    method: l.method,
-                    result: (
-                      <Pill tone={l.success ? "success" : "danger"}>
-                        {l.success ? "ok" : "failed"}
-                      </Pill>
-                    ),
-                    ip: <code className="text-[12px]">{l.ipAddress ?? "—"}</code>,
-                  }))}
-                  empty="This account has never signed in."
-                />
-              </div>
-            </Panel>
-
-            <Panel title="Restrictions and appeals" flush>
-              <div className="px-4 py-1">
-                <DataTable
-                  columns={[
-                    { key: "what", label: "Action" },
-                    { key: "severity", label: "Severity", hideBelow: "sm" },
-                    { key: "state", label: "State" },
-                    { key: "at", label: "Issued", align: "right", hideBelow: "md" },
-                  ]}
-                  rows={[
-                    ...person.restrictions.map((r) => ({
-                      what: r.title,
-                      severity: r.severity,
-                      state: <Pill tone={restrictionState(r) === "expired" ? "muted" : "warn"}>{restrictionState(r)}</Pill>,
-                      at: dateOnly(r.startedAt),
-                    })),
-                    ...person.appeals.map((a) => ({
-                      what: `Appeal — ${a.note.slice(0, 48)}${a.note.length > 48 ? "…" : ""}`,
-                      severity: "appeal",
-                      state: (
-                        <Pill tone={a.decision === "overturned" ? "success" : a.decision === "upheld" ? "danger" : "muted"}>
-                          {a.decision ?? "pending"}
-                        </Pill>
-                      ),
-                      at: dateOnly(a.createdAt),
-                    })),
-                  ]}
-                  empty="Never restricted, and never asked to be."
-                />
-              </div>
-            </Panel>
-          </div>
-
-          <Panel
-            title="Everything else this account touched"
-            hint="Counts are what the console can reach for one person."
-          >
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
-              <Tally label="Devices" value={person.devices.length} />
-              <Tally label="Notifications" value={person.notifications.length} href="/admin/notifications" />
-              <Tally label="Push tokens" value={person.push.length} href="/admin/push" />
-              <Tally label="Emails sent" value={person.emailsSent.length} href="/admin/email/deliveries" />
-              <Tally label="Data exports" value={person.exports.length} href="/admin/export-requests" />
-              <Tally label="Tickets" value={person.tickets.length} href="/admin/tickets" />
-              <Tally label="Console actions on them" value={person.audit.length} href="/admin/audit" />
-              <Tally label="Activity rows" value={person.statusEvents.length} href="/admin/activity" />
-              <Tally
-                label="Storage"
-                value={person.exports.reduce((t, e) => t + (e.bytes ?? 0), 0)}
-                asBytes
-              />
-              <Tally
-                label="Handle"
-                value={person.identity?.username ?? "—"}
-                href="/admin/identities"
+          <Panel title="Sessions" flush hint="Newest first. A token is never part of this read.">
+            <div className="px-4 py-1">
+              <DataTable
+                columns={[
+                  { key: "device", label: "Client" },
+                  { key: "ip", label: "From", hideBelow: "sm" },
+                  { key: "started", label: "Started", align: "right", nowrap: true },
+                  { key: "expires", label: "Expires", align: "right", hideBelow: "md", nowrap: true },
+                ]}
+                rows={p.sessions.map((s) => ({
+                  device: (
+                    <span className="block max-w-[34ch] truncate text-[12px]" title={s.userAgent ?? undefined}>
+                      {device(s.userAgent) ?? <span className="text-[var(--muted)]">unknown client</span>}
+                    </span>
+                  ),
+                  ip: <code className="text-[12px]">{s.ipAddress ?? "—"}</code>,
+                  started: s.createdAt ? dateTime(s.createdAt) : "—",
+                  expires: s.expiresAt ? dateOnly(s.expiresAt) : "—",
+                }))}
+                empty="No session row. A ban or a suspension signs every device out, so an enforced account reads empty here."
               />
             </div>
           </Panel>
 
-          <Panel title="Recent activity" hint="The ledger rows this account appears in, newest first.">
-            <ol className="flex flex-col gap-0">
-              {person.statusEvents.slice(0, 12).map((e) => (
-                <li key={e.id} className="flex gap-3 border-b border-[var(--divider)] py-2.5 last:border-0">
-                  <span
-                    className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
-                      e.severity === "critical"
-                        ? "bg-danger"
-                        : e.severity === "error"
-                          ? "bg-danger"
-                          : e.severity === "warning"
-                            ? "bg-warn"
-                            : "bg-[var(--text-4)]"
-                    }`}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] text-[var(--fg)]">{e.title}</p>
-                    <p className="mt-0.5 text-[12px] text-[var(--muted)]">
-                      <code>{e.kind}</code>
-                      {e.detail ? ` · ${e.detail}` : ""}
-                    </p>
-                  </div>
-                  <time className="shrink-0 text-[12px] tabular-nums text-[var(--muted)]">
-                    {ago(e.createdAt, NOW_ISO)}
-                  </time>
-                </li>
-              ))}
-              {person.statusEvents.length === 0 ? (
-                <li className="text-[13px] text-[var(--muted)]">Nothing in the ledger yet.</li>
-              ) : null}
-            </ol>
+          <Panel title="Mail the account is set up to receive">
+            <dl className="-my-1">
+              <Field label="Any mail">
+                <Pill tone={p.emailOptIns.emailEnabled ? "success" : "muted"}>
+                  {p.emailOptIns.emailEnabled ? "on" : "off"}
+                </Pill>
+              </Field>
+              <Field label="Paused now">
+                <Pill tone={p.emailOptIns.paused ? "warn" : "muted"}>
+                  {p.emailOptIns.paused ? "paused" : "not paused"}
+                </Pill>
+              </Field>
+              <Field label="Account recap">
+                <Pill tone={p.emailOptIns.summaryEnabled ? "success" : "muted"}>
+                  {p.emailOptIns.summaryEnabled
+                    ? `${p.emailOptIns.summaryFrequency} recap on`
+                    : "off"}
+                </Pill>
+              </Field>
+              <Field label="Last recap sent">
+                {p.emailOptIns.lastSummarySentAt ? dateTime(p.emailOptIns.lastSummarySentAt) : "never"}
+              </Field>
+            </dl>
           </Panel>
-        </>
-      )}
+
+          <Panel
+            title="Consent on file"
+            hint="The switches as the preferences row holds them, in the database's own keys."
+          >
+            {p.signupConsent ? (
+              <dl className="-my-1">
+                <Field label="Policies accepted">
+                  <Pill tone={p.signupConsent.policyAccepted ? "success" : "danger"}>
+                    {p.signupConsent.policyAccepted ? "yes" : "no"}
+                  </Pill>
+                </Field>
+                <Field label="When">
+                  {p.signupConsent.acceptedAt ? dateTime(p.signupConsent.acceptedAt) : "—"}
+                </Field>
+                <Field label="Console may read their data">
+                  <Pill tone={p.signupConsent.adminDataAccess ? "warn" : "muted"}>
+                    {p.signupConsent.adminDataAccess ? "allowed" : "withheld"}
+                  </Pill>
+                </Field>
+                <Field label="Signature">{p.signupConsent.signatureName || "—"}</Field>
+                {p.signupConsent.viaOAuth ? (
+                  <Field label="Accepted through">an OAuth sign-in</Field>
+                ) : null}
+              </dl>
+            ) : (
+              <p className="text-[13px] text-[var(--text-2)]">
+                No signup consent record on this account.
+              </p>
+            )}
+            {p.otherConsents.length > 0 ? (
+              <ul className="mt-3 flex flex-wrap gap-2 border-t border-[var(--divider)] pt-3">
+                {p.otherConsents.map((c) => (
+                  <li key={c.key}>
+                    <Pill tone={c.granted ? "success" : "muted"}>
+                      {c.key} · {c.granted ? "yes" : "no"}
+                    </Pill>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </Panel>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          {mayAct ? (
+            <Panel
+              title="Act on this account"
+              hint="Every write here is signed as you: the API authenticates your own session."
+            >
+              <PersonActionControls
+                id={p.id}
+                identity={identity}
+                isBanned={p.isBanned}
+                isSuspended={p.isSuspended}
+                hasConsoleAccess={p.adminRole != null}
+              />
+            </Panel>
+          ) : (
+            <Panel
+              title="Act on this account"
+              hint="Read-only for this role."
+            >
+              <p className="text-[13px] leading-relaxed text-[var(--text-2)]">
+                Banning, suspending and lifting an enforcement change a person's account, so the console
+                only offers them to a role holding “Change an account”. Your role can read this account and
+                that is all it is asked to do.
+              </p>
+            </Panel>
+          )}
+
+          {mayAct ? (
+            <Panel title="What you may change">
+              <PersonDetailsForm
+                id={p.id}
+                identity={identity}
+                name={p.name}
+                adminRole={p.adminRole}
+                maySetRole={maySetRole}
+                roles={roleChoices}
+              />
+            </Panel>
+          ) : null}
+
+          <Panel title="What this read does not cover">
+            <ul className="flex flex-col gap-2 text-[13px] leading-relaxed text-[var(--text-2)]">
+              <li>
+                No last-seen or last sign-in: the account detail door does not carry either column.
+              </li>
+              <li>
+                No reason or end date beside an enforcement — only the reference code and the state.
+              </li>
+              <li>
+                No history for this account. The ledger takes a severity and a limit, never a person,
+                so its rows cannot be narrowed to one account from here.
+              </li>
+            </ul>
+          </Panel>
+        </div>
+      </div>
     </>
   );
 }
 
-/** A fictional avatar URL would render a broken image, and a scaffold is read
-    for its layout — so the plate is a monogram, which also proves the fallback
-    a real photo URL would need anyway. */
+/** A photo URL on the account row is real, but the console has no image host
+ *  allow-list to load it through — so the plate is a monogram and the row is
+ *  named rather than rendered as a broken image. */
 function Monogram({ name, url }: { name: string; url: string | null }) {
   const initials = name
     .split(/[\s._-]+/)
@@ -406,111 +335,5 @@ function Monogram({ name, url }: { name: string; url: string | null }) {
         <span className="text-[10px] text-[var(--text-4)]">no photo</span>
       )}
     </div>
-  );
-}
-
-function Tally({
-  label,
-  value,
-  href,
-  asBytes,
-}: {
-  label: string;
-  value: number | string;
-  href?: string;
-  asBytes?: boolean;
-}) {
-  const shown =
-    typeof value === "string" ? value : asBytes ? bytes(value) : value.toLocaleString();
-
-  const body = (
-    <>
-      <p className="text-[19px] font-semibold tabular-nums tracking-[-0.02em] text-[var(--fg)]">
-        {shown}
-      </p>
-      <p className="mt-0.5 text-[12px] leading-snug text-[var(--muted)]">{label}</p>
-    </>
-  );
-
-  const plate = "rounded-[12px] bg-[var(--surface-2)] px-3 py-2.5";
-
-  return href ? (
-    <Link href={href} className={`${plate} transition-colors hover:bg-[var(--hover)]`}>
-      {body}
-    </Link>
-  ) : (
-    <div className={plate}>{body}</div>
-  );
-}
-
-/** A real account, on a screen that cannot describe it yet.
- *
- *  Only what the one door that exists can say is shown, and the rest of the
- *  screen is named rather than left blank — a 360 that quietly omits the
- *  devices, sessions and history it has no endpoint for reads as an account
- *  with none of those things. */
-async function RealAccount({ id }: { id: string }) {
-  const lookup = await readPersonSummary(id);
-
-  if (lookup.kind === "absent") notFound();
-
-  if (lookup.kind === "error") {
-    const load =
-      lookup.load.reason === "signed-out"
-        ? {
-            ...lookup.load,
-            action: (
-              <Link
-                href={await signInUrl(`/admin/people/${id}`)}
-                className="btn btn-primary btn-sm"
-              >
-                Sign in
-              </Link>
-            ),
-          }
-        : lookup.load;
-    return (
-      <>
-        <PageHeader title="Person" description={`Account ${id}`} />
-        <PageState load={load} />
-      </>
-    );
-  }
-
-  const p = lookup.person;
-  return (
-    <>
-      <PageHeader
-        title={p.name ?? p.username ?? p.email}
-        description={`${p.email} · ${p.username ? `@${p.username}` : "no handle"} · ${p.id}`}
-        unwired
-        actions={
-          <Link href="/admin/people" className="btn btn-quiet btn-sm">
-            <ArrowLeft size={13} aria-hidden />
-            All people
-          </Link>
-        }
-      />
-
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-        <Panel title="What the account row says">
-          <Field label="Status">
-            <Pill tone={TONE[p.status]}>{p.status.replaceAll("_", " ")}</Pill>
-          </Field>
-          <Field label="Level">{p.isAdmin ? "admin" : "person"}</Field>
-          <Field label="Joined">{dateOnly(p.createdAt)}</Field>
-        </Panel>
-
-        <Panel title="What this screen is waiting for">
-          <p className="text-[13px] leading-relaxed text-[var(--text-2)]">
-            The person row is real. Everything below it — profile, addresses, security, sessions,
-            devices, logins, restrictions, appeals, status history, notifications, push, exports,
-            tickets, mail and the trail of console actions — is still drawn from the fixture world,
-            which only knows its own seeded ids. Wiring this screen means one read per section, and
-            most of those sections have no admin endpoint yet.
-          </p>
-        </Panel>
-      </div>
-    </>
   );
 }

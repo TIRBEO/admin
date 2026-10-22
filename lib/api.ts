@@ -122,17 +122,26 @@ export function errorMessage(result: ApiResult<unknown>): string {
  *
  *  The three failures an operator actually hits are told apart on purpose:
  *  the API being unreachable, the operator being signed out, and the operator
- *  being signed in as somebody who is not an admin each need a different fix,
- *  and a screen that shows them all as "error" sends people to the wrong one. */
+ *  being signed in as somebody whose role does not cover this screen each need
+ *  a different fix, and a screen that shows them all as "error" sends people to
+ *  the wrong one.
+ *
+ *  For a refusal the API's own sentence is used rather than one written here.
+ *  The guard knows which permission was missing and the role it belongs to;
+ *  this file knows neither, and guessing "you are not an admin" for a Moderator
+ *  who asked for a staff screen tells the operator something untrue. */
 export function apiFailure(result: ApiResult<unknown>): LoadError {
+  const fromApi = (result.data as { error?: unknown } | null)?.error;
+  const refusal = typeof fromApi === "string" && fromApi.trim() ? fromApi.trim() : null;
+
   const message =
     result.status === 0
       ? "The API never answered. It is either stopped or this host cannot reach it."
       : result.status === 401
         ? "The API refused this read because no session came with the request."
         : result.status === 403
-          ? "You are signed in, but this account is not an administrator."
-          : errorMessage(result);
+          ? (refusal ?? "This account is staff, but its role does not cover this screen.")
+          : (refusal ?? `The API answered ${result.status}.`);
 
   const reason =
     result.status === 0
@@ -140,7 +149,7 @@ export function apiFailure(result: ApiResult<unknown>): LoadError {
       : result.status === 401
         ? "signed-out"
         : result.status === 403
-          ? "not-admin"
+          ? "not-permitted"
           : undefined;
 
   return { status: "error", message, reason };

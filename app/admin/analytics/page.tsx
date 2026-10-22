@@ -1,250 +1,222 @@
-import { ChartNoAxesCombined, ShieldCheck } from "lucide-react";
+import Link from "next/link";
 
 import { DataTable } from "@/components/data-table";
 import { Metric, PageHeader, PageState, Panel, Pill } from "@/components/page-header";
-import { analytics } from "@/lib/mock";
-import { present, readState } from "@/lib/load-state";
-import { dateTime } from "@/lib/format";
+import { readAnalytics, type DayCount } from "@/lib/analytics";
+import { ago, dateTime } from "@/lib/format";
 
-import type { CountRow, SeriesPoint } from "@/lib/mock/types";
+import type { Severity } from "@/lib/types";
 
-type Params = Record<string, string | string[] | undefined>;
+/* What this screen is, now that it reads the platform: how many accounts there
+   are, how many arrive per day, what the ledger mostly records, and the newest
+   rows in it. Nothing else — the door answers no question about traffic,
+   referrers, devices, countries or consent coverage, so none of those is drawn.
 
-export default async function AnalyticsPage({
-  searchParams,
-}: {
-  searchParams: Promise<Params>;
-}) {
-  const params = await searchParams;
-  const state = readState(params);
-  const view = await analytics();
-  const load = present(state, view, {
-    message: "The telemetry store answers one aggregate query; it either groups or it times out.",
-  });
+   The whole snapshot covers the door's own 30-day window, so every panel says
+   so: a count with no period is a count nobody can compare with the next one. */
+
+const DOT: Record<Severity, string> = {
+  info: "bg-[var(--text-4)]",
+  warning: "bg-warn",
+  error: "bg-danger",
+  critical: "bg-danger",
+};
+
+const TONE: Record<Severity, "muted" | "warn" | "danger"> = {
+  info: "muted",
+  warning: "warn",
+  error: "danger",
+  critical: "danger",
+};
+
+export default async function AnalyticsPage() {
+  const load = await readAnalytics();
 
   return (
     <>
       <PageHeader
         title="Analytics"
-        description="Traffic the platform can actually attribute, and the consent coverage that decides how much of it is usable."
-        state={state}
-        params={params}
+        description="What the platform can count about itself: accounts, what arrives each day, what the ledger records most, and its newest rows. Everything here is the last 30 days — the window the API counts over."
+        actions={
+          <Link href="/admin/activity" className="btn btn-secondary btn-sm">
+            Live ledger
+          </Link>
+        }
       />
 
       <PageState
         load={load}
         rows={6}
-        empty={`No telemetry inside the last ${view.rangeDays} days — either nothing was viewed or consent coverage is too low to report any of it.`}
+        empty="The platform has counted nothing in this window."
       />
 
       {load.status !== "ready" ? null : (
         <>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
             <Metric
-              label="Page views"
-              value={sum(view.traffic).toLocaleString()}
-              hint={`across ${view.rangeDays} days`}
+              label="Accounts"
+              value={load.data.accounts.total.toLocaleString()}
+              hint="every row in users, any status"
             />
             <Metric
-              label="Visits"
-              value={sum(view.visits).toLocaleString()}
-              hint={`${Math.round(sum(view.visits) / view.rangeDays)} a day`}
+              label="With console access"
+              value={load.data.accounts.admins.toLocaleString()}
+              hint="isAdmin, the one level the API has"
+              tone={load.data.accounts.admins > 0 ? "accent" : "default"}
             />
             <Metric
-              label="Signups"
-              value={sum(view.signups).toLocaleString()}
-              hint={`${view.funnel[view.funnel.length - 1]?.rate ?? 0}% still active at 7 days`}
+              label="Created today"
+              value={load.data.accounts.newToday.toLocaleString()}
+              hint="since midnight on the API's clock"
+              tone={load.data.accounts.newToday > 0 ? "success" : "default"}
             />
             <Metric
-              label="Consent rate"
-              value={`${view.consent.rate}%`}
-              hint={`${view.consent.consented} of ${view.consent.total} accounts`}
-              tone={view.consent.rate >= 80 ? "success" : "warn"}
+              label="Ledger rows"
+              value={load.data.ledgerRows.toLocaleString()}
+              hint={`every kind of event in ${load.data.windowDays} days`}
+            />
+            <Metric
+              label="Notifications"
+              value={load.data.notifications.toLocaleString()}
+              hint="all time, not the window — the only total the door gives"
             />
           </div>
 
-          <Panel
-            title={`Traffic, last ${view.rangeDays} days`}
-            hint={`as of ${dateTime(view.fetchedAt)}`}
-          >
-            <div className="flex flex-col gap-6">
-              <Series label="Page views" points={view.traffic} />
-              <Series label="Visits" points={view.visits} tone="success" />
-              <Series label="Signups" points={view.signups} tone="quiet" />
-            </div>
-          </Panel>
-
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          <div className="grid gap-4 lg:grid-cols-2">
             <Panel
-              title="Most viewed pages"
+              title="Accounts created per day"
+              hint={`Days with at least one signup inside the window; a quiet day has no row to hide behind.`}
+            >
+              <Days rows={load.data.signupsByDay} empty="No account was created in this window." />
+            </Panel>
+            <Panel
+              title="Ledger rows per day"
+              hint="The same window, counted over everything the ledger holds."
+            >
+              <Days rows={load.data.activityByDay} empty="Nothing was recorded in this window." />
+            </Panel>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <Panel
+              title="What the ledger records most"
               flush
-              hint="Paths on the public app, not console routes."
+              hint="Top kinds by row count — the platform's own events, not only console actions."
             >
               <div className="px-4 py-1">
                 <DataTable
                   columns={[
-                    { key: "path", label: "Path" },
-                    { key: "views", label: "Views", align: "right" },
-                    { key: "share", label: "Share", align: "right", hideBelow: "sm" },
+                    { key: "kind", label: "Kind" },
+                    { key: "count", label: "Rows", align: "right" },
+                    { key: "share", label: "Of the top", align: "right", hideBelow: "sm" },
                   ]}
-                  rows={view.topPages.map((p) => ({
-                    path: <code className="text-[12px]">{p.path}</code>,
-                    views: p.views.toLocaleString(),
-                    share: `${Math.round((p.views / Math.max(1, view.topPages[0]?.views ?? 1)) * 100)}%`,
+                  rows={load.data.topActions.map((a) => ({
+                    kind: <code className="text-[12px]">{a.action}</code>,
+                    count: a.count.toLocaleString(),
+                    share: `${Math.round((a.count / Math.max(1, load.data.topActions[0]?.count ?? 1)) * 100)}%`,
                   }))}
-                  empty="No page has been viewed inside the range."
+                  empty={`No ledger row of any kind inside ${load.data.windowDays} days.`}
                 />
               </div>
             </Panel>
 
-            <Panel title="Signup funnel">
-              <ol className="flex flex-col gap-3">
-                {view.funnel.map((step, i) => (
-                  <li key={step.label}>
-                    <div className="flex items-baseline justify-between gap-3">
-                      <span className="text-[13px] text-[var(--text-2)]">{step.label}</span>
-                      <span className="text-[13px] font-semibold tabular-nums">
-                        {step.count.toLocaleString()}
-                      </span>
+            <Panel
+              title="Newest ledger rows"
+              flush
+              hint="The 20 most recent the door returns — the same ledger Activity draws in full."
+              action={
+                <Link href="/admin/activity" className="btn btn-quiet btn-sm">
+                  All rows
+                </Link>
+              }
+            >
+              <ul className="divide-y divide-[var(--divider)]">
+                {load.data.recent.map((e) => (
+                  <li key={e.id} className="flex items-start gap-3 py-2.5 first:pt-1">
+                    <span
+                      className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${DOT[e.severity]}`}
+                      aria-hidden
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13px] font-medium tracking-[-0.01em] text-[var(--fg)]">
+                        {e.title}
+                      </p>
+                      <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[12px] text-[var(--muted)]">
+                        <code>{e.kind}</code>
+                        {e.personId ? (
+                          <Link
+                            href={`/admin/people/${e.personId}`}
+                            className="max-w-[16ch] truncate text-[var(--accent-text)] hover:underline"
+                          >
+                            {e.personLabel}
+                          </Link>
+                        ) : (
+                          <span>no account</span>
+                        )}
+                        {e.ipAddress ? <code>{e.ipAddress}</code> : null}
+                      </p>
                     </div>
-                    <div className="mt-1.5 flex items-center gap-2">
-                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--surface-2)]">
-                        <div
-                          className="h-full rounded-full bg-[var(--accent-solid)]"
-                          /* Each bar is this step's share of the step above it,
-                             so a leak is visible where it happens. */
-                          style={{ width: `${Math.max(3, step.rate)}%`, opacity: 1 - i * 0.13 }}
-                        />
-                      </div>
-                      <span className="w-9 shrink-0 text-right text-[11px] tabular-nums text-[var(--muted)]">
-                        {step.rate}%
-                      </span>
-                    </div>
+                    <span className="flex shrink-0 flex-col items-end gap-1">
+                      <Pill tone={TONE[e.severity]}>{e.severity}</Pill>
+                      <time
+                        className="text-[11px] tabular-nums text-[var(--muted)]"
+                        dateTime={e.createdAt}
+                        title={dateTime(e.createdAt)}
+                      >
+                        {ago(e.createdAt)}
+                      </time>
+                    </span>
                   </li>
                 ))}
-              </ol>
+              </ul>
+              {load.data.recent.length === 0 ? (
+                <p className="px-4 py-6 text-[13px] text-[var(--muted)]">
+                  The ledger is empty in this window.
+                </p>
+              ) : null}
             </Panel>
           </div>
-
-          <div className="grid gap-4 md:grid-cols-3">
-            <Panel title="Referrers">
-              <Breakdown rows={view.referrers} />
-            </Panel>
-            <Panel title="Devices">
-              <Breakdown rows={view.devices} />
-            </Panel>
-            <Panel title="Countries">
-              <Breakdown rows={view.countries} />
-            </Panel>
-          </div>
-
-          <Panel
-            title="Consent"
-            hint="Everything above is drawn from the accounts that opted in."
-            action={
-              <Pill tone={view.consent.rate >= 80 ? "success" : "warn"}>
-                <ShieldCheck size={12} aria-hidden />
-                {view.consent.rate}% covered
-              </Pill>
-            }
-          >
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-              <span className="flex items-center gap-2 text-[13px] text-[var(--text-2)]">
-                <ChartNoAxesCombined size={14} aria-hidden />
-                {view.consent.consented} consented · {view.consent.total - view.consent.consented}{" "}
-                not
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {view.consent.byPurpose.map((p) => (
-                  <span
-                    key={p.label}
-                    className="rounded-full bg-[var(--surface-2)] px-2.5 py-1 text-[12px] text-[var(--text-2)]"
-                  >
-                    {p.label} · <span className="tabular-nums font-medium">{p.value}</span>
-                  </span>
-                ))}
-              </div>
-            </div>
-          </Panel>
         </>
       )}
     </>
   );
 }
 
-function sum(points: SeriesPoint[]): number {
-  return points.reduce((t, p) => t + p.value, 0);
-}
+/** Day counts as bars scaled to the busiest day in the set. Each row is a day
+    the door returned; the total beside it is what it counted, so a tall bar on
+    a small window cannot be mistaken for a rate. */
+function Days({ rows, empty }: { rows: DayCount[]; empty: string }) {
+  if (rows.length === 0) {
+    return <p className="text-[13px] text-[var(--muted)]">{empty}</p>;
+  }
 
-/** A labelled sparkline. The three series are on one screen at wildly
-    different magnitudes, so each scales to its own peak and says so. */
-function Series({
-  label,
-  points,
-  tone = "accent",
-}: {
-  label: string;
-  points: SeriesPoint[];
-  tone?: "accent" | "success" | "quiet";
-}) {
-  const max = Math.max(...points.map((p) => p.value), 1);
-  const fill = {
-    accent: "var(--accent-solid)",
-    success: "var(--success)",
-    quiet: "var(--text-4)",
-  }[tone];
+  const peak = Math.max(...rows.map((r) => r.count), 1);
+  const total = rows.reduce((t, r) => t + r.count, 0);
 
   return (
     <div>
-      <div className="mb-2 flex items-baseline justify-between gap-3">
-        <span className="text-[12px] font-medium uppercase tracking-[0.05em] text-[var(--muted)]">
-          {label}
-        </span>
-        <span className="text-[13px] tabular-nums text-[var(--text-2)]">
-          peak {max.toLocaleString()} · {points[points.length - 1]?.label}
-        </span>
-      </div>
-      <div
-        className="flex h-20 items-end gap-1"
-        role="img"
-        aria-label={`${label} daily series`}
-      >
-        {points.map((p) => (
-          <div
-            key={p.label}
-            className="flex-1 rounded-t-[3px]"
-            style={{
-              height: `${Math.max(3, Math.round((p.value / max) * 100))}%`,
-              background: fill,
-              opacity: 0.78,
-            }}
-            title={`${p.label}: ${p.value.toLocaleString()}`}
-          />
+      <ul className="flex flex-col gap-2.5">
+        {rows.map((r) => (
+          <li key={r.day} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3">
+            <span className="w-[5.5rem] shrink-0 text-[12px] tabular-nums text-[var(--muted)]">
+              {r.label}
+            </span>
+            <div className="h-1.5 overflow-hidden rounded-full bg-[var(--surface-2)]">
+              <div
+                className="h-full rounded-full bg-[var(--accent-solid)]"
+                style={{ width: `${Math.max(2, Math.round((r.count / peak) * 100))}%` }}
+              />
+            </div>
+            <span className="w-9 shrink-0 text-right text-[12px] tabular-nums text-[var(--text-2)]">
+              {r.count}
+            </span>
+          </li>
         ))}
-      </div>
+      </ul>
+      <p className="mt-3 flex items-center justify-between gap-2 border-t border-[var(--divider)] pt-3 text-[12px] tabular-nums text-[var(--muted)]">
+        <span>{rows.length} days with rows</span>
+        <span>{total.toLocaleString()} total</span>
+      </p>
     </div>
-  );
-}
-
-function Breakdown({ rows }: { rows: CountRow[] }) {
-  const max = Math.max(...rows.map((r) => r.value), 1);
-  const total = rows.reduce((t, r) => t + r.value, 0) || 1;
-  return (
-    <ul className="flex flex-col gap-2.5">
-      {rows.map((r) => (
-        <li key={r.label} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1">
-          <span className="truncate text-[13px] text-[var(--text-2)]">{r.label}</span>
-          <span className="text-[13px] tabular-nums text-[var(--muted)]">
-            {Math.round((r.value / total) * 100)}%
-          </span>
-          <div className="col-span-2 h-1.5 overflow-hidden rounded-full bg-[var(--surface-2)]">
-            <div
-              className="h-full rounded-full bg-[var(--accent-solid)]"
-              style={{ width: `${Math.round((r.value / max) * 100)}%` }}
-            />
-          </div>
-        </li>
-      ))}
-    </ul>
   );
 }

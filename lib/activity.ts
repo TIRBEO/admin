@@ -1,7 +1,7 @@
 import { apiFailure, apiGet } from "@/lib/api";
 import type { Load } from "@/lib/load-state";
 
-import type { ActivityEvent, OnlineUser, Severity } from "@/lib/mock/types";
+import type { ActivityEvent, OnlineUser, Severity } from "@/lib/types";
 
 /** The Activity screen's one read: GET /api/admin/activity.
  *

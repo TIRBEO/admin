@@ -5,6 +5,7 @@ import { ArrowLeft, MailOpen, MailWarning } from "lucide-react";
 import { Field, PageHeader, PageState, Panel, Pill } from "@/components/page-header";
 import { ReplyForm } from "@/components/reply-form";
 import { readThread } from "@/lib/support";
+import { can } from "@/lib/permissions";
 import { ago, dateTime } from "@/lib/format";
 
 /* One thread, read from the ledger it lives in.
@@ -38,6 +39,7 @@ export default async function TicketThreadPage({
   const code = decodeURIComponent(id ?? "").trim();
   if (!code) notFound();
 
+  const mayAnswer = await can("tickets.answer");
   const load = await readThread(code);
   /* Nothing in the ledger carries this code. A thread that does not exist is a
      404, not an error plate — the screen would otherwise ask the operator to
@@ -108,7 +110,14 @@ export default async function TicketThreadPage({
                   : undefined
               }
             >
-              {replyTo ? (
+              {!mayAnswer ? (
+                <p className="text-[13px] leading-relaxed text-[var(--muted)]">
+                  Reading this queue does not include writing to it. Answering needs the{" "}
+                  <code className="text-[var(--text-2)]">tickets.answer</code> permission, and your role
+                  does not have it — the question, its reference and everything said so far are still here
+                  in full.
+                </p>
+              ) : replyTo ? (
                 <ReplyForm
                   code={thread.ref}
                   to={replyTo}

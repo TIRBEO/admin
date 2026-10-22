@@ -1,111 +1,88 @@
-import { apiFailure, apiGet } from "@/lib/api";
+import { apiGet, apiFailure, type ApiResult } from "@/lib/api";
 import type { Load } from "@/lib/load-state";
-import { fetchSecurityScore } from "@/lib/security";
+import { readOpenRequests, type OpenRequests } from "@/lib/support-summary";
 
-import type {
-  AuditEvent,
-  CountRow,
-  DashSnapshot,
-  EmailDelivery,
-  HealthCheck,
-  SecurityScore,
-  SeriesPoint,
-  Severity,
-  SlowQuery,
-  Ticket,
-  UserLogin,
-} from "@/lib/mock/types";
+import type { CountRow, SeriesPoint, Severity } from "@/lib/types";
 
 /* ═══════════════════════════════════════════════════════════════════
    The Overview screen, read from the platform.
 
-   The console draws from two doors: GET /admin/dash for the counters and
-   the series, GET /admin/security/score for the posture. Both are real
-   queries over the live tables — the numbers on this screen are the
-   platform's, not a rehearsal of them.
+   This screen is the one an operator opens when something is wrong, so every
+   number on it has to be a measurement the platform actually took. The route
+   behind GET /admin/dash answers a very large object, and a great deal of it is
+   hardcoded in the route itself — table entries that resolve to `Promise.resolve(0)`,
+   series that are always empty, `recent*` lists that are always empty, and a
+   `topTemplates` that groups on one column while reading another. Drawing any of
+   those would tell an operator "nobody used this today" about a thing that was
+   never measured. That is the one lie this console cannot tell, so those fields
+   are dropped and simply never appear — no empty panel, no decorative zero.
 
-   The two doors answer in their own words, and this file is the only
-   place that knows how they differ: the API counts sessions "active" and
-   the console says "active"; the API reports uptime in seconds under
-   `uptime`; health checks arrive as a map and the console draws a list.
-   Every translation lives here so the page keeps talking the console's
-   language and a second screen reading the same door cannot invent its
-   own mapping.
+   What is kept is only what the route computes against a live table:
+   the account / security / login / notification / email counts, the five series
+   that come back from a real day-bucket query, the top event kinds, the newest
+   real ledger rows, uptime, and the block-rate alerts the limiter actually raised.
 
-   What the API does not answer is left empty rather than invented: a
-   number nobody measured is a zero the operator can see is a zero, not a
-   figure this file made up to fill a box.
-   ═══════════════════════════════════════════════════════════════════ */
+   The other two doors — the helpdesk queue and the security posture — are read
+   separately and reported with their own success or failure, so a queue that
+   refuses does not blank the counters that did answer. */
 
-type ApiSeries = { label: string; value: number }[];
+// ── the dash door, as it actually arrives ──────────────────────────────────
+
+function num(v: unknown): number {
+  return typeof v === "number" && Number.isFinite(v) ? v : 0;
+}
+
+function str(v: unknown): string {
+  return typeof v === "string" ? v : "";
+}
+
+type ApiSeries = Array<{ label?: string; value?: number }>;
 
 type ApiDash = {
   fetchedAt?: string;
   uptime?: number;
   overview?: {
-    users?: {
-      total?: number;
-      active?: number;
-      activeToday?: number;
-      newToday?: number;
-      newThisWeek?: number;
-      newThisMonth?: number;
-    };
+    users?: { total?: number; active?: number; newToday?: number; newThisWeek?: number };
     notifications?: { total?: number; unread?: number };
-    tickets?: { total?: number; open?: number };
-    sessions?: { total?: number; active?: number };
-    emails?: { total?: number; today?: number; lastHour?: number; failures?: number };
-    logins?: { total?: number; today?: number };
     securityEventsToday?: number;
-    requests?: { hits?: number; blocked?: number; bypassed?: number; blockRate?: number };
   };
-  tables?: Record<string, number>;
+  // The email total lives here: the route's own `emails.total` reads a table key
+  // (`emailLog`) that is never populated, so the count nobody defined would be a
+  // zero. `tables.emailDelivery` is the genuine `email_deliveries.count()`.
+  tables?: { emailDelivery?: number };
   users?: {
     banned?: number;
     suspended?: number;
     scheduledDeletion?: number;
     deleted?: number;
     twoFA?: number;
-    mustChange?: number;
     oauth?: { google?: number; github?: number; discord?: number };
   };
+  logins?: { today?: number; failedToday?: number; successRateToday?: number };
   emails?: {
-    total?: number;
     today?: number;
     lastHour?: number;
     failures?: number;
-    opened?: number;
-    clicked?: number;
-    openRate?: number;
-    clickRate?: number;
+    byStatus?: Array<{ status?: string; count?: number }>;
   };
-  logins?: {
-    total?: number;
-    today?: number;
-    successToday?: number;
-    failedToday?: number;
-    successRateToday?: number;
-    byMethod?: Array<{ method?: string; count?: number }>;
-  };
-  push?: { total?: number };
   notifications?: { byType?: Array<{ type?: string; count?: number }> };
   series?: {
     activity?: ApiSeries;
     users?: ApiSeries;
     emails?: ApiSeries;
     logins?: ApiSeries;
-    security?: ApiSeries;
+    notifications?: ApiSeries;
   };
   topActions?: Array<{ action?: string; count?: number }>;
   recentAudit?: Array<{
     id: string;
     kind?: string;
     title?: string;
-    detail?: string | null;
     severity?: Severity;
     ipAddress?: string | null;
-    userId?: string | null;
     createdAt: string;
+    actor?: { email?: string | null; name?: string | null } | null;
+    user?: { email?: string | null; profile?: { name?: string | null } | null } | null;
   }>;
   recentEmails?: Array<{
     id: string;
@@ -113,25 +90,30 @@ type ApiDash = {
     subject?: string;
     eventKey?: string;
     status?: string;
-    openedAt?: string | null;
-    clickedAt?: string | null;
     createdAt: string;
   }>;
   recentLogins?: Array<{
     id: string;
-    eventType?: string;
     kind?: string;
+    eventType?: string;
     ipAddress?: string | null;
     userId?: string | null;
     createdAt: string;
   }>;
   recentSecurity?: Array<{
     id: string;
-    eventType?: string;
     kind?: string;
+    eventType?: string;
     severity?: Severity;
     ipAddress?: string | null;
     userId?: string | null;
+    createdAt: string;
+  }>;
+  recentNotifications?: Array<{
+    id: string;
+    type?: string;
+    title?: string;
+    isRead?: boolean;
     createdAt: string;
   }>;
   alerts?: {
@@ -144,272 +126,388 @@ type ApiDash = {
       message?: string;
     }>;
   };
-  health?: {
-    status?: string;
-    checks?: Record<string, { status?: string; latencyMs?: number | null }>;
-    redis?: { configured?: boolean; keys?: number; memoryBytes?: number | null; latencyMs?: number | null };
-    pool?: { total?: number; idle?: number; inUse?: number; waiting?: number };
-    version?: string;
-  };
-  queryPerf?: { slowest?: SlowQuery[] };
 };
 
-function num(v: unknown): number {
-  return typeof v === "number" && Number.isFinite(v) ? v : 0;
-}
+// ── what the screen draws ──────────────────────────────────────────────────
 
-function series(points: ApiSeries | undefined): SeriesPoint[] {
-  if (!Array.isArray(points)) return [];
-  return points.map((p) => ({ label: p.label ?? "", value: num(p.value) }));
-}
+export type LiveNumbers = {
+  accountsTotal: number;
+  accountsActiveWeek: number;
+  newToday: number;
+  newThisWeek: number;
+  signinsToday: number;
+  signinFailuresToday: number;
+  emailsToday: number;
+  emailsLastHour: number;
+  securityEventsToday: number;
+  notificationsTotal: number;
+  notificationsUnread: number;
+};
 
-function counts(rows: Array<{ label?: string; count?: number }> | undefined, fallback: string): CountRow[] {
-  if (!Array.isArray(rows)) return [{ label: fallback, value: 0 }];
-  return rows.map((r) => ({ label: r.label ?? fallback, value: num(r.count) }));
-}
+export type RecentAudit = {
+  id: string;
+  kind: string;
+  title: string;
+  severity: Severity;
+  ipAddress: string | null;
+  actor: string;
+  createdAt: string;
+};
 
-function healthChecks(
-  raw: Record<string, { status?: string; latencyMs?: number | null; error?: string; code?: string }> | undefined,
-): HealthCheck[] {
-  if (!raw || typeof raw !== "object") return [];
-  return Object.entries(raw).map(([name, check]) => ({
-    name,
-    status: check?.status ?? "unknown",
-    latencyMs: typeof check?.latencyMs === "number" ? check.latencyMs : null,
-    detail: check?.error ?? check?.code ?? "",
-  }));
-}
+export type RecentLogin = {
+  id: string;
+  kind: string;
+  userId: string | null;
+  ipAddress: string | null;
+  createdAt: string;
+};
 
-function toAudit(rows: ApiDash["recentAudit"]): AuditEvent[] {
-  if (!Array.isArray(rows)) return [];
-  return rows.map((r) => ({
-    id: r.id,
-    actorId: r.userId ?? "system",
-    action: r.kind ?? "activity",
-    title: r.title ?? r.kind ?? "Activity",
-    targetType: "activity",
-    targetId: r.id,
-    severity: (r.severity ?? "info") as Severity,
-    ipAddress: r.ipAddress ?? null,
-    metadata: {},
-    createdAt: r.createdAt,
-  }));
-}
+export type RecentEvent = {
+  id: string;
+  kind: string;
+  severity: Severity;
+  userId: string | null;
+  ipAddress: string | null;
+  createdAt: string;
+};
 
-function toEmails(rows: ApiDash["recentEmails"]): EmailDelivery[] {
-  if (!Array.isArray(rows)) return [];
-  return rows.map((r) => ({
-    id: r.id,
-    jobId: null,
-    userId: null,
-    toEmail: r.toEmail ?? "",
-    eventKey: r.eventKey ?? "",
-    event: r.eventKey ?? "",
-    category: "",
-    subject: r.subject ?? "(no subject)",
-    status: r.status ?? "unknown",
-    provider: null,
-    providerId: null,
-    messageId: null,
-    openedAt: r.openedAt ?? null,
-    clickedAt: r.clickedAt ?? null,
-    createdAt: r.createdAt,
-  }));
-}
+export type RecentEmail = {
+  id: string;
+  toEmail: string;
+  subject: string;
+  eventKey: string;
+  status: string;
+  createdAt: string;
+};
 
-function toLogins(rows: ApiDash["recentLogins"]): UserLogin[] {
-  if (!Array.isArray(rows)) return [];
-  return rows.map((r) => ({
-    id: r.id,
-    userId: r.userId ?? "",
-    method: (r.eventType ?? r.kind ?? "unknown") as UserLogin["method"],
-    success: true,
-    ipAddress: r.ipAddress ?? null,
-    userAgent: null,
-    location: null,
-    createdAt: r.createdAt,
-  }));
-}
+export type RecentNotice = {
+  id: string;
+  type: string;
+  title: string;
+  isRead: boolean;
+  createdAt: string;
+};
 
-/** The dash door's alerts are rate-limit block alerts; the console draws
-    them as things that need attention, which is what they are. */
-function toAlerts(dash: ApiDash): DashSnapshot["alerts"] {
-  const recent = dash.alerts?.recentAlerts;
-  if (!Array.isArray(recent)) return [];
-  return recent.map((a, i) => ({
-    id: `block-rate-${a.timestamp ?? i}`,
-    severity: (num(a.blockRate) > num(a.threshold) ? "critical" : "warning") as Severity,
-    title: "Request block rate is high",
-    detail: a.message ?? "Requests are being blocked above the configured threshold.",
-    at: new Date(a.timestamp ?? Date.now()).toISOString(),
-  }));
-}
+export type DashAlert = {
+  id: string;
+  message: string;
+  at: string;
+  blockRate: number;
+  threshold: number;
+  totalBlocked: number;
+};
 
-function toSnapshot(dash: ApiDash): DashSnapshot {
-  const users = dash.overview?.users ?? {};
-  const total = num(users.total);
-  const banned = num(dash.users?.banned);
-  const suspended = num(dash.users?.suspended);
-  const deletionPending = num(dash.users?.scheduledDeletion);
-  const deleted = num(dash.users?.deleted);
-  const held = banned + suspended + deletionPending + deleted;
-
-  return {
-    fetchedAt: dash.fetchedAt ?? new Date().toISOString(),
-    uptimeSeconds: num(dash.uptime),
-    overview: {
-      users: {
-        total,
-        active: num(users.active),
-        activeToday: num(users.activeToday),
-        newToday: num(users.newToday),
-        newThisWeek: num(users.newThisWeek),
-        newThisMonth: num(users.newThisMonth),
-      },
-      emails: {
-        total: num(dash.emails?.total),
-        today: num(dash.emails?.today),
-        lastHour: num(dash.emails?.lastHour),
-        failures: num(dash.emails?.failures),
-        opened: num(dash.emails?.opened),
-        clicked: num(dash.emails?.clicked),
-        openRate: num(dash.emails?.openRate),
-        clickRate: num(dash.emails?.clickRate),
-      },
-      logins: {
-        total: num(dash.logins?.total),
-        today: num(dash.logins?.today),
-        successToday: num(dash.logins?.successToday),
-        failedToday: num(dash.logins?.failedToday),
-        successRateToday: num(dash.logins?.successRateToday),
-      },
-      sessions: {
-        total: num(dash.overview?.sessions?.total),
-        active: num(dash.overview?.sessions?.active),
-      },
-      securityEventsToday: num(dash.overview?.securityEventsToday),
-      notifications: {
-        total: num(dash.overview?.notifications?.total),
-        unread: num(dash.overview?.notifications?.unread),
-      },
-      tickets: {
-        total: num(dash.overview?.tickets?.total),
-        open: num(dash.overview?.tickets?.open),
-      },
-      push: { total: num(dash.push?.total) },
-      twoFA: num(dash.users?.twoFA),
-      mustChangePw: num(dash.users?.mustChange),
-      banned,
-      suspended,
-      deletionPending,
-      requests: {
-        hits: num(dash.overview?.requests?.hits),
-        blocked: num(dash.overview?.requests?.blocked),
-        bypassed: num(dash.overview?.requests?.bypassed),
-        blockRate: num(dash.overview?.requests?.blockRate),
-      },
-    },
-    tables: Object.entries(dash.tables ?? {}).map(([name, rows]) => ({ name, rows: num(rows) })),
-    series: {
-      users: series(dash.series?.users),
-      activity: series(dash.series?.activity),
-      emails: series(dash.series?.emails),
-      logins: series(dash.series?.logins),
-      security: series(dash.series?.security),
-      signups: series(dash.series?.users),
-    },
-    breakdowns: {
-      usersByStatus: [
-        { label: "Active", value: Math.max(0, total - held) },
-        { label: "Banned", value: banned },
-        { label: "Suspended", value: suspended },
-        { label: "Deletion pending", value: deletionPending },
-        { label: "Deleted", value: deleted },
-      ],
-      loginsByMethod: counts(dash.logins?.byMethod, "unknown"),
-      emailsByStatus: [],
-      notificationsByType: counts(dash.notifications?.byType, "other"),
-      activityTopKinds: counts(dash.topActions, "activity"),
-      oauth: [
-        { label: "Google", value: num(dash.users?.oauth?.google) },
-        { label: "GitHub", value: num(dash.users?.oauth?.github) },
-        { label: "Discord", value: num(dash.users?.oauth?.discord) },
-      ],
-    },
-    recents: {
-      audit: toAudit(dash.recentAudit),
-      logins: toLogins(dash.recentLogins),
-      security: (dash.recentSecurity ?? []).map((r) => ({
-        id: r.id,
-        eventType: r.eventType ?? r.kind ?? "unknown",
-        severity: (r.severity ?? "info") as Severity,
-        ipAddress: r.ipAddress ?? null,
-        userAgent: null,
-        userId: r.userId ?? null,
-        createdAt: r.createdAt,
-        ref: r.id.slice(0, 8),
-      })),
-      emails: toEmails(dash.recentEmails),
-      tickets: [] as Ticket[],
-      notifications: [],
-    },
-    alerts: toAlerts(dash),
-    health: {
-      status: (dash.health?.status ?? "unknown") as "ok" | "degraded" | "down" | "unknown",
-      fetchedAt: dash.fetchedAt ?? new Date().toISOString(),
-      uptimeSeconds: num(dash.uptime),
-      version: dash.health?.version ?? "—",
-      checks: healthChecks(dash.health?.checks),
-      redis: {
-        configured: Boolean(dash.health?.redis?.configured),
-        keys: num(dash.health?.redis?.keys),
-        memoryBytes: dash.health?.redis?.memoryBytes ?? null,
-        latencyMs: dash.health?.redis?.latencyMs ?? null,
-      },
-      pool: {
-        total: num(dash.health?.pool?.total),
-        idle: num(dash.health?.pool?.idle),
-        inUse: num(dash.health?.pool?.inUse),
-        waiting: num(dash.health?.pool?.waiting),
-      },
-    },
-    slowest: dash.queryPerf?.slowest ?? [],
+export type Core = {
+  fetchedAt: string;
+  days: number;
+  uptimeSeconds: number;
+  live: LiveNumbers;
+  accountsHeld: number;
+  accountsByStatus: CountRow[];
+  oauth: CountRow[];
+  twoFA: number;
+  emailStatus: CountRow[];
+  emailTotal: number;
+  noticeTypes: CountRow[];
+  series: {
+    activity: SeriesPoint[];
+    users: SeriesPoint[];
+    emails: SeriesPoint[];
+    logins: SeriesPoint[];
+    notifications: SeriesPoint[];
   };
-}
+  topActions: CountRow[];
+  alerts: DashAlert[];
+  recentAudit: RecentAudit[];
+  recentLogins: RecentLogin[];
+  recentEvents: RecentEvent[];
+  recentEmails: RecentEmail[];
+  recentNotices: RecentNotice[];
+};
 
-export async function readDashboard(): Promise<Load<{ snapshot: DashSnapshot; score: SecurityScore }>> {
-  const [dash, score] = await Promise.all([
-    apiGet<ApiDash>("/admin/dash?days=14"),
-    fetchSecurityScore(),
-  ]);
+// ── the security door ──────────────────────────────────────────────────────
 
-  if (!dash.ok) return apiFailure(dash);
-  if (!dash.data) return { status: "error", message: "The API answered with no snapshot in it." };
+export type MeasuredFactor = {
+  name: string;
+  score: number;
+  maxScore: number;
+  status: "good" | "warning" | "critical";
+  description: string;
+};
+
+export type ScoreSummary = {
+  factors: MeasuredFactor[];
+  measuredScore: number;
+  measuredMax: number;
+  stats: {
+    totalUsers: number;
+    usersWith2FA: number;
+    activeSessions: number;
+    revokedSessions: number;
+    blockedIPs: number;
+    blockedUsers: number;
+  };
+  topIPs: Array<{ ip: string; count: number; lastSeen: string | null }>;
+  topEventTypes: Array<{ type: string; count: number }>;
+  recentCritical: Array<{
+    id: string;
+    kind: string;
+    ipAddress: string | null;
+    actor: string | null;
+    createdAt: string;
+  }>;
+};
+
+/* The posture door reports only what a query produced. It used to add five
+ * factors of which three were literals in the handler (`passwordScore = 18`,
+ * "Assuming strong password policy"), and this screen had to know that and
+ * filter them out by name. The route now sends `measured` and a separately
+ * labelled `unmeasured`, so the allowlist is gone: whatever arrives is counted. */
+type ApiFactor = {
+  name?: string;
+  score?: number;
+  maxScore?: number;
+  status?: MeasuredFactor["status"];
+  observed?: number;
+  detail?: string;
+};
+
+type ApiScore = {
+  windowDays?: number;
+  measured?: ApiFactor[];
+  unmeasured?: Array<{ name?: string; why?: string }>;
+  counts?: {
+    totalUsers?: number;
+    usersWith2FA?: number;
+    activeSessions?: number;
+    revokedSessions?: number;
+    blockedIPs?: number;
+    blockedUsers?: number;
+    criticalLastWindow?: number;
+  };
+  busiestIPs?: Array<{ ip?: string; count?: number; lastSeen?: string | null }>;
+  eventKinds?: Array<{ type?: string; count?: number }>;
+  recentCritical?: Array<{
+    id: string;
+    kind?: string;
+    eventType?: string;
+    ipAddress?: string | null;
+    createdAt: string;
+    user?: { email?: string | null; name?: string | null } | null;
+  }>;
+};
+
+function readScore(result: ApiResult<ApiScore>): Load<ScoreSummary> {
+  if (!result.ok) return apiFailure(result);
+  if (!result.data) return { status: "error", message: "The API answered with no posture in it." };
+  const raw = result.data;
+
+  const factors: MeasuredFactor[] = (raw.measured ?? []).map((f) => ({
+    name: str(f.name),
+    score: num(f.score),
+    maxScore: num(f.maxScore),
+    status: f.status ?? "warning",
+    description: str(f.detail),
+  }));
 
   return {
     status: "ready",
     data: {
-      snapshot: toSnapshot(dash.data),
-      // The score is a second door. If it is the one that failed, the screen
-      // still has its counters — losing the whole overview because a posture
-      // query was refused would be a worse answer than showing the posture as
-      // unmeasured.
-      score: score ?? {
-        score: 0,
-        threatLevel: "low",
-        factors: [],
-        stats: {
-          totalUsers: 0,
-          usersWith2FA: 0,
-          activeSessions: 0,
-          revokedSessions: 0,
-          blockedIPs: 0,
-          blockedUsers: 0,
-        },
-        topIPs: [],
-        topEventTypes: [],
-        recentCritical: [],
+      factors,
+      measuredScore: factors.reduce((sum, f) => sum + f.score, 0),
+      measuredMax: factors.reduce((sum, f) => sum + f.maxScore, 0),
+      stats: {
+        totalUsers: num(raw.counts?.totalUsers),
+        usersWith2FA: num(raw.counts?.usersWith2FA),
+        activeSessions: num(raw.counts?.activeSessions),
+        revokedSessions: num(raw.counts?.revokedSessions),
+        blockedIPs: num(raw.counts?.blockedIPs),
+        blockedUsers: num(raw.counts?.blockedUsers),
       },
+      // `lastSeen` is the row's own timestamp now, so it is kept: an address
+      // that has not been seen in three weeks is a different lead from one that
+      // was seen a minute ago.
+      topIPs: (raw.busiestIPs ?? []).map((p) => ({
+        ip: str(p.ip) || "not recorded",
+        count: num(p.count),
+        lastSeen: p.lastSeen ?? null,
+      })),
+      topEventTypes: (raw.eventKinds ?? []).map((t) => ({
+        type: str(t.type) || "unknown",
+        count: num(t.count),
+      })),
+      recentCritical: (raw.recentCritical ?? []).map((e) => ({
+        id: e.id,
+        kind: e.eventType ?? e.kind ?? "unknown",
+        ipAddress: e.ipAddress ?? null,
+        actor: e.user?.name ?? e.user?.email ?? null,
+        createdAt: e.createdAt,
+      })),
+    },
+  };
+}
+
+// ── the dash door → the screen's shape ─────────────────────────────────────
+
+function series(points: ApiSeries | undefined): SeriesPoint[] {
+  if (!Array.isArray(points)) return [];
+  return points.map((p) => ({ label: str(p.label), value: num(p.value) }));
+}
+
+function counts<T extends { count?: number }>(
+  rows: T[] | undefined,
+  label: (row: T) => string,
+): CountRow[] {
+  if (!Array.isArray(rows)) return [];
+  return rows.map((r) => ({ label: label(r) || "unknown", value: num(r.count) }));
+}
+
+function severity(v: unknown): Severity {
+  return v === "warning" || v === "error" || v === "critical" ? v : "info";
+}
+
+function toCore(dash: ApiDash, days: number): Core {
+  const users = dash.overview?.users ?? {};
+  const banned = num(dash.users?.banned);
+  const suspended = num(dash.users?.suspended);
+  const deletion = num(dash.users?.scheduledDeletion);
+  const deleted = num(dash.users?.deleted);
+  const total = num(users.total);
+  const held = banned + suspended + deletion + deleted;
+
+  return {
+    fetchedAt: str(dash.fetchedAt) || new Date().toISOString(),
+    days,
+    uptimeSeconds: num(dash.uptime),
+    live: {
+      accountsTotal: total,
+      accountsActiveWeek: num(users.active),
+      newToday: num(users.newToday),
+      newThisWeek: num(users.newThisWeek),
+      signinsToday: num(dash.logins?.today),
+      signinFailuresToday: num(dash.logins?.failedToday),
+      emailsToday: num(dash.emails?.today),
+      emailsLastHour: num(dash.emails?.lastHour),
+      securityEventsToday: num(dash.overview?.securityEventsToday),
+      notificationsTotal: num(dash.overview?.notifications?.total),
+      notificationsUnread: num(dash.overview?.notifications?.unread),
+    },
+    accountsHeld: held,
+    // Every slice here is a computed status count; "Active" is the remainder of
+    // the computed total, never a placeholder.
+    accountsByStatus: [
+      { label: "Active", value: Math.max(0, total - held) },
+      { label: "Banned", value: banned },
+      { label: "Suspended", value: suspended },
+      { label: "Deletion pending", value: deletion },
+      { label: "Deleted", value: deleted },
+    ],
+    oauth: [
+      { label: "Google", value: num(dash.users?.oauth?.google) },
+      { label: "GitHub", value: num(dash.users?.oauth?.github) },
+      { label: "Discord", value: num(dash.users?.oauth?.discord) },
+    ],
+    twoFA: num(dash.users?.twoFA),
+    emailStatus: counts(dash.emails?.byStatus, (r) => str(r.status)),
+    emailTotal: num(dash.tables?.emailDelivery),
+    noticeTypes: counts(dash.notifications?.byType, (r) => str(r.type)),
+    // `series.security` is the same unfiltered activity query as `series.activity`,
+    // and tickets/submissions/incidents/media are always empty — only these five
+    // are distinct, real day-bucket queries.
+    series: {
+      activity: series(dash.series?.activity),
+      users: series(dash.series?.users),
+      emails: series(dash.series?.emails),
+      logins: series(dash.series?.logins),
+      notifications: series(dash.series?.notifications),
+    },
+    topActions: counts(dash.topActions, (r) => str(r.action)),
+    alerts: (dash.alerts?.recentAlerts ?? []).map((a, i) => ({
+      id: `block-rate-${a.timestamp ?? i}`,
+      message: str(a.message) || "Request block rate is above the configured threshold.",
+      at: new Date(a.timestamp ?? Date.now()).toISOString(),
+      blockRate: num(a.blockRate),
+      threshold: num(a.threshold),
+      totalBlocked: num(a.totalBlocked),
+    })),
+    recentAudit: (dash.recentAudit ?? []).map((r) => ({
+      id: r.id,
+      kind: str(r.kind) || "activity",
+      title: str(r.title) || str(r.kind) || "Activity",
+      severity: severity(r.severity),
+      ipAddress: r.ipAddress ?? null,
+      actor: r.actor?.name ?? r.actor?.email ?? r.user?.profile?.name ?? r.user?.email ?? "system",
+      createdAt: r.createdAt,
+    })),
+    recentLogins: (dash.recentLogins ?? []).map((r) => ({
+      id: r.id,
+      kind: str(r.eventType ?? r.kind) || "sign-in",
+      userId: r.userId ?? null,
+      ipAddress: r.ipAddress ?? null,
+      createdAt: r.createdAt,
+    })),
+    recentEvents: (dash.recentSecurity ?? []).map((r) => ({
+      id: r.id,
+      kind: str(r.eventType ?? r.kind) || "event",
+      severity: severity(r.severity),
+      userId: r.userId ?? null,
+      ipAddress: r.ipAddress ?? null,
+      createdAt: r.createdAt,
+    })),
+    recentEmails: (dash.recentEmails ?? []).map((r) => ({
+      id: r.id,
+      toEmail: str(r.toEmail),
+      subject: str(r.subject) || "(no subject)",
+      eventKey: str(r.eventKey),
+      status: str(r.status) || "unknown",
+      createdAt: r.createdAt,
+    })),
+    recentNotices: (dash.recentNotifications ?? []).map((r) => ({
+      id: r.id,
+      type: str(r.type) || "notice",
+      title: str(r.title) || "(untitled)",
+      isRead: Boolean(r.isRead),
+      createdAt: r.createdAt,
+    })),
+  };
+}
+
+// ── the one read the screen makes ──────────────────────────────────────────
+
+export type Dashboard = {
+  core: Core;
+  score: Load<ScoreSummary>;
+  requests: Load<OpenRequests>;
+};
+
+/** Clamp to the window the route will actually serve (7–90 days). */
+function windowDays(raw: number | undefined): number {
+  if (!raw || !Number.isFinite(raw)) return 14;
+  return Math.min(90, Math.max(7, Math.round(raw)));
+}
+
+export async function readDashboard(
+  days: number,
+): Promise<Load<Dashboard>> {
+  const window = windowDays(days);
+  const [dash, score, requests] = await Promise.all([
+    apiGet<ApiDash>(`/admin/dash?days=${window}`),
+    apiGet<ApiScore>("/admin/security/score"),
+    readOpenRequests(6),
+  ]);
+
+  // The dash door is the backbone; if it fails the whole screen has no numbers.
+  if (!dash.ok) return apiFailure(dash);
+  if (!dash.data) return { status: "error", message: "The API answered with no snapshot in it." };
+
+  // The other two doors report themselves: a refused queue or posture leaves
+  // its panel as an error, but never drags the counters that did answer down.
+  return {
+    status: "ready",
+    data: {
+      core: toCore(dash.data, window),
+      score: readScore(score),
+      requests,
     },
   };
 }

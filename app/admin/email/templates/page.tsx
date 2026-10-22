@@ -1,107 +1,140 @@
 import Link from "next/link";
 
-import { ago, dateOnly } from "@/lib/format";
-import { getTemplate, listTemplates } from "@/lib/mock";
-import { NOW_ISO } from "@/lib/mock/world";
+import { EmailTemplateEditor } from "@/components/email-template-editor";
+import { PageHeader, PageState, Panel, Pill } from "@/components/page-header";
+import { readTemplates } from "@/lib/email-templates";
+import { dateOnly, dateTime } from "@/lib/format";
+import { can } from "@/lib/permissions";
+
+import type { EmailTemplate } from "@/lib/types";
+
+/* The mail bodies, and the slots each one fills.
+
+   The registry reads in one shot — the door hands back every template with its
+   body attached — so opening a template is navigation, not a request: the slug
+   in the URL names which loaded row to draw. That is why selecting here is a
+   plain link rather than a client fetch; there is nothing second to retrieve.
+
+   What the screen prints comes from the row, nothing more: the subject and body
+   are the template's own, the slot names are what the body actually contains,
+   and the declared-variable list is exactly what the registry stores. */
+
+type Params = Record<string, string | string[] | undefined>;
 
 export default async function EmailTemplatesPage({
   searchParams,
 }: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  searchParams: Promise<Params>;
 }) {
   const params = await searchParams;
   const raw = params.slug;
   const slug = (Array.isArray(raw) ? raw[0] : raw) ?? "";
 
-  const templates = await listTemplates();
-  const selected = slug ? await getTemplate(slug) : (templates[0] ?? null);
+  const mayEdit = await can("email.configure");
+  const load = await readTemplates();
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6">
-      <div className="mb-6">
-        <h1 className="text-lg font-semibold text-[var(--fg)]">Templates</h1>
-        <p className="mt-1 text-[13px] text-[var(--text-3)]">Registry of email templates</p>
-      </div>
+    <>
+      <PageHeader
+        title="Templates"
+        description="Every mail the platform can build, with the slots it fills and the body a person receives. Opening one lets you edit its subject and body; the mail goes out in this shape the next time its event fires."
+      />
 
-      <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-        <div>
-          <div className="text-[12px] uppercase tracking-wide text-[var(--text-4)]">All</div>
-          <div className="mt-2 divide-y divide-[var(--divider)]">
-            {templates.map((t) => {
-              const active = selected?.slug === t.slug;
-              return (
+      <PageState
+        load={load}
+        rows={6}
+        empty="The registry holds no templates. Until one exists, the platform has no body to build a mail from."
+      />
+
+      {load.status !== "ready" ? null : (
+        <TemplateView templates={load.data} slug={slug} mayEdit={mayEdit} />
+      )}
+    </>
+  );
+}
+
+function TemplateView({
+  templates,
+  slug,
+  mayEdit,
+}: {
+  templates: EmailTemplate[];
+  slug: string;
+  /** Whose role holds email.configure: the editor or only the reader. */
+  mayEdit: boolean;
+}) {
+  const selected = templates.find((t) => t.slug === slug) ?? templates[0];
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)]">
+      <Panel flush title="Registry" hint={`${templates.length} templates`}>
+        <ul className="max-h-[70vh] divide-y divide-[var(--divider)] overflow-y-auto">
+          {templates.map((t) => {
+            const active = selected?.slug === t.slug;
+            return (
+              <li key={t.id}>
                 <Link
-                  key={t.slug}
-                  href={`/admin/email/templates?slug=${t.slug}`}
-                  className="flex items-center justify-between gap-3 py-2.5"
+                  href={`/admin/email/templates?slug=${encodeURIComponent(t.slug)}`}
+                  className={`flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-[var(--hover)] ${
+                    active ? "bg-[var(--hover)]" : ""
+                  }`}
                 >
-                  <div className="min-w-0">
-                    <div className={`truncate text-[13px] ${active ? "text-[var(--fg)]" : "text-[var(--text-2)]"}`}>
-                      {t.slug}
-                    </div>
-                    <div className="truncate text-[12px] text-[var(--text-4)]">{t.label}</div>
-                  </div>
-                  <div className="shrink-0 text-[12px] text-[var(--text-4)]">{ago(t.updatedAt, NOW_ISO)}</div>
+                  <span className="min-w-0 flex-1">
+                    <span
+                      className={`block truncate text-[13px] font-medium tracking-[-0.01em] ${
+                        active ? "text-[var(--accent-text)]" : "text-[var(--fg)]"
+                      }`}
+                    >
+                      {t.label || t.slug}
+                    </span>
+                    <code className="block truncate text-[11px] text-[var(--muted)]">{t.slug}</code>
+                  </span>
+                  <span className="shrink-0 text-[11px] tabular-nums text-[var(--muted)]">
+                    {dateOnly(t.updatedAt)}
+                  </span>
                 </Link>
-              );
-            })}
-          </div>
-        </div>
+              </li>
+            );
+          })}
+        </ul>
+      </Panel>
 
-        {selected ? (
-          <div>
-            <div className="flex items-baseline justify-between gap-3">
-              <div>
-                <div className="text-[13px] text-[var(--fg)]">{selected.slug}</div>
-                <div className="mt-1 text-[12px] text-[var(--text-4)]">{selected.label}</div>
+      {selected ? (
+        <div className="flex flex-col gap-3">
+          <Panel title={selected.label || selected.slug} hint={`slug ${selected.slug}`}>
+            <dl className="flex flex-col gap-2.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <Pill tone="accent">{selected.subject || "no subject"}</Pill>
               </div>
-              <div className="text-[12px] text-[var(--text-4)]">{selected.variables.length} vars</div>
-            </div>
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-[12px] text-[var(--muted)]">
+                <span title={dateTime(selected.createdAt)}>Created {dateOnly(selected.createdAt)}</span>
+                <span title={dateTime(selected.updatedAt)}>Updated {dateOnly(selected.updatedAt)}</span>
+                <span>
+                  Declares {selected.variables.length > 0 ? selected.variables.join(", ") : "no variables"}
+                </span>
+              </div>
+            </dl>
+          </Panel>
 
-            <div className="mt-4 divide-y divide-[var(--divider)]">
-              <div className="flex items-center justify-between py-2">
-                <span className="text-[13px] text-[var(--text-3)]">Subject</span>
-                <span className="text-[13px] text-[var(--fg)]">{selected.subject}</span>
-              </div>
-              <div className="flex items-center justify-between py-2">
-                <span className="text-[13px] text-[var(--text-3)]">Updated</span>
-                <span className="text-[13px] text-[var(--text-2)]">{ago(selected.updatedAt, NOW_ISO)}</span>
-              </div>
-              <div className="flex items-center justify-between py-2">
-                <span className="text-[13px] text-[var(--text-3)]">Created</span>
-                <span className="text-[13px] text-[var(--text-2)]">{dateOnly(selected.createdAt)}</span>
-              </div>
-              <div className="flex items-center justify-between py-2">
-                <span className="text-[13px] text-[var(--text-3)]">Variables</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {selected.variables.map((v) => (
-                    <span key={v} className="text-[12px] text-[var(--text-3)]">{`{{${v}}}`}</span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5">
-              <div className="text-[12px] text-[var(--text-4)]">Render</div>
-              <iframe
-                title={`Rendered ${selected.slug}`}
-                sandbox=""
-                srcDoc={`<!doctype html><meta charset="utf-8"><body style="margin:0;font:15px/1.5 -apple-system,system-ui,sans-serif;color:#e6e6e6;background:#1c1c1e"><div style="max-width:34rem;margin:0 auto;padding:20px">${selected.html}</div></body>`}
-                className="mt-2 h-64 w-full border border-[var(--divider)] bg-[#1c1c1e]"
+          <Panel title={mayEdit ? "Edit subject & body" : "Subject & body"}>
+            {mayEdit ? (
+              <EmailTemplateEditor
+                key={selected.id}
+                id={selected.id}
+                slug={selected.slug}
+                subject={selected.subject}
+                html={selected.html}
               />
-            </div>
-
-            <div className="mt-4 flex flex-wrap gap-4">
-              <Link href={`/admin/email/compose?template=${selected.slug}`} className="text-[13px] text-[var(--link)]">
-                Send a test
-              </Link>
-              <Link href="/admin/email/queue" className="text-[13px] text-[var(--link)]">
-                Jobs using it
-              </Link>
-            </div>
-          </div>
-        ) : null}
-      </div>
+            ) : (
+              <p className="text-[13px] leading-relaxed text-[var(--muted)]">
+                A body can be read here and written only by a role holding{" "}
+                <code className="text-[var(--text-2)]">email.configure</code>. Yours sees the mail, not the
+                editor.
+              </p>
+            )}
+          </Panel>
+        </div>
+      ) : null}
     </div>
   );
 }

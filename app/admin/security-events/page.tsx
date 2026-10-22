@@ -1,16 +1,28 @@
 import Link from "next/link";
-import { ShieldCheck } from "lucide-react";
+import { AlertTriangle, ShieldAlert } from "lucide-react";
 
 import { DataTable } from "@/components/data-table";
 import { Metric, PageHeader, PageState, Panel, Pill } from "@/components/page-header";
-import { fetchSecurityScore, readSecurityEvents } from "@/lib/security";
-import { ago, dateTime } from "@/lib/format";
+import { readLedger, readPosture, type SecurityEvent, type Severity } from "@/lib/security";
+import { ago, dateTime, device } from "@/lib/format";
 
-import type { SecurityScore, Severity } from "@/lib/mock/types";
+/* What the platform noticed, and how much of it it can actually stand behind.
+ *
+ * This screen used to lead with a number out of 100. Three of the five things
+ * inside that number were constants in the route — "Password Policy: 18,
+ * // Assuming strong password policy" — so the headline was mostly an
+ * assumption wearing a decimal, and the plate below it printed zeros as if a
+ * query had returned them whenever the read failed.
+ *
+ * What is here instead is the ledger and its real volume, the one factor that
+ * is a ratio of two counts, and a plainly-labelled list of what this build
+ * cannot measure. An operator can act on that. On a 83 they could only be
+ * soothed.
+ */
 
 type Params = Record<string, string | string[] | undefined>;
 
-const SEVERITIES: Severity[] = ["info", "warning", "error", "critical"];
+const SEVERITIES: Severity[] = ["critical", "error", "warning", "info"];
 
 const SEVERITY_TONE: Record<Severity, "muted" | "warn" | "danger"> = {
   info: "muted",
@@ -19,28 +31,11 @@ const SEVERITY_TONE: Record<Severity, "muted" | "warn" | "danger"> = {
   critical: "danger",
 };
 
-/** What the posture panel shows when the posture query did not answer. */
-const UNMEASURED: SecurityScore = {
-  score: 0,
-  threatLevel: "low",
-  factors: [],
-  stats: {
-    totalUsers: 0,
-    usersWith2FA: 0,
-    activeSessions: 0,
-    revokedSessions: 0,
-    blockedIPs: 0,
-    blockedUsers: 0,
-  },
-  topIPs: [],
-  topEventTypes: [],
-  recentCritical: [],
-};
-
-const FACTOR_TONE: Record<string, string> = {
-  good: "bg-[var(--success)]",
-  warning: "bg-[var(--warn)]",
-  critical: "bg-[var(--danger)]",
+const SEVERITY_WORD: Record<Severity, string> = {
+  info: "info",
+  warning: "warning",
+  error: "error",
+  critical: "critical",
 };
 
 export default async function SecurityEventsPage({
@@ -53,139 +48,145 @@ export default async function SecurityEventsPage({
     const v = params[key];
     return Array.isArray(v) ? v[0] : v;
   };
-  const severity = (one("severity") ?? "") as Severity | "";
-  const type = one("type") ?? "";
+  const severity = (one("severity") ?? "") as "" | Severity;
+  const kind = one("kind") ?? "";
   const q = one("q") ?? "";
-  const page = Math.max(1, Number(one("page")) || 1);
+  const from = one("from") ?? "";
+  const page = Math.max(1, Number(one("page") ?? 1) || 1);
 
-  /* The live ledger and the live posture, read side by side. The posture is
-     a second door: if it is the one that failed, the events still stand, and
-     an operator is better served by "not measured" than by a zero that looks
-     like a measurement. */
-  const [load, measured] = await Promise.all([
-    readSecurityEvents({ severity, type, q, page }),
-    fetchSecurityScore(),
+  const [ledger, posture] = await Promise.all([
+    readLedger({ severity, kind, q, from, page }),
+    readPosture(),
   ]);
-  const now = new Date().toISOString();
-  const score: SecurityScore = measured ?? UNMEASURED;
-  /* The kinds an operator can filter by: the ones this page actually shows,
-     topped up with the platform's own ranking of kinds so the list is not
-     limited to whatever the current filter happens to return. */
-  const eventTypes = Array.from(
-    new Set([
-      ...(load.status === "ready" ? load.data.items.map((e) => e.eventType) : []),
-      ...score.topEventTypes.map((t) => t.type),
-    ]),
-  ).sort();
 
-  const href = (over: Record<string, string | number>) => {
-    const search = new URLSearchParams();
-    for (const [key, value] of Object.entries({ severity, type, q, page, ...over })) {
-      if (value === "" || Number(value) === 1) continue;
-      search.set(key, String(value));
-    }
-    const query = search.toString();
-    return query ? `?${query}` : "";
-  };
+  const shown = ledger.status === "ready" ? ledger.data : null;
+  const stats = shown?.stats ?? null;
+  const view = posture.status === "ready" ? posture.data : null;
+  const kinds = posture.status === "ready" ? posture.data.eventKinds : [];
+  const filtered = !!(severity || kind || q || from);
+
+  const field =
+    "h-9 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-3 text-[13px] text-[var(--fg)] focus:border-[var(--accent)] focus:outline-none";
 
   return (
     <>
       <PageHeader
         title="Security events"
-        description="Every anomaly the platform noticed, and the posture score that is those events read as one number."
+        description="Every anomaly the platform wrote down, newest first. A row is a fact the API recorded at the time — not a conclusion drawn about it afterwards."
+        actions={
+          <Link href="/admin/activity" className="btn btn-quiet btn-sm">
+            Whole activity log
+          </Link>
+        }
       />
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-        <Panel title="Posture">
-          <div className="flex items-end gap-3">
-            <p className="text-[46px] font-semibold leading-none tabular-nums tracking-[-0.04em] text-[var(--fg)]">
-              {measured ? score.score : "—"}
-            </p>
-            <Pill
-              tone={
-                !measured
-                  ? "muted"
-                  : score.threatLevel === "low"
-                    ? "success"
-                    : score.threatLevel === "medium"
-                      ? "warn"
-                      : "danger"
-              }
-            >
-              <ShieldCheck size={12} aria-hidden />
-              {measured ? `${score.threatLevel} threat` : "not measured"}
-            </Pill>
-          </div>
-          <ul className="mt-4 flex flex-col gap-3">
-            {!measured ? (
-              <li className="text-[12px] leading-snug text-[var(--muted)]">
-                The posture query did not answer, so nothing here is a score. The event list
-                below is the ledger itself and stands on its own.
-              </li>
-            ) : null}
-            {score.factors.map((f) => (
-              <li key={f.name} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1">
-                <span className="truncate text-[13px] text-[var(--text-2)]">{f.name}</span>
-                <span className="text-[12px] tabular-nums text-[var(--muted)]">
-                  {f.score}/{f.maxScore}
-                </span>
-                <div className="col-span-2 h-1.5 overflow-hidden rounded-full bg-[var(--surface-2)]">
-                  <div
-                    className={`h-full rounded-full ${FACTOR_TONE[f.status] ?? FACTOR_TONE.good}`}
-                    style={{ width: `${Math.round((f.score / Math.max(1, f.maxScore)) * 100)}%` }}
-                  />
-                </div>
-                <span className="col-span-2 text-[11px] leading-snug text-[var(--muted)]">
-                  {f.description}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </Panel>
-
-        <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-            <Metric label="Accounts" value={score.stats.totalUsers} />
-            <Metric
-              label="With 2FA"
-              value={score.stats.usersWith2FA}
-              hint={`${Math.round((score.stats.usersWith2FA / Math.max(1, score.stats.totalUsers)) * 100)}% of people`}
-              tone="warn"
-            />
-            <Metric
-              label="Live sessions"
-              value={score.stats.activeSessions}
-              hint={`${score.stats.revokedSessions} revoked`}
-            />
-            <Metric label="Blocked IPs" value={score.stats.blockedIPs} />
-            <Metric label="Blocked people" value={score.stats.blockedUsers} tone="danger" />
-            <Metric
-              label="Critical rows"
-              value={score.recentCritical.length}
-              hint="in the recent window"
-              tone={score.recentCritical.length > 0 ? "danger" : "success"}
-            />
-          </div>
-
-          <Panel title="Where it is coming from" flush hint="Ranked by event volume, not by severity.">
-            <div className="px-4 py-1">
-              <DataTable
-                columns={[
-                  { key: "ip", label: "Address" },
-                  { key: "count", label: "Events", align: "right" },
-                  { key: "seen", label: "Last seen", align: "right", hideBelow: "sm" },
-                ]}
-                rows={score.topIPs.map((ip) => ({
-                  ip: <code className="text-[12px]">{ip.ip}</code>,
-                  count: ip.count,
-                  seen: ago(ip.lastSeen, now),
-                }))}
-                empty="No address has produced an event."
-              />
-            </div>
-          </Panel>
+      {/* Volume first: this is a log, and the first question about a log is how
+          much of it there is and whether today is worse than the week. */}
+      {stats ? (
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <Metric
+            label="Today"
+            value={stats.today.total}
+            hint={stats.today.serious ? `${stats.today.serious} serious` : "nothing serious"}
+            tone={stats.today.serious > 0 ? "danger" : "default"}
+          />
+          <Metric label="This week" value={stats.week.total} hint={`${stats.week.serious} serious`} />
+          <Metric label="This month" value={stats.month.total} hint={`${stats.month.serious} serious`} />
+          <Metric
+            label="Active blocks"
+            value={stats.activeBlocks}
+            hint={`${stats.lifetime} rows in the log`}
+            tone={stats.activeBlocks > 0 ? "success" : "default"}
+          />
         </div>
-      </div>
+      ) : null}
+
+      <Panel
+        title="What this build measures"
+        hint="A factor appears here only when a query produced it. The list beside it is everything the screen used to score anyway."
+      >
+        {posture.status === "error" ? (
+          <div className="flex items-start gap-2.5 rounded-[10px] border border-[var(--danger)]/25 bg-[var(--danger-soft)] px-3.5 py-3">
+            <ShieldAlert size={15} aria-hidden className="mt-0.5 shrink-0 text-[var(--danger-text)]" />
+            <p className="text-[13px] leading-relaxed text-[var(--fg)]">
+              {posture.message} The ledger above is a separate read and is unaffected — this
+              panel has no number to show, so it shows none.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+            <div className="flex flex-col gap-4">
+              {view?.measured.length ? (
+                view.measured.map((factor) => (
+                  <div key={factor.name}>
+                    <div className="flex items-baseline justify-between gap-3">
+                      <p className="text-[13px] font-semibold text-[var(--fg)]">{factor.name}</p>
+                      <p className="text-[12px] tabular-nums text-[var(--text-2)]">
+                        {factor.score} / {factor.maxScore}
+                      </p>
+                    </div>
+                    <div
+                      className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--surface-2)]"
+                      role="img"
+                      aria-label={`${factor.observed} percent`}
+                    >
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${Math.max(2, Math.min(100, factor.observed))}%`,
+                          background: `var(--${factor.status === "good" ? "success" : factor.status === "warning" ? "warn" : "danger"})`,
+                        }}
+                      />
+                    </div>
+                    <p className="mt-2 text-[12px] leading-relaxed text-[var(--muted)]">
+                      {factor.detail} — {factor.observed}% observed
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-[13px] text-[var(--muted)]">No factor could be computed.</p>
+              )}
+
+              {view ? (
+                <dl className="grid grid-cols-2 gap-x-4 border-t border-[var(--divider)] pt-3 text-[12px]">
+                  {[
+                    ["Accounts", view.counts.totalUsers],
+                    ["With 2FA", view.counts.usersWith2FA],
+                    ["Active sessions", view.counts.activeSessions],
+                    ["Revoked sessions", view.counts.revokedSessions],
+                    ["Blocked addresses", view.counts.blockedIPs],
+                    ["Blocked accounts", view.counts.blockedUsers],
+                  ].map(([label, value]) => (
+                    <div key={label as string} className="flex justify-between gap-2 py-1">
+                      <dt className="text-[var(--muted)]">{label}</dt>
+                      <dd className="tabular-nums font-medium text-[var(--fg)]">{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : null}
+            </div>
+
+            <div className="rounded-[10px] bg-[var(--surface-2)] px-3.5 py-3">
+              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--text-4)]">
+                Not measured
+              </p>
+              <ul className="mt-2.5 flex flex-col gap-2.5">
+                {(view?.unmeasured ?? []).map((item) => (
+                  <li key={item.name} className="min-w-0">
+                    <p className="text-[12px] font-semibold text-[var(--fg)]">{item.name}</p>
+                    <p className="mt-0.5 text-[12px] leading-relaxed text-[var(--muted)]">{item.why}</p>
+                  </li>
+                ))}
+                {!view ? (
+                  <li className="text-[12px] leading-relaxed text-[var(--muted)]">
+                    Nothing drawn while the posture read is failing — see the notice above.
+                  </li>
+                ) : null}
+              </ul>
+            </div>
+          </div>
+        )}
+      </Panel>
 
       <Panel>
         <form action="/admin/security-events" method="get" className="flex flex-wrap items-center gap-2">
@@ -194,39 +195,33 @@ export default async function SecurityEventsPage({
             type="search"
             name="q"
             defaultValue={q}
-            placeholder="Event id, address or account"
-            className="h-9 min-w-[14rem] flex-1 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-3 text-[13px] text-[var(--fg)] placeholder:text-[var(--placeholder)] focus:border-[var(--accent)] focus:outline-none"
+            placeholder="Address, kind, account or reference code"
+            className={`${field} min-w-[14rem] flex-1`}
           />
           <span className="sr-only">Severity</span>
-          <select
-            name="severity"
-            defaultValue={severity}
-            className="h-9 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-3 text-[13px] text-[var(--fg)] focus:border-[var(--accent)] focus:outline-none"
-          >
+          <select name="severity" defaultValue={severity} className={field}>
             <option value="">Any severity</option>
             {SEVERITIES.map((s) => (
               <option key={s} value={s}>
-                {s}
+                {SEVERITY_WORD[s]}
               </option>
             ))}
           </select>
-          <span className="sr-only">Type</span>
-          <select
-            name="type"
-            defaultValue={type}
-            className="h-9 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-3 text-[13px] text-[var(--fg)] focus:border-[var(--accent)] focus:outline-none"
-          >
-            <option value="">Any event</option>
-            {eventTypes.map((t) => (
-              <option key={t} value={t}>
-                {t}
+          <span className="sr-only">Kind</span>
+          <select name="kind" defaultValue={kind} className={field}>
+            <option value="">Any kind</option>
+            {kinds.map((k) => (
+              <option key={k.type} value={k.type}>
+                {k.type} ({k.count})
               </option>
             ))}
           </select>
+          <span className="sr-only">From</span>
+          <input type="date" name="from" defaultValue={from} className={field} title="Only rows from this day" />
           <button type="submit" className="btn btn-primary btn-sm h-9">
             Apply
           </button>
-          {q || severity || type ? (
+          {filtered ? (
             <a href="/admin/security-events" className="btn btn-quiet btn-sm h-9">
               Reset
             </a>
@@ -234,63 +229,164 @@ export default async function SecurityEventsPage({
         </form>
       </Panel>
 
-      <PageState load={load} rows={8} empty="No event matches — a quiet log is the best kind until you suspect the probe is the quiet thing." />
+      <PageState
+        load={ledger}
+        rows={8}
+        empty={
+          filtered
+            ? "No event matches this view. Widen the dates — a security log is rarely empty, it is usually filtered."
+            : "The log holds nothing. That is either a very quiet platform or a write path that has stopped recording."
+        }
+      />
 
-      {load.status !== "ready" ? null : (
-        <Panel flush>
+      {shown ? (
+        <Panel
+          flush
+          title="The ledger"
+          hint={`${shown.total} row${shown.total === 1 ? "" : "s"} match${shown.total === 1 ? "s" : ""} this view — ${shown.perPage} to a page.`}
+          action={
+            shown.page > 1 ? (
+              <Link
+                href={pageHref(params, shown.page - 1)}
+                className="btn btn-quiet btn-sm"
+              >
+                Previous
+              </Link>
+            ) : null
+          }
+        >
           <div className="px-4 py-1">
             <DataTable
               columns={[
-                { key: "type", label: "Event" },
-                { key: "severity", label: "Severity", hideBelow: "sm" },
+                { key: "event", label: "Event" },
+                { key: "ref", label: "Reference", hideBelow: "md" },
                 { key: "account", label: "Account", hideBelow: "md" },
-                { key: "ip", label: "Address", hideBelow: "lg" },
-                { key: "when", label: "When", align: "right" },
+                { key: "where", label: "Reached from", hideBelow: "lg", nowrap: true },
+                { key: "severity", label: "Severity" },
+                { key: "at", label: "When", align: "right", hideBelow: "sm", nowrap: true },
               ]}
-              rows={load.data.items.map((e) => ({
-                type: <code className="text-[12px] text-[var(--fg)]">{e.eventType}</code>,
-                severity: <Pill tone={SEVERITY_TONE[e.severity]}>{e.severity}</Pill>,
-                account: e.userId ? (
-                  <Link
-                    href={`/admin/people/${e.userId}`}
-                    className="font-mono text-[12px] text-[var(--accent-text)] hover:underline"
-                  >
-                    {e.userId}
-                  </Link>
-                ) : (
-                  <span className="text-[12px] text-[var(--muted)]">pre-account</span>
-                ),
-                ip: <code className="text-[12px]">{e.ipAddress ?? "—"}</code>,
-                when: <span title={dateTime(e.createdAt)}>{ago(e.createdAt, now)}</span>,
-              }))}
-              empty="No event matches this filter."
+              rows={shown.rows.map((row) => eventCells(row))}
+              empty="No event matches this view."
             />
+            {shown.rows.length === shown.perPage ? (
+              <div className="flex justify-end border-t border-[var(--divider)] px-4 py-3">
+                <Link href={pageHref(params, shown.page + 1)} className="btn btn-quiet btn-sm">
+                  Next {shown.perPage}
+                </Link>
+              </div>
+            ) : null}
           </div>
-
-          <nav
-            aria-label="Pagination"
-            className="flex items-center justify-between gap-3 border-t border-[var(--divider)] px-4 py-3"
-          >
-            <p className="text-[12px] tabular-nums text-[var(--muted)]">
-              {(load.data.page - 1) * load.data.perPage + 1}–
-              {Math.min(load.data.page * load.data.perPage, load.data.total)} of{" "}
-              {load.data.total.toLocaleString()}
-            </p>
-            <div className="flex gap-2">
-              {load.data.page > 1 ? (
-                <Link href={href({ page: load.data.page - 1 })} className="btn btn-secondary btn-sm">
-                  Previous
-                </Link>
-              ) : null}
-              {load.data.page * load.data.perPage < load.data.total ? (
-                <Link href={href({ page: load.data.page + 1 })} className="btn btn-secondary btn-sm">
-                  Next
-                </Link>
-              ) : null}
-            </div>
-          </nav>
         </Panel>
-      )}
+      ) : null}
+
+      {view && view.busiestIPs.length ? (
+        <Panel
+          title={`Busiest addresses · last ${view.windowDays} days`}
+          hint="Counted from the same log, so an address that appears here generated that many rows — including perfectly ordinary ones. It is a lead, not an accusation."
+        >
+          <ul className="flex flex-col divide-y divide-[var(--divider)]">
+            {view.busiestIPs.map((entry) => (
+              <li key={entry.ip} className="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">
+                <Link
+                  href={`/admin/security-events?q=${encodeURIComponent(entry.ip)}`}
+                  className="min-w-0 truncate font-mono text-[12px] tabular-nums text-[var(--text-2)] hover:text-[var(--accent-text)]"
+                >
+                  {entry.ip}
+                </Link>
+                <span className="flex shrink-0 items-center gap-3 text-[12px] text-[var(--muted)]">
+                  {entry.lastSeen ? (
+                    <span title={dateTime(entry.lastSeen)}>seen {ago(entry.lastSeen)}</span>
+                  ) : (
+                    <span>no timestamp</span>
+                  )}
+                  <span className="tabular-nums font-medium text-[var(--fg)]">{entry.count}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      ) : null}
     </>
   );
+}
+
+function eventCells(row: SecurityEvent) {
+  return {
+    event: (
+      <span className="flex min-w-0 flex-col">
+        <span className="flex min-w-0 items-center gap-2">
+          {row.severity === "critical" || row.severity === "error" ? (
+            <AlertTriangle
+              size={13}
+              aria-hidden
+              className="shrink-0 text-[var(--danger-text)]"
+            />
+          ) : null}
+          <span className="truncate font-medium text-[var(--fg)]">
+            {row.title ?? row.kind}
+          </span>
+        </span>
+        <span className="mt-0.5 truncate text-[11px] text-[var(--muted)]" title={row.detail ?? undefined}>
+          {row.kind === row.title ? "security event" : row.kind}
+          {row.detail ? ` · ${row.detail}` : ""}
+        </span>
+      </span>
+    ),
+    ref: row.ref ? (
+      <Link
+        href={`/admin/security-events?q=${encodeURIComponent(row.ref)}`}
+        title="Filter the log by this reference"
+        className="font-mono text-[12px] tabular-nums text-[var(--accent-text)] hover:underline"
+      >
+        {row.ref}
+      </Link>
+    ) : (
+      <span className="text-[12px] text-[var(--text-4)]">no code</span>
+    ),
+    account: row.account ? (
+      <Link
+        href={`/admin/people/${row.account.id}`}
+        className="text-[12px] text-[var(--accent-text)] hover:underline"
+        title={row.account.email}
+      >
+        {row.account.username ?? row.account.name ?? row.account.email}
+        {row.account.staff ? " · staff" : ""}
+      </Link>
+    ) : row.id ? (
+      <span className="text-[12px] text-[var(--muted)]">no account on the row</span>
+    ) : null,
+    where: (
+      <span
+        className="flex min-w-0 max-w-[26ch] flex-col"
+        title={[row.device, row.ip].filter(Boolean).join(" · ")}
+      >
+        <span className="truncate font-mono text-[12px] tabular-nums text-[var(--text-2)]">
+          {row.ip ?? "address not recorded"}
+        </span>
+        {/* A user-agent string is 120 characters of which six are worth
+            reading; the whole thing is in the row's title. */}
+        <span className="truncate text-[11px] text-[var(--muted)]">
+          {device(row.device) ?? "no device string"}
+        </span>
+      </span>
+    ),
+    severity: <Pill tone={SEVERITY_TONE[row.severity]}>{SEVERITY_WORD[row.severity]}</Pill>,
+    at: (
+      <span title={dateTime(row.at)} className="text-[12px] tabular-nums">
+        {ago(row.at)}
+      </span>
+    ),
+  };
+}
+
+/** Keep every filter while moving pages. */
+function pageHref(params: Params, next: number): string {
+  const search = new URLSearchParams();
+  for (const key of ["severity", "kind", "q", "from"]) {
+    const value = params[key];
+    const single = Array.isArray(value) ? value[0] : value;
+    if (single) search.set(key, String(single));
+  }
+  search.set("page", String(next));
+  return `/admin/security-events?${search.toString()}`;
 }

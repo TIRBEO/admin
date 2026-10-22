@@ -3,15 +3,24 @@
 /* ═══════════════════════════════════════════════════════════════════════
    Tirbeo Admin — tokens
    ───────────────────────────────────────────────────────────────────────
-   The canonical Apple spec, replicated from docs/design/apple-tokens.css
-   at the repo root. This app deploys standalone on Vercel, so it cannot
-   import a shared package — the block is copied, and a change to the spec
-   means a change here in the same pass.
+   One palette across the fleet: this is apps/myprofile's token set, in the
+   same order and with the same values, so a person who runs the console and
+   also signs in as an ordinary account is looking at one product.
 
-   Ladder: ground (--bg) → plate (--card/--surface) → control
-   (--surface-2/--field) → hairline (--divider). Dark gets lighter as it
-   comes forward; light is white plates on a #f2f2f7 canvas. Both themes
-   are first-class — the contrast audit runs over both.
+   Apple's grouped tables, in Apple's order: the ground is the darkest thing on
+   the screen and every layer above it is lighter — plate, then control, then
+   the separator between two rows of a plate.
+
+     systemGroupedBackground → cell → control → separator
+
+   Depth comes from that ladder, not from shadows: a plate is 1px of lift and
+   nothing more. The console is dense, so it keeps the mail's small type, but
+   the surfaces are the account app's, and dark is the default rather than the
+   opt-in.
+
+   Contrast is measured against the *plate* a colour lands on, not the ground —
+   #0A84FF on a control is Apple's, but the same blue as 13px words is 3.8:1, so
+   text uses the increased-contrast systemBlue (#64A5FF), which clears 4.5.
    ═══════════════════════════════════════════════════════════════════════ */
 
 :root,
@@ -26,19 +35,18 @@
   --muted: #b6b6bd;
   --link: #64a5ff;
   --text-2: #ebeaf0;
-  /* 4.5:1 on --surface-3, the lightest plate muted text ever sits on. */
   --text-3: #b6b6bd;
   --text-4: #a8a8af;
   --placeholder: #a8a8af;
   --border: #48484a;
   --border-strong: #5a5a5e;
   --divider: #38383a;
+  /* A hover has to be lighter than the plate it sits on — the ground's colour
+     reads as a hole punched in the row. */
   --hover: #3a3a3c;
   --accent: #0a84ff;
   --accent-hover: #409cff;
   --accent-press: #0060c9;
-  /* Fills carrying white text need 4.5:1 — iOS #0a84ff is 3.65:1. Text on a
-     background needs it too, hence --accent-text. */
   --accent-solid: #0a63e5;
   --accent-solid-hover: #0a52c9;
   --accent-soft: rgba(10, 132, 255, 0.18);
@@ -52,7 +60,14 @@
   --success-text: #5ce070;
   --warn: #ffd60a;
   --warn-text: #e5c209;
-  /* iOS systemFill — the grey a secondary button is filled with. */
+  --support: #30d5d8;
+  --support-text: #5ddddf;
+  --danger-soft: rgba(255, 69, 58, 0.16);
+  --warn-soft: rgba(255, 214, 10, 0.16);
+  --success-soft: rgba(50, 215, 75, 0.16);
+  --support-soft: rgba(48, 213, 216, 0.16);
+  /* Apple's systemFill: a translucent grey, so one value works on a plate, on a
+     field, and on the sheet — each of which is a different colour under it. */
   --fill: rgba(120, 120, 128, 0.24);
   --fill-hover: rgba(120, 120, 128, 0.34);
   --fill-press: rgba(120, 120, 128, 0.42);
@@ -69,36 +84,30 @@
   --scrim: rgb(0 0 0 / 62%);
   --track: #48484a;
   --focus-ring: #0a84ff;
+  --autofill-fill: #3a3a3c;
   --ink: #ffffff;
   --ink-fg: #000000;
   --ambient: rgba(255, 255, 255, 0.05);
   --faint: rgba(255, 255, 255, 0.06);
+  --shadow-plate: 0 1px 2px rgb(0 0 0 / 45%), 0 10px 26px -18px rgb(0 0 0 / 60%);
+  --shadow-pop: 0 16px 44px -12px rgb(0 0 0 / 62%);
   --shadow-sheet: 0 -20px 60px -12px rgb(0 0 0 / 68%);
-  --stack-sans: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto,
-    Helvetica, Arial, sans-serif;
-  --stack-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
-    "Liberation Mono", monospace;
-  --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-exit: cubic-bezier(0.32, 0, 0.67, 0);
   --chart-1: #0a84ff;
   --chart-2: #32d74b;
   --chart-3: #ffd60a;
   --chart-4: #ff453a;
   --chart-5: #64aaff;
 
-  /* iOS grouped-list depth: a plate floats on the ground with a soft, wide
-     shadow — never a hard border alone. */
-  --shadow-plate: 0 1px 2px rgb(0 0 0 / 28%), 0 8px 24px -12px rgb(0 0 0 / 50%);
-  --shadow-pop: 0 24px 60px -12px rgb(0 0 0 / 60%), 0 2px 8px rgb(0 0 0 / 30%);
-
-  /* App-local. The spec carries no tinted status backgrounds because no
-     other Tirbeo surface shows a severity pill; a console is built out of
-     them, so they live here rather than in the shared ladder. */
-  --danger-soft: rgba(255, 69, 58, 0.16);
-  --warn-soft: rgba(255, 214, 10, 0.16);
-  --success-soft: rgba(50, 215, 75, 0.16);
+  --stack-sans: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  --stack-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+  --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-exit: cubic-bezier(0.32, 0, 0.67, 0);
 }
 
+/* Light palette: same names, same ladder — grouped grey underneath, white
+   plates above it, #C6C6C8 where two rows of a plate meet. */
 :root[data-theme="light"] {
   color-scheme: light;
   --bg: #f2f2f7;
@@ -110,12 +119,11 @@
   --muted: #5d5d66;
   --link: #0068d6;
   --text-2: #3f3f46;
-  /* 4.9:1 on --surface-3 — same rule as dark. */
   --text-3: #5d5d66;
   --text-4: #6e6e76;
   --placeholder: #6e6e76;
-  --border: #eaeaea;
-  --border-strong: #d1d1d6;
+  --border: #d1d1d6;
+  --border-strong: #c6c6c8;
   --divider: #c6c6c8;
   --hover: #ececf1;
   --accent: #007aff;
@@ -134,6 +142,12 @@
   --success-text: #188a3e;
   --warn: #c47b00;
   --warn-text: #9d6300;
+  --support: #0f766e;
+  --support-text: #0f766e;
+  --danger-soft: rgba(224, 52, 44, 0.1);
+  --warn-soft: rgba(196, 123, 0, 0.12);
+  --success-soft: rgba(30, 166, 75, 0.12);
+  --support-soft: rgba(15, 118, 110, 0.12);
   --fill: rgba(120, 120, 128, 0.16);
   --fill-hover: rgba(120, 120, 128, 0.24);
   --fill-press: rgba(120, 120, 128, 0.32);
@@ -150,24 +164,19 @@
   --scrim: rgb(18 19 22 / 45%);
   --track: #c6c6c8;
   --focus-ring: #007aff;
+  --autofill-fill: #ececf1;
   --ink: #171717;
   --ink-fg: #ffffff;
   --ambient: rgba(18, 19, 22, 0.04);
   --faint: rgba(18, 19, 22, 0.05);
-  --shadow-sheet: 0 -20px 56px -12px rgb(18 19 22 / 26%),
-    0 2px 8px rgb(18 19 22 / 12%);
+  --shadow-plate: 0 1px 2px rgb(18 19 22 / 7%), 0 14px 36px -20px rgb(18 19 22 / 20%);
+  --shadow-pop: 0 14px 36px -10px rgb(18 19 22 / 22%), 0 2px 6px rgb(18 19 22 / 10%);
+  --shadow-sheet: 0 -20px 56px -12px rgb(18 19 22 / 26%), 0 2px 8px rgb(18 19 22 / 12%);
   --chart-1: #0a84ff;
   --chart-2: #1ea64b;
   --chart-3: #c47b00;
   --chart-4: #e0342c;
   --chart-5: #8b93b0;
-
-  --shadow-plate: 0 1px 2px rgb(0 0 0 / 4%), 0 8px 24px -12px rgb(0 0 0 / 16%);
-  --shadow-pop: 0 24px 60px -12px rgb(0 0 0 / 22%), 0 2px 8px rgb(0 0 0 / 8%);
-
-  --danger-soft: rgba(224, 52, 44, 0.1);
-  --warn-soft: rgba(196, 123, 0, 0.12);
-  --success-soft: rgba(30, 166, 75, 0.1);
 }
 
 /* Tailwind v4 mapping — the utilities the screens are written with. */
@@ -205,6 +214,9 @@
   --color-warn: var(--warn);
   --color-warn-text: var(--warn-text);
   --color-warn-soft: var(--warn-soft);
+  --color-support: var(--support);
+  --color-support-text: var(--support-text);
+  --color-support-soft: var(--support-soft);
   --color-fill: var(--fill);
   --color-fill-hover: var(--fill-hover);
   --color-fill-press: var(--fill-press);
@@ -215,8 +227,14 @@
   --color-scrim: var(--scrim);
   --color-ink: var(--ink);
   --color-ink-fg: var(--ink-fg);
+  --color-faint: var(--faint);
   --font-sans: var(--stack-sans);
   --font-mono: var(--stack-mono);
+  /* Apple's radius ladder: 10px control, 14px row inside a card, 17px card,
+     20px sheet. The console is dense, so its plates sit at 14 rather than 17 —
+     the difference between a table and a settings screen is the corner. */
+  --radius-sm: 8px;
+  --radius-md: 10px;
   --radius-lg: 14px;
   --radius-xl: 17px;
   --radius-2xl: 20px;
@@ -234,9 +252,27 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  scrollbar-gutter: stable;
+}
+
 ::selection {
   background: var(--accent);
   color: var(--accent-fg);
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--fg) !important;
+  caret-color: var(--fg);
+  -webkit-box-shadow: 0 0 0 1000px var(--autofill-fill) inset !important;
+  box-shadow: 0 0 0 1000px var(--autofill-fill) inset !important;
+  transition: background-color 6000000s 0s, color 6000000s 0s;
 }
 
 /* Keyboard operators are a first-class audience here. No border-radius on
@@ -250,17 +286,17 @@ body {
 /* ── Buttons ────────────────────────────────────────────────────────────
    The Tirbeo pill at console scale: a dense tool, so the height is what a
    table row can hold rather than the 42px the account surfaces use. Two
-   fills — the quiet one is grey-filled with an accent label, never an
-   outline, because an outlined pill beside a solid blue one reads as a
-   disabled pair. Unlayered, so a stray utility cannot re-shape one call
-   site and leave the rest behind.
+   fills — the quiet one is systemFill with an ink label, never an outline,
+   because an outlined pill beside a solid blue one reads as a disabled pair.
+   Unlayered, so a stray utility cannot re-shape one call site and leave the
+   rest behind.
    ───────────────────────────────────────────────────────────────────── */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 36px;
+  min-height: 34px;
   padding: 0 14px;
   border: 0;
   border-radius: 999px;
@@ -290,8 +326,8 @@ body {
   background: var(--accent-solid-hover);
 }
 
-/* A disabled fill is not an enabled one seen through glass — iOS mutes the
-   plate and the label; half-transparent blue reads as "loading", not "off". */
+/* A disabled fill is not an enabled one seen through glass — muting the
+   plate and the label says "off"; half-transparent blue says "loading". */
 .btn-primary:disabled {
   background: var(--btn-disabled-bg);
   color: var(--btn-disabled-fg);
@@ -299,7 +335,7 @@ body {
 
 .btn-secondary {
   background: var(--fill);
-  color: var(--accent-text);
+  color: var(--fg);
 }
 
 .btn-secondary:hover {
@@ -328,7 +364,7 @@ body {
   opacity: 0.5;
 }
 
-/* Row-level actions and pagination, where 36px would push the row apart. */
+/* Row-level actions and pagination, where 34px would push the row apart. */
 .btn-sm {
   min-height: 28px;
   padding: 0 11px;

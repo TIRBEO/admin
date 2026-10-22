@@ -29,8 +29,18 @@ const nextConfig: NextConfig = {
       "/admin/operations/logs": "/admin/activity",
       "/admin/operations/monitor": "/admin/security-events",
       "/admin/operations/maintenance": "/admin/maintenance",
-      "/admin/email": "/admin/email/queue",
-      "/admin/messaging": "/admin/email/queue",
+      "/admin/email": "/admin/email/deliveries",
+      "/admin/messaging": "/admin/email/deliveries",
+      /* Screens that were drawn over fixture data and have been deleted.
+         These point at the live screen that answers the same question; the
+         rest are left to 404 rather than sent somewhere they did not ask
+         for. */
+      "/admin/email/queue": "/admin/email/deliveries",
+      "/admin/restrictions": "/admin/appeals",
+      "/admin/heartbeat": "/admin/health",
+      "/admin/jobs": "/admin/health",
+      "/admin/export-requests": "/admin/people",
+      "/admin/identities": "/admin/people",
     };
     return Object.entries(map).map(([source, destination]) => ({
       source,

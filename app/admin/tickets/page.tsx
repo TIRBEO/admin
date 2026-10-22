@@ -124,11 +124,11 @@ export default async function TicketsPage({
                 columns={[
                   { key: "subject", label: "Subject" },
                   { key: "account", label: "From", hideBelow: "md" },
-                  { key: "origin", label: "Reached from", hideBelow: "lg" },
+                  { key: "origin", label: "Reached from", hideBelow: "lg", nowrap: true },
                   { key: "status", label: "Status" },
                   { key: "ref", label: "Reference", hideBelow: "md" },
                   { key: "replies", label: "Replies", hideBelow: "lg", align: "right" },
-                  { key: "updated", label: "Last activity", align: "right", hideBelow: "sm" },
+                  { key: "updated", label: "Last activity", align: "right", hideBelow: "sm", nowrap: true },
                 ]}
                 rows={queue.threads.map((t) => ({
                   subject: (

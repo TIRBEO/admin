@@ -7,7 +7,7 @@ import { readPeople, type PeopleFilter } from "@/lib/people";
 import { signInUrl } from "@/lib/sign-in";
 import { ago, dateOnly } from "@/lib/format";
 
-import type { User, UserStatus } from "@/lib/mock/types";
+import type { User, UserStatus } from "@/lib/types";
 
 type Params = Record<string, string | string[] | undefined>;
 
@@ -117,7 +117,7 @@ export default async function PeoplePage({
                 { key: "status", label: "Status", hideBelow: "sm" },
                 { key: "level", label: "Level", hideBelow: "lg" },
                 { key: "active", label: "Last active", align: "right", hideBelow: "md" },
-                { key: "joined", label: "Joined", align: "right", hideBelow: "lg" },
+                { key: "joined", label: "Joined", align: "right", hideBelow: "lg", nowrap: true },
                 { key: "id", label: "Id", hideBelow: "lg", width: "11ch" },
               ]}
               rows={ready.items.map((u: User) => ({

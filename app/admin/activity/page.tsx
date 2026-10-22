@@ -4,7 +4,7 @@ import { PageHeader, PageState, Panel, Pill } from "@/components/page-header";
 import { readActivity } from "@/lib/activity";
 import { ago, dateTime } from "@/lib/format";
 
-import type { Severity } from "@/lib/mock/types";
+import type { Severity } from "@/lib/types";
 
 type Params = Record<string, string | string[] | undefined>;
 

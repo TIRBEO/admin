@@ -1,20 +1,20 @@
 import Link from "next/link";
 import { Hourglass } from "lucide-react";
 
+import { AppealDecision } from "@/components/appeal-decision";
 import { DataTable } from "@/components/data-table";
 import { Metric, PageHeader, PageState, Panel, Pill } from "@/components/page-header";
-import { listAppeals } from "@/lib/mock";
-import { present, readState } from "@/lib/load-state";
 import { ago, dateTime } from "@/lib/format";
-import { NOW_ISO } from "@/lib/mock/world";
+import { readAppeals } from "@/lib/appeals";
+import { can } from "@/lib/permissions";
 
-import type { AppealDecision } from "@/lib/mock/types";
+import type { AppealDecision as Decision } from "@/lib/types";
 
 type Params = Record<string, string | string[] | undefined>;
 
-const DECISIONS: AppealDecision[] = ["pending", "upheld", "overturned"];
+const DECISIONS: Decision[] = ["pending", "upheld", "overturned"];
 
-const TONE: Record<string, "warn" | "danger" | "success" | "muted"> = {
+const TONE: Record<Decision, "warn" | "danger" | "success"> = {
   pending: "warn",
   upheld: "danger",
   overturned: "success",
@@ -26,27 +26,39 @@ export default async function AppealsPage({
   searchParams: Promise<Params>;
 }) {
   const params = await searchParams;
-  const state = readState(params);
-  const raw = params.decision;
-  const decision = (Array.isArray(raw) ? raw[0] : raw) ?? "";
+  const one = (key: string) => {
+    const v = params[key];
+    return Array.isArray(v) ? v[0] : v;
+  };
+  const decision = (one("decision") ?? "") as Decision | "";
+  const q = one("q") ?? "";
+  const limit = Math.min(100, Math.max(1, Number(one("limit")) || 50));
+  const page = Math.max(1, Number(one("page")) || 1);
 
-  const rows = await listAppeals({ decision: decision as AppealDecision | "" });
-  const load = present(state, rows);
+  const mayDecide = await can("appeals.manage");
+  const load = await readAppeals({ decision, q, limit, page });
+  const now = new Date().toISOString();
 
-  const waiting = rows.filter((a) => !a.decision || a.decision === "pending");
+  const pages = load.status === "ready" ? Math.max(1, Math.ceil(load.data.total / load.data.limit)) : 1;
+  const link = (target: number) => {
+    const s = new URLSearchParams();
+    if (decision) s.set("decision", decision);
+    if (q) s.set("q", q);
+    s.set("limit", String(limit));
+    s.set("page", String(target));
+    return `/admin/appeals?${s.toString()}`;
+  };
 
   return (
     <>
       <PageHeader
         title="Appeals"
-        description="A person asking for a restriction to be lifted. Every row here is a decision somebody owes them, and an overturn costs nothing but pride."
-        state={state}
-        params={params}
+        description="A person asking for a restriction to be lifted. Every row here is a decision somebody owes them, and an overturn costs nothing but pride. Only the live queue — the counts come straight from the ledger."
         actions={
-          waiting.length > 0 ? (
+          load.status === "ready" && load.data.pending > 0 ? (
             <span className="flex items-center gap-1.5 text-[12px] text-[var(--warn-text)]">
               <Hourglass size={13} aria-hidden />
-              {waiting.length} unanswered
+              {load.data.pending} unanswered
             </span>
           ) : null
         }
@@ -67,10 +79,33 @@ export default async function AppealsPage({
               </option>
             ))}
           </select>
+          <label className="sr-only" htmlFor="q">
+            Search
+          </label>
+          <input
+            id="q"
+            name="q"
+            type="search"
+            defaultValue={q}
+            placeholder="email, appeal id, or note"
+            className="h-9 w-56 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-3 text-[13px] text-[var(--fg)] placeholder:text-[var(--placeholder)] focus:border-[var(--accent)] focus:outline-none"
+          />
+          <span className="sr-only">Rows</span>
+          <select
+            name="limit"
+            defaultValue={String(limit)}
+            className="h-9 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-3 text-[13px] text-[var(--fg)] focus:border-[var(--accent)] focus:outline-none"
+          >
+            {[25, 50, 100].map((n) => (
+              <option key={n} value={n}>
+                {n} rows
+              </option>
+            ))}
+          </select>
           <button type="submit" className="btn btn-primary btn-sm h-9">
             Apply
           </button>
-          {decision ? (
+          {decision || q ? (
             <a href="/admin/appeals" className="btn btn-quiet btn-sm h-9">
               Reset
             </a>
@@ -83,24 +118,14 @@ export default async function AppealsPage({
       {load.status !== "ready" ? null : (
         <>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <Metric label="Appeals" value={rows.length} hint="in this filter" />
+            <Metric label="In this view" value={load.data.total} hint="appeals matching the filter" />
             <Metric
               label="Unanswered"
-              value={waiting.length}
-              hint="filed, no verdict"
-              tone={waiting.length > 0 ? "warn" : "success"}
+              value={load.data.pending}
+              hint="no verdict, platform-wide"
+              tone={load.data.pending > 0 ? "warn" : "success"}
             />
-            <Metric
-              label="Overturned"
-              value={rows.filter((a) => a.decision === "overturned").length}
-              hint="the restriction came off"
-              tone="success"
-            />
-            <Metric
-              label="Upheld"
-              value={rows.filter((a) => a.decision === "upheld").length}
-              hint="the restriction stands"
-            />
+            <Metric label="Page" value={`${load.data.page} / ${pages}`} hint={`${load.data.rows.length} shown here`} />
           </div>
 
           <Panel title="The queue" flush>
@@ -113,30 +138,63 @@ export default async function AppealsPage({
                   { key: "decision", label: "Verdict" },
                   { key: "filed", label: "Filed", align: "right", hideBelow: "md" },
                   { key: "decided", label: "Decided", align: "right", hideBelow: "sm" },
+                  { key: "act", label: "", align: "right", width: "18ch" },
                 ]}
-                rows={rows.map((a) => ({
-                  person: (
+                rows={load.data.rows.map((a) => ({
+                  person: a.user.id ? (
                     <Link
-                      href={`/admin/people/${a.userId}`}
-                      className="font-mono text-[12px] text-[var(--accent-text)] hover:underline"
+                      href={`/admin/people/${a.user.id}`}
+                      className="text-[12px] text-[var(--accent-text)] hover:underline"
                     >
-                      {a.userId}
+                      {a.user.name || a.user.email || a.user.id}
                     </Link>
+                  ) : (
+                    <span className="text-[var(--muted)]">deleted account</span>
                   ),
                   note: <span className="text-[var(--text-2)]">{a.note}</span>,
-                  against: <code className="text-[12px] text-[var(--muted)]">{a.restrictionId}</code>,
-                  decision: (
-                    <Pill tone={a.decision ? TONE[a.decision] : "muted"}>
-                      {a.decision ?? "not filed"}
-                    </Pill>
+                  against: a.restriction.id ? (
+                    <span className="flex flex-col">
+                      <span className="text-[12px] text-[var(--fg)]">{a.restriction.title}</span>
+                      <code className="text-[11px] text-[var(--muted)]">
+                        {a.restriction.severity} · {a.restriction.guideline}
+                      </code>
+                    </span>
+                  ) : (
+                    <span className="text-[var(--muted)]">no restriction</span>
                   ),
-                  filed: <span title={dateTime(a.createdAt)}>{ago(a.createdAt, NOW_ISO)}</span>,
-                  age: a.decidedAt ? ago(a.decidedAt, NOW_ISO) : "—",
+                  decision: <Pill tone={TONE[a.decision]}>{a.decision}</Pill>,
+                  filed: <span title={dateTime(a.createdAt)}>{ago(a.createdAt, now)}</span>,
+                  decided: a.decidedAt ? (
+                    <span title={dateTime(a.decidedAt)}>{ago(a.decidedAt, now)}</span>
+                  ) : null,
+                  act: a.decision === "pending" && mayDecide ? <AppealDecision appealId={a.id} /> : null,
                 }))}
                 empty="Nobody has appealed."
               />
             </div>
           </Panel>
+
+          {pages > 1 ? (
+            <div className="flex items-center justify-between gap-2 text-[12px]">
+              {load.data.page > 1 ? (
+                <Link href={link(load.data.page - 1)} className="btn btn-quiet btn-sm">
+                  Previous
+                </Link>
+              ) : (
+                <span />
+              )}
+              <span className="tabular-nums text-[var(--muted)]">
+                page {load.data.page} of {pages}
+              </span>
+              {load.data.page < pages ? (
+                <Link href={link(load.data.page + 1)} className="btn btn-quiet btn-sm">
+                  Next
+                </Link>
+              ) : (
+                <span />
+              )}
+            </div>
+          ) : null}
         </>
       )}
     </>

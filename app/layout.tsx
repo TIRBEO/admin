@@ -3,8 +3,9 @@ import { THEME_BOOT } from "@/lib/theme";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Tirbeo Admin",
+  title: { default: "Tirbeo Console", template: "%s · Tirbeo Console" },
   description: "Operations, safety and growth for Tirbeo.",
+  applicationName: "Tirbeo Console",
 };
 
 export default function RootLayout({

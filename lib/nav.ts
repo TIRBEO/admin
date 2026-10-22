@@ -1,42 +1,40 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  Activity,
   BellRing,
-  Blocks,
   ChartNoAxesCombined,
   CircleGauge,
   CircleSlash,
-  CircleUser,
-  Clock,
-  CreditCard,
-  Download,
-  FileClock,
-  Fingerprint,
   Gauge,
   HeartPulse,
-  Inbox,
   LayoutList,
   Mail,
-  MailWarning,
   MessageSquareQuote,
-  MessagesSquare,
   Radar,
   ScrollText,
-  Send,
   ServerCog,
-  Settings,
   ShieldAlert,
   ShieldCheck,
-  Siren,
   Ticket,
   UserPlus,
   Users,
   Wrench,
 } from "lucide-react";
 
-/* The rail is the app's only navigation, so it is also its table of
-   contents: every screen the console ships appears here, and the filter
-   box has to find every one of them by keyword. */
+/* The rail is the console's table of contents, so it lists exactly the
+   screens that read from the API — nothing else.
+
+   It used to list thirty-three, and most of them were drawn over fixture
+   data: a Subscribers screen with invented plans, a Push screen with invented
+   delivery rates, a Jobs screen whose cron table does not exist. An operator
+   who acts on this console is acting on faith, and a screen full of plausible
+   fake numbers is the quickest way to lose it. The `unwired` flag that marked
+   some of them went the same way — it was wrong more often than it was right,
+   which is worse than no marker at all.
+
+   Each entry now names the permission its screen asks the API for, which is
+   the same key the read itself is guarded by. The list is only honest if it can
+   be checked against the code that enforces it, so `permission` is that
+   check: an entry with no key is a screen every role can open. */
 
 export type NavItem = {
   href: string;
@@ -44,8 +42,7 @@ export type NavItem = {
   description: string;
   icon: LucideIcon;
   keywords?: string;
-  /** A screen whose data has no endpoint behind it yet. */
-  unwired?: boolean;
+  permission?: string;
 };
 
 export type NavGroup = {
@@ -62,23 +59,33 @@ export const NAV_GROUPS: NavGroup[] = [
       {
         href: "/admin",
         label: "Dashboard",
-        description: "Live counts, errors and what needs attention",
+        description: "Live counts, series and what needs attention",
         icon: CircleGauge,
-        keywords: "home start kpi summary metrics totals",
+        keywords: "home start kpi summary metrics totals overview",
+        permission: "dashboard.read",
       },
       {
         href: "/admin/health",
         label: "Health",
-        description: "Services, dependencies and latency budgets",
+        description: "Database, session store and what the platform says about itself",
         icon: HeartPulse,
-        keywords: "uptime status db redis queue postgres s3 smtp ping",
+        keywords: "uptime status db redis queue postgres smtp ping setup",
       },
       {
         href: "/admin/analytics",
         label: "Analytics",
-        description: "Traffic, signups and consent coverage",
+        description: "Signups, ledger volume and what the console is used for",
         icon: ChartNoAxesCombined,
-        keywords: "charts traffic pageviews visits sessions signups umami",
+        keywords: "charts growth signups users by day top actions",
+        permission: "analytics.read",
+      },
+      {
+        href: "/admin/activity",
+        label: "Activity",
+        description: "The live ledger: who is on, what just happened",
+        icon: Radar,
+        keywords: "live feed online presence realtime now recent events",
+        permission: "activity.read",
       },
     ],
   },
@@ -89,61 +96,18 @@ export const NAV_GROUPS: NavGroup[] = [
       {
         href: "/admin/people",
         label: "People",
-        description: "Search accounts, inspect status, set levels",
+        description: "Search accounts, read status, ban, suspend, export",
         icon: Users,
-        keywords: "users accounts search profile ban suspend delete level",
+        keywords: "users accounts search profile ban suspend delete level consent",
+        permission: "people.read",
       },
       {
         href: "/admin/people/new",
         label: "New person",
         description: "Provision an account from the console",
         icon: UserPlus,
-        keywords: "create invite onboard add operator staff signup",
-      },
-      {
-        href: "/admin/people/u_1001",
-        label: "Person 360",
-        description: "One account in full: profile, devices, history",
-        icon: CircleUser,
-        keywords: "detail profile id devices sessions timeline moderation",
-      },
-      {
-        href: "/admin/identities",
-        label: "Identities",
-        description: "Handles, reserved addresses and claim rules",
-        icon: Fingerprint,
-        keywords: "handle username slug reserved claim identity",
-        unwired: true,
-      },
-      {
-        href: "/admin/subscribers",
-        label: "Subscribers",
-        description: "Paid plans, renewals and entitlements",
-        icon: CreditCard,
-        keywords: "billing plan subscription renew entitlement pro",
-        unwired: true,
-      },
-      {
-        href: "/admin/export-requests",
-        label: "Export requests",
-        description: "GDPR data exports and their download windows",
-        icon: Download,
-        keywords: "gdpr dsar download privacy erase anonymise export",
-      },
-      {
-        href: "/admin/feedback",
-        label: "Feedback",
-        description: "In-product reports, ratings and triage",
-        icon: MessageSquareQuote,
-        keywords: "reports ratings bugs suggestions nps survey triage",
-      },
-      {
-        href: "/admin/waitlist",
-        label: "Waitlist",
-        description: "Pre-launch signups, sourcing and invites",
-        icon: FileClock,
-        keywords: "landing early access invites source referral launch",
-        unwired: true,
+        keywords: "create invite onboard add operator staff signup provision",
+        permission: "people.manage",
       },
     ],
   },
@@ -152,39 +116,36 @@ export const NAV_GROUPS: NavGroup[] = [
     title: "Safety",
     items: [
       {
-        href: "/admin/restrictions",
-        label: "Restrictions",
-        description: "Active mutes, freezes and shadow limits",
-        icon: ShieldAlert,
-        keywords: "mute freeze restrict shadow ban scope expiry appeal",
-      },
-      {
         href: "/admin/appeals",
         label: "Appeals",
-        description: "Requests to lift a restriction, and their verdicts",
-        icon: Ticket,
-        keywords: "appeal request review lift verdict pending resolved",
+        description: "Restrictions an owner has answered, and what was decided",
+        icon: MessageSquareQuote,
+        keywords: "restriction appeal ban suspend uphold overturn verdict pending",
+        permission: "appeals.read",
       },
       {
         href: "/admin/blocklist",
         label: "Blocklist",
-        description: "Banned addresses, domains, IPs and devices",
+        description: "Addresses and accounts blocked, by whom and until when",
         icon: CircleSlash,
-        keywords: "block ban ip email domain device fingerprint deny",
-      },
-      {
-        href: "/admin/limits",
-        label: "Limits",
-        description: "Rate limiter budgets and verification caps",
-        icon: Gauge,
-        keywords: "rate limit throttle quota otp sms verification budget",
+        keywords: "block blocked ip address email domain deny unblock entry",
+        permission: "blocklist.read",
       },
       {
         href: "/admin/security-events",
         label: "Security events",
-        description: "Anomalies, failed logins and posture score",
-        icon: ShieldCheck,
-        keywords: "anomaly login failure 2fa mfa posture risk score event",
+        description: "Failed sign-ins, alerts and the score they add up to",
+        icon: ShieldAlert,
+        keywords: "login failure 2fa mfa anomaly threat risk posture score",
+        permission: "security.read",
+      },
+      {
+        href: "/admin/limits",
+        label: "Limits",
+        description: "Rate limits, the traffic they stopped, the per-method caps",
+        icon: Gauge,
+        keywords: "rate limit throttle quota otp sms verification budget 429 bypass",
+        permission: "limits.read",
       },
     ],
   },
@@ -195,18 +156,10 @@ export const NAV_GROUPS: NavGroup[] = [
       {
         href: "/admin/tickets",
         label: "Tickets",
-        description: "The inbox: priority, owner, SLA and status",
-        icon: Inbox,
-        keywords: "support helpdesk conversation owner sla priority open",
-        unwired: true,
-      },
-      {
-        href: "/admin/tickets/t_2001",
-        label: "Ticket thread",
-        description: "One conversation, its history and its replies",
-        icon: MessagesSquare,
-        keywords: "thread reply message customer detail close resolve",
-        unwired: true,
+        description: "Every request that came in, on its reference code",
+        icon: Ticket,
+        keywords: "support helpdesk conversation reply answered reference open",
+        permission: "tickets.read",
       },
     ],
   },
@@ -215,60 +168,36 @@ export const NAV_GROUPS: NavGroup[] = [
     title: "Messaging",
     items: [
       {
-        href: "/admin/email/queue",
-        label: "Email queue",
-        description: "Outbound jobs, retries and dead letters",
-        icon: Mail,
-        keywords: "outbox jobs retry dead letter smtp queue pending",
-      },
-      {
         href: "/admin/email/deliveries",
         label: "Deliveries",
-        description: "Sent mail and its provider outcome",
-        icon: Send,
-        keywords: "delivered bounced opened clicked sent provider smtp",
+        description: "Every mail the platform sent and what the provider said",
+        icon: Mail,
+        keywords: "email sent delivered bounced complained opened clicked queue smtp",
+        permission: "email.read",
       },
       {
         href: "/admin/email/templates",
         label: "Templates",
-        description: "Layouts, content and version history",
+        description: "The mail bodies, and the slots each one fills",
         icon: LayoutList,
-        keywords: "layout subject body design version html render",
+        keywords: "email template subject body html variables slug edit version",
+        permission: "email.read",
       },
       {
         href: "/admin/email/config",
         label: "Email config",
-        description: "Senders, domains, keys and provider settings",
-        icon: Settings,
-        keywords: "sender from domain dkim spf dmarc api key resend smtp",
-      },
-      {
-        href: "/admin/email/compose",
-        label: "Compose",
-        description: "Write and test a single message by hand",
-        icon: MailWarning,
-        keywords: "draft preview test send manual recipient subject",
-      },
-      {
-        href: "/admin/email/inbox",
-        label: "Inbox",
-        description: "Replies and inbound bounces routed to us",
-        icon: Inbox,
-        keywords: "inbound reply autoreply bounce vacation route",
-      },
-      {
-        href: "/admin/push",
-        label: "Push",
-        description: "Device tokens, campaigns and delivery rates",
-        icon: Siren,
-        keywords: "webpush fcm apns device token campaign notify",
+        description: "Provider, domains and the address each kind of mail comes from",
+        icon: ServerCog,
+        keywords: "smtp resend api key domain dkim sender from alias",
+        permission: "email.read",
       },
       {
         href: "/admin/notifications",
         label: "Notifications",
-        description: "In-app notification rules and their reach",
+        description: "In-app notices, and the broadcast that reaches everyone",
         icon: BellRing,
-        keywords: "inapp feed rules digest unread bell preference",
+        keywords: "inbox broadcast announcement bell unread digest preference send",
+        permission: "notifications.read",
       },
     ],
   },
@@ -277,61 +206,34 @@ export const NAV_GROUPS: NavGroup[] = [
     title: "Platform",
     items: [
       {
-        href: "/admin/settings",
-        label: "Settings",
-        description: "Feature flags, signup mode and platform switches",
-        icon: Blocks,
-        keywords: "flags feature registration open closed rollout kill switch",
-        unwired: true,
-      },
-      {
-        href: "/admin/maintenance",
-        label: "Maintenance",
-        description: "Maintenance mode, notices and the status page",
-        icon: Wrench,
-        keywords: "downtime incident banner message schedule status page",
-      },
-      {
-        href: "/admin/jobs",
-        label: "Jobs",
-        description: "Scheduled and background job runs",
-        icon: Clock,
-        keywords: "cron worker queue backlog scheduled task run job",
-        unwired: true,
-      },
-      {
-        href: "/admin/heartbeat",
-        label: "Heartbeat",
-        description: "Cron pings, deadlines and missed runs",
-        icon: Activity,
-        keywords: "cron ping deadman deadline missed schedule monitor",
-      },
-    ],
-  },
-  {
-    id: "audit",
-    title: "Audit",
-    items: [
-      {
-        href: "/admin/activity",
-        label: "Activity",
-        description: "The live feed: who is on, what just happened",
-        icon: Radar,
-        keywords: "live feed online presence realtime now recent",
-      },
-      {
         href: "/admin/audit",
         label: "Audit trail",
         description: "Every console action, immutable and searchable",
         icon: ScrollText,
         keywords: "trail compliance history change operator action log",
+        permission: "activity.read",
+      },
+      {
+        href: "/admin/staff",
+        label: "Staff",
+        description: "Who is staff, what kind, and what each kind may do",
+        icon: ShieldCheck,
+        keywords: "admins administrators roles owner moderator support analyst grant revoke powers permissions roster",
+        permission: "staff.read",
+      },
+      {
+        href: "/admin/maintenance",
+        label: "Maintenance",
+        description: "The gate the platform puts up, and who it still lets through",
+        icon: Wrench,
+        keywords: "downtime banner message allowlist schedule outage status",
       },
       {
         href: "/admin/account",
         label: "My account",
-        description: "Your level, sessions, keys and preferences",
-        icon: ServerCog,
-        keywords: "operator profile password api key session mfa signout",
+        description: "Who you are to this console, and what your hands have changed",
+        icon: ShieldCheck,
+        keywords: "operator profile password two factor session signout level permission",
       },
     ],
   },
@@ -339,23 +241,45 @@ export const NAV_GROUPS: NavGroup[] = [
 
 export const ALL_NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((g) => g.items);
 
-export function titleFor(pathname: string): NavItem | undefined {
-  return ALL_NAV_ITEMS.filter(
-    (i) => pathname === i.href || pathname.startsWith(i.href + "/"),
-  ).sort((a, b) => b.href.length - a.href.length)[0];
+/** A permission set as delivered by `/admin/me`. Anything not named true is
+    not allowed, including a key the API has since added — the set arrives
+    complete, so an absent key means the operator was not given it. */
+export type Permissions = Record<string, boolean>;
+
+function visible(item: NavItem, permissions: Permissions | null): boolean {
+  // null means the console has not asked yet (or could not); the rail then
+  // lists everything it always listed rather than silently losing sections.
+  if (!permissions || !item.permission) return true;
+  return permissions[item.permission] === true;
 }
 
-export function sectionFor(href: string): NavGroup | undefined {
-  return NAV_GROUPS.find((g) => g.items.some((i) => i.href === href));
+/** The longest matching entry wins, so a detail route under /admin/people
+    still reads as People rather than as whatever shorter path it also sits
+    under. */
+export function titleFor(pathname: string, permissions: Permissions | null = null): NavItem | undefined {
+  return ALL_NAV_ITEMS.filter((i) => visible(i, permissions))
+    .filter((i) => pathname === i.href || pathname.startsWith(i.href + "/"))
+    .sort((a, b) => b.href.length - a.href.length)[0];
 }
 
-export function searchNav(query: string): NavGroup[] {
+/** Sections, filtered by what the operator may open and then by the query.
+    A group whose items were all refused disappears rather than rendering an
+    orphan heading. */
+export function searchNav(query: string, permissions: Permissions | null = null): NavGroup[] {
   const q = query.trim().toLowerCase();
-  if (!q) return NAV_GROUPS;
   return NAV_GROUPS.map((g) => ({
     ...g,
-    items: g.items.filter((i) =>
-      [i.label, i.description, i.keywords ?? "", i.href].join(" ").toLowerCase().includes(q),
-    ),
+    items: g.items
+      .filter((i) => visible(i, permissions))
+      .filter((i) =>
+        !q ||
+        [i.label, i.description, i.keywords ?? "", i.href].join(" ").toLowerCase().includes(q),
+      ),
   })).filter((g) => g.items.length > 0);
+}
+
+/** Every screen this operator can reach — the ground the console checks a
+    direct URL against before it renders a table and a refusal. */
+export function allowedHrefs(permissions: Permissions | null): string[] {
+  return ALL_NAV_ITEMS.filter((i) => visible(i, permissions)).map((i) => i.href);
 }

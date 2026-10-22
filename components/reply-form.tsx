@@ -75,7 +75,7 @@ export function ReplyForm({
         value={body}
         onChange={(e) => setBody(e.target.value)}
         placeholder="Write what happens next…"
-        className="w-full resize-y rounded-[12px] border border-[var(--border)] bg-[var(--field)] px-3 py-2.5 text-[13px] leading-relaxed text-[var(--fg)] placeholder:text-[var(--placeholder)] focus:border-[var(--accent)] focus:outline-none"
+        className="w-full resize-y rounded-[14px] border border-[var(--border)] bg-[var(--field)] px-3 py-2.5 text-[13px] leading-relaxed text-[var(--fg)] placeholder:text-[var(--placeholder)] focus:border-[var(--accent)] focus:outline-none"
       />
       <div className="flex flex-wrap items-center gap-2">
         <button

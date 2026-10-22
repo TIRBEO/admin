@@ -23,15 +23,19 @@ export function dateOnly(v: unknown): string {
 }
 
 /** "3 days ago" / "in 2 hours" / "just now".
- *  `from` pins the comparison to a fixed clock — the fixtures all measure
- *  against one NOW so an age cannot drift between two renders of a page. */
+ *  `from` pins the comparison to a fixed clock, so two rows on one page
+ *  cannot disagree about how old "now" is.
+ *
+ *  The running value is scaled into each unit before it is compared, which is
+ *  the part that is easy to get wrong: testing the raw second count against
+ *  every threshold answers "is this older than a year" for anything over a
+ *  minute and prints "this year" on a row written eight hours ago. */
 export function ago(v: unknown, from?: unknown): string {
   const d = toDate(v);
   if (!d) return "—";
   const now = toDate(from)?.getTime() ?? Date.now();
   const secs = Math.round((now - d.getTime()) / 1000);
   const future = secs < 0;
-  const abs = Math.abs(secs);
 
   const units: Array<[Intl.RelativeTimeFormatUnit, number]> = [
     ["second", 60],
@@ -43,15 +47,12 @@ export function ago(v: unknown, from?: unknown): string {
     ["year", Number.POSITIVE_INFINITY],
   ];
 
-  let value = -abs;
+  const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+  let value = Math.abs(secs);
   for (const [unit, size] of units) {
-    if (abs < size) {
-      const rtf = new Intl.RelativeTimeFormat(undefined, {
-        numeric: "auto",
-      });
-      return rtf.format(future ? -value : value, unit);
-    }
-    value = Math.round(value / size);
+    const n = Math.round(value);
+    if (n < size) return rtf.format(future ? n : -n, unit);
+    value /= size;
   }
   return "—";
 }
@@ -97,4 +98,37 @@ function toDate(v: unknown): Date | null {
     return Number.isNaN(d.getTime()) ? null : d;
   }
   return null;
+}
+/* A user-agent string names four engines and one browser. The row keeps the
+   whole thing in its title attribute; this is the part worth a column. */
+const BROWSERS: Array<[RegExp, string]> = [
+  [/CriOS\/(\d+)/, "Chrome"],
+  [/FxiOS\/(\d+)/, "Firefox"],
+  [/Edg(?:A|iOS|CV)?\/(\d+)/, "Edge"],
+  [/OPR\/(\d+)/, "Opera"],
+  [/SamsungBrowser\/(\d+)/, "Samsung Internet"],
+  [/Firefox\/(\d+)/, "Firefox"],
+  [/Chrome\/(\d+)/, "Chrome"],
+  [/Version\/(\d+).*Safari/, "Safari"],
+];
+
+const SYSTEMS: Array<[RegExp, string]> = [
+  [/\((?:iPhone|iPad|iPod)/, "iOS"],
+  [/Android/, "Android"],
+  [/Mac OS X/, "macOS"],
+  [/Windows NT/, "Windows"],
+  [/CrOS/, "ChromeOS"],
+  [/Linux/, "Linux"],
+];
+
+export function device(userAgent: string | null | undefined): string | null {
+  const ua = userAgent?.trim();
+  if (!ua) return null;
+  const browser = BROWSERS.find(([re]) => re.test(ua));
+  const system = SYSTEMS.find(([re]) => re.test(ua))?.[1];
+  if (!browser && !system) return ua.slice(0, 40);
+  const version = browser ? browser[0].exec(ua)?.[1] : null;
+  return [browser ? `${browser[1]} ${version ?? ""}`.trim() : null, system ?? null]
+    .filter(Boolean)
+    .join(" · ");
 }
