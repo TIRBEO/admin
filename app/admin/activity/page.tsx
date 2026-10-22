@@ -1,10 +1,8 @@
 import Link from "next/link";
 
 import { PageHeader, PageState, Panel, Pill } from "@/components/page-header";
-import { activityFeed, onlineNow } from "@/lib/mock";
-import { present, readState } from "@/lib/load-state";
+import { readActivity } from "@/lib/activity";
 import { ago, dateTime } from "@/lib/format";
-import { NOW_ISO } from "@/lib/mock/world";
 
 import type { Severity } from "@/lib/mock/types";
 
@@ -25,7 +23,6 @@ export default async function ActivityPage({
   searchParams: Promise<Params>;
 }) {
   const params = await searchParams;
-  const state = readState(params);
   const one = (key: string) => {
     const v = params[key];
     return Array.isArray(v) ? v[0] : v;
@@ -33,16 +30,22 @@ export default async function ActivityPage({
   const severity = (one("severity") ?? "") as Severity | "";
   const limit = Math.min(200, Math.max(10, Number(one("limit")) || 60));
 
-  const [events, online] = await Promise.all([activityFeed({ severity, limit }), onlineNow()]);
-  const load = present(state, { events, online });
+  /* The live ledger, not a fixture: an admin alert has to be on this screen
+     while it is happening. A screen that shows a rehearsed ledger tells an
+     operator the platform is quiet, which is the one thing this screen must
+     never say when it is wrong. */
+  const load = await readActivity({ severity, limit });
+
+  /* The ledger is live, so "how long ago" is measured against the real clock —
+     the fixture world runs on a frozen one, and a row that says "3 hours ago"
+     when it was written thirty seconds ago is a lie an operator acts on. */
+  const now = new Date().toISOString();
 
   return (
     <>
       <PageHeader
         title="Activity"
-        description="One ledger, every kind of thing that happened. Presence is the same table read with a five-minute window, so both halves of this screen disagree only if the clock does."
-        state={state}
-        params={params}
+        description="One ledger, every kind of thing that happened — including the alerts the platform raises about itself. Presence is the same table read with a five-minute window, so both halves of this screen disagree only if the clock does."
         actions={
           <Link href="/admin/audit" className="btn btn-secondary btn-sm">
             Console actions
@@ -91,7 +94,7 @@ export default async function ActivityPage({
                   </a>
                 ) : null}
                 <span className="ml-auto text-[12px] tabular-nums text-[var(--muted)]">
-                  {events.length} rows · newest first
+                  {load.data.events.length} rows · newest first
                 </span>
               </form>
             </Panel>
@@ -129,7 +132,7 @@ export default async function ActivityPage({
                       dateTime={e.createdAt}
                       title={dateTime(e.createdAt)}
                     >
-                      {ago(e.createdAt, NOW_ISO)}
+                      {ago(e.createdAt, now)}
                     </time>
                   </li>
                 ))}
@@ -152,7 +155,7 @@ export default async function ActivityPage({
                     {o.userId}
                   </Link>
                   <span className="shrink-0 text-[11px] tabular-nums text-[var(--muted)]">
-                    {ago(o.at, NOW_ISO)}
+                    {ago(o.at, now)}
                   </span>
                 </li>
               ))}

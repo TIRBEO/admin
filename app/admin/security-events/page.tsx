@@ -3,12 +3,10 @@ import { ShieldCheck } from "lucide-react";
 
 import { DataTable } from "@/components/data-table";
 import { Metric, PageHeader, PageState, Panel, Pill } from "@/components/page-header";
-import { listSecurityEvents, securityScore } from "@/lib/mock";
-import { present, readState } from "@/lib/load-state";
+import { fetchSecurityScore, readSecurityEvents } from "@/lib/security";
 import { ago, dateTime } from "@/lib/format";
-import { NOW_ISO } from "@/lib/mock/world";
 
-import type { Severity } from "@/lib/mock/types";
+import type { SecurityScore, Severity } from "@/lib/mock/types";
 
 type Params = Record<string, string | string[] | undefined>;
 
@@ -19,6 +17,24 @@ const SEVERITY_TONE: Record<Severity, "muted" | "warn" | "danger"> = {
   warning: "warn",
   error: "danger",
   critical: "danger",
+};
+
+/** What the posture panel shows when the posture query did not answer. */
+const UNMEASURED: SecurityScore = {
+  score: 0,
+  threatLevel: "low",
+  factors: [],
+  stats: {
+    totalUsers: 0,
+    usersWith2FA: 0,
+    activeSessions: 0,
+    revokedSessions: 0,
+    blockedIPs: 0,
+    blockedUsers: 0,
+  },
+  topIPs: [],
+  topEventTypes: [],
+  recentCritical: [],
 };
 
 const FACTOR_TONE: Record<string, string> = {
@@ -33,7 +49,6 @@ export default async function SecurityEventsPage({
   searchParams: Promise<Params>;
 }) {
   const params = await searchParams;
-  const state = readState(params);
   const one = (key: string) => {
     const v = params[key];
     return Array.isArray(v) ? v[0] : v;
@@ -43,11 +58,25 @@ export default async function SecurityEventsPage({
   const q = one("q") ?? "";
   const page = Math.max(1, Number(one("page")) || 1);
 
-  const [events, score] = await Promise.all([
-    listSecurityEvents({ severity, type, q, page }),
-    securityScore(),
+  /* The live ledger and the live posture, read side by side. The posture is
+     a second door: if it is the one that failed, the events still stand, and
+     an operator is better served by "not measured" than by a zero that looks
+     like a measurement. */
+  const [load, measured] = await Promise.all([
+    readSecurityEvents({ severity, type, q, page }),
+    fetchSecurityScore(),
   ]);
-  const load = present(state, events);
+  const now = new Date().toISOString();
+  const score: SecurityScore = measured ?? UNMEASURED;
+  /* The kinds an operator can filter by: the ones this page actually shows,
+     topped up with the platform's own ranking of kinds so the list is not
+     limited to whatever the current filter happens to return. */
+  const eventTypes = Array.from(
+    new Set([
+      ...(load.status === "ready" ? load.data.items.map((e) => e.eventType) : []),
+      ...score.topEventTypes.map((t) => t.type),
+    ]),
+  ).sort();
 
   const href = (over: Record<string, string | number>) => {
     const search = new URLSearchParams();
@@ -64,30 +93,36 @@ export default async function SecurityEventsPage({
       <PageHeader
         title="Security events"
         description="Every anomaly the platform noticed, and the posture score that is those events read as one number."
-        state={state}
-        params={params}
       />
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
         <Panel title="Posture">
           <div className="flex items-end gap-3">
             <p className="text-[46px] font-semibold leading-none tabular-nums tracking-[-0.04em] text-[var(--fg)]">
-              {score.score}
+              {measured ? score.score : "—"}
             </p>
             <Pill
               tone={
-                score.threatLevel === "low"
-                  ? "success"
-                  : score.threatLevel === "medium"
-                    ? "warn"
-                    : "danger"
+                !measured
+                  ? "muted"
+                  : score.threatLevel === "low"
+                    ? "success"
+                    : score.threatLevel === "medium"
+                      ? "warn"
+                      : "danger"
               }
             >
               <ShieldCheck size={12} aria-hidden />
-              {score.threatLevel} threat
+              {measured ? `${score.threatLevel} threat` : "not measured"}
             </Pill>
           </div>
           <ul className="mt-4 flex flex-col gap-3">
+            {!measured ? (
+              <li className="text-[12px] leading-snug text-[var(--muted)]">
+                The posture query did not answer, so nothing here is a score. The event list
+                below is the ledger itself and stands on its own.
+              </li>
+            ) : null}
             {score.factors.map((f) => (
               <li key={f.name} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1">
                 <span className="truncate text-[13px] text-[var(--text-2)]">{f.name}</span>
@@ -143,7 +178,7 @@ export default async function SecurityEventsPage({
                 rows={score.topIPs.map((ip) => ({
                   ip: <code className="text-[12px]">{ip.ip}</code>,
                   count: ip.count,
-                  seen: ago(ip.lastSeen, NOW_ISO),
+                  seen: ago(ip.lastSeen, now),
                 }))}
                 empty="No address has produced an event."
               />
@@ -182,9 +217,9 @@ export default async function SecurityEventsPage({
             className="h-9 rounded-[10px] border border-[var(--border)] bg-[var(--field)] px-3 text-[13px] text-[var(--fg)] focus:border-[var(--accent)] focus:outline-none"
           >
             <option value="">Any event</option>
-            {score.topEventTypes.map((t) => (
-              <option key={t.type} value={t.type}>
-                {t.type}
+            {eventTypes.map((t) => (
+              <option key={t} value={t}>
+                {t}
               </option>
             ))}
           </select>
@@ -226,7 +261,7 @@ export default async function SecurityEventsPage({
                   <span className="text-[12px] text-[var(--muted)]">pre-account</span>
                 ),
                 ip: <code className="text-[12px]">{e.ipAddress ?? "—"}</code>,
-                when: <span title={dateTime(e.createdAt)}>{ago(e.createdAt, NOW_ISO)}</span>,
+                when: <span title={dateTime(e.createdAt)}>{ago(e.createdAt, now)}</span>,
               }))}
               empty="No event matches this filter."
             />

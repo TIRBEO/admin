@@ -11,6 +11,8 @@
 
 import { cookies } from "next/headers";
 
+import type { LoadError } from "@/lib/load-state";
+
 /** The API refuses a cookie-authed write that does not echo `__csrf` back in
  *  a header, so both names belong here and nowhere else. */
 const SESSION_COOKIE = "__session";
@@ -89,10 +91,57 @@ export function apiGet<T>(path: string, init: RequestInit = {}) {
   return apiSend<T>(path, { ...init, method: "GET" });
 }
 
+/** The API's answer with its headers intact — for the one call whose reply has
+ *  to reach the browser. Logout clears a session by `Set-Cookie`, and the
+ *  attributes (domain, path, secure) are the API's decision; re-typing them
+ *  here would make this a second place they can be gotten wrong. */
+export async function apiRelay(path: string, init: RequestInit = {}): Promise<{ status: number; setCookie: string[] }> {
+  const method = init.method ?? "GET";
+  try {
+    const res = await fetch(`${API_URL}/api${path}`, {
+      ...init,
+      method,
+      headers: { ...(await authHeaders(method)), ...(init.headers ?? {}) },
+      cache: "no-store",
+    });
+    return { status: res.status, setCookie: res.headers.getSetCookie() };
+  } catch {
+    return { status: 0, setCookie: [] };
+  }
+}
+
 /** The first human-readable message in an unknown API payload. */
 export function errorMessage(result: ApiResult<unknown>): string {
   if (result.status === 0) return "Cannot reach the API.";
   const d = result.data as { error?: unknown } | null;
   if (d && typeof d.error === "string" && d.error) return d.error;
   return `The API answered ${result.status}.`;
+}
+
+/** A failed read, in the shape a screen draws.
+ *
+ *  The three failures an operator actually hits are told apart on purpose:
+ *  the API being unreachable, the operator being signed out, and the operator
+ *  being signed in as somebody who is not an admin each need a different fix,
+ *  and a screen that shows them all as "error" sends people to the wrong one. */
+export function apiFailure(result: ApiResult<unknown>): LoadError {
+  const message =
+    result.status === 0
+      ? "The API never answered. It is either stopped or this host cannot reach it."
+      : result.status === 401
+        ? "The API refused this read because no session came with the request."
+        : result.status === 403
+          ? "You are signed in, but this account is not an administrator."
+          : errorMessage(result);
+
+  const reason =
+    result.status === 0
+      ? "unreachable"
+      : result.status === 401
+        ? "signed-out"
+        : result.status === 403
+          ? "not-admin"
+          : undefined;
+
+  return { status: "error", message, reason };
 }

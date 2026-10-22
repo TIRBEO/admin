@@ -24,12 +24,12 @@ export function readTheme(): ThemeId {
   }
 }
 
-/** `system` follows the device and falls back to dark when unavailable. */
+/** `system` follows the device and falls back to light when unavailable. */
 export function resolveTheme(id: ThemeId): "dark" | "light" {
   if (id !== "system") return id;
-  return typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: light)").matches
-    ? "light"
-    : "dark";
+  return typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
 }
 
 export function applyTheme(id: ThemeId) {
@@ -59,4 +59,4 @@ export function onSystemThemeChange(onChange: () => void) {
 
 /** Inlined in <head> so the palette is correct on the very first paint.
     Also carries any legacy tb-theme choice forward. */
-export const THEME_BOOT = `(function(){try{var k="tirbeo:theme";var v=localStorage.getItem(k);if(!v){v=localStorage.getItem("tb-theme");if(v)localStorage.setItem(k,v);}var t=(v==="dark"||v==="light"||v==="system")?v:"system";var a=t==="light"||(t==="system"&&window.matchMedia&&matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";document.documentElement.setAttribute("data-theme",a);document.documentElement.style.colorScheme=a;}catch(e){}})();`;
+export const THEME_BOOT = `(function(){try{var k="tirbeo:theme";var v=localStorage.getItem(k);if(!v){v=localStorage.getItem("tb-theme");if(v)localStorage.setItem(k,v);}var t=(v==="dark"||v==="light"||v==="system")?v:"system";var a=t==="dark"||(t==="system"&&window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light";document.documentElement.setAttribute("data-theme",a);document.documentElement.style.colorScheme=a;}catch(e){}})();`;

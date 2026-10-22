@@ -1,133 +1,107 @@
 import Link from "next/link";
 
-import { DataTable } from "@/components/data-table";
-import { Field, PageHeader, PageState, Panel, Pill } from "@/components/page-header";
-import { getTemplate, listTemplates } from "@/lib/mock";
-import { present, readState } from "@/lib/load-state";
 import { ago, dateOnly } from "@/lib/format";
+import { getTemplate, listTemplates } from "@/lib/mock";
 import { NOW_ISO } from "@/lib/mock/world";
-
-type Params = Record<string, string | string[] | undefined>;
 
 export default async function EmailTemplatesPage({
   searchParams,
 }: {
-  searchParams: Promise<Params>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  const state = readState(params);
   const raw = params.slug;
   const slug = (Array.isArray(raw) ? raw[0] : raw) ?? "";
 
   const templates = await listTemplates();
   const selected = slug ? await getTemplate(slug) : (templates[0] ?? null);
-  const load = present(state, { templates, selected });
 
   return (
-    <>
-      <PageHeader
-        title="Templates"
-        description="The layout a job renders into. Editing one here changes the next mail, not the last one."
-        state={state}
-        params={params}
-      />
+    <div className="mx-auto max-w-5xl px-4 py-6">
+      <div className="mb-6">
+        <h1 className="text-lg font-semibold text-[var(--fg)]">Templates</h1>
+        <p className="mt-1 text-[13px] text-[var(--text-3)]">Registry of email templates</p>
+      </div>
 
-      <PageState load={load} rows={6} empty="There is no template registry — nothing can be sent, because there is nothing to send as." />
+      <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+        <div>
+          <div className="text-[12px] uppercase tracking-wide text-[var(--text-4)]">All</div>
+          <div className="mt-2 divide-y divide-[var(--divider)]">
+            {templates.map((t) => {
+              const active = selected?.slug === t.slug;
+              return (
+                <Link
+                  key={t.slug}
+                  href={`/admin/email/templates?slug=${t.slug}`}
+                  className="flex items-center justify-between gap-3 py-2.5"
+                >
+                  <div className="min-w-0">
+                    <div className={`truncate text-[13px] ${active ? "text-[var(--fg)]" : "text-[var(--text-2)]"}`}>
+                      {t.slug}
+                    </div>
+                    <div className="truncate text-[12px] text-[var(--text-4)]">{t.label}</div>
+                  </div>
+                  <div className="shrink-0 text-[12px] text-[var(--text-4)]">{ago(t.updatedAt, NOW_ISO)}</div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
 
-      {load.status !== "ready" ? null : (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-          <Panel title="Registry" flush hint="A slug is what the code asks for; a label is what an operator reads.">
-            <div className="px-4 py-1">
-              <DataTable
-                columns={[
-                  { key: "slug", label: "Slug" },
-                  { key: "subject", label: "Subject", hideBelow: "sm" },
-                  { key: "changed", label: "Changed", align: "right", hideBelow: "md" },
-                ]}
-                rows={templates.map((t) => ({
-                  slug: (
-                    <span className="flex min-w-0 flex-col">
-                      <Link
-                        href={`/admin/email/templates?slug=${t.slug}`}
-                        className={`truncate font-medium hover:underline ${
-                          selected?.slug === t.slug
-                            ? "text-[var(--accent-text)]"
-                            : "text-[var(--fg)] hover:text-[var(--accent-text)]"
-                        }`}
-                      >
-                        {t.slug}
-                      </Link>
-                      <span className="truncate text-[11px] text-[var(--muted)]">{t.label}</span>
-                    </span>
-                  ),
-                  subject: <span className="block truncate text-[var(--text-2)]">{t.subject}</span>,
-                  changed: (
-                    <span title={dateOnly(t.updatedAt)}>{ago(t.updatedAt, NOW_ISO)}</span>
-                  ),
-                }))}
-                empty="No template is registered."
+        {selected ? (
+          <div>
+            <div className="flex items-baseline justify-between gap-3">
+              <div>
+                <div className="text-[13px] text-[var(--fg)]">{selected.slug}</div>
+                <div className="mt-1 text-[12px] text-[var(--text-4)]">{selected.label}</div>
+              </div>
+              <div className="text-[12px] text-[var(--text-4)]">{selected.variables.length} vars</div>
+            </div>
+
+            <div className="mt-4 divide-y divide-[var(--divider)]">
+              <div className="flex items-center justify-between py-2">
+                <span className="text-[13px] text-[var(--text-3)]">Subject</span>
+                <span className="text-[13px] text-[var(--fg)]">{selected.subject}</span>
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <span className="text-[13px] text-[var(--text-3)]">Updated</span>
+                <span className="text-[13px] text-[var(--text-2)]">{ago(selected.updatedAt, NOW_ISO)}</span>
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <span className="text-[13px] text-[var(--text-3)]">Created</span>
+                <span className="text-[13px] text-[var(--text-2)]">{dateOnly(selected.createdAt)}</span>
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <span className="text-[13px] text-[var(--text-3)]">Variables</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {selected.variables.map((v) => (
+                    <span key={v} className="text-[12px] text-[var(--text-3)]">{`{{${v}}}`}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5">
+              <div className="text-[12px] text-[var(--text-4)]">Render</div>
+              <iframe
+                title={`Rendered ${selected.slug}`}
+                sandbox=""
+                srcDoc={`<!doctype html><meta charset="utf-8"><body style="margin:0;font:15px/1.5 -apple-system,system-ui,sans-serif;color:#e6e6e6;background:#1c1c1e"><div style="max-width:34rem;margin:0 auto;padding:20px">${selected.html}</div></body>`}
+                className="mt-2 h-64 w-full border border-[var(--divider)] bg-[#1c1c1e]"
               />
             </div>
-          </Panel>
 
-          {selected ? (
-            <div className="flex flex-col gap-4">
-              <Panel
-                title={selected.slug}
-                hint={selected.label ?? "no label"}
-                action={<Pill tone="muted">{selected.variables.length} variables</Pill>}
-              >
-                <dl className="-my-1">
-                  <Field label="Subject">{selected.subject}</Field>
-                  <Field label="Variables">
-                    <span className="flex flex-wrap justify-end gap-1.5">
-                      {selected.variables.map((v) => (
-                        <code
-                          key={v}
-                          className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-[11px] text-[var(--text-2)]"
-                        >
-                          {`{{${v}}}`}
-                        </code>
-                      ))}
-                    </span>
-                  </Field>
-                  <Field label="Updated">{ago(selected.updatedAt, NOW_ISO)}</Field>
-                  <Field label="Created">{dateOnly(selected.createdAt)}</Field>
-                </dl>
-              </Panel>
-
-              <Panel
-                title="Render"
-                hint="Isolated in a sandboxed frame: a template is markup from the database, and a console should not execute it."
-              >
-                <iframe
-                  title={`Rendered ${selected.slug}`}
-                  sandbox=""
-                  srcDoc={`<!doctype html><meta charset="utf-8"><body style="margin:0;font:15px/1.5 -apple-system,system-ui,sans-serif;color:#171717;background:#fff"><div style="max-width:34rem;margin:0 auto;padding:20px">${selected.html}</div></body>`}
-                  className="h-64 w-full rounded-[12px] border border-[var(--border)] bg-white"
-                />
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Link
-                    href={`/admin/email/compose?template=${selected.slug}`}
-                    className="btn btn-secondary btn-sm"
-                  >
-                    Send a test
-                  </Link>
-                  <Link href="/admin/email/queue" className="btn btn-quiet btn-sm">
-                    Jobs using it
-                  </Link>
-                </div>
-              </Panel>
+            <div className="mt-4 flex flex-wrap gap-4">
+              <Link href={`/admin/email/compose?template=${selected.slug}`} className="text-[13px] text-[var(--link)]">
+                Send a test
+              </Link>
+              <Link href="/admin/email/queue" className="text-[13px] text-[var(--link)]">
+                Jobs using it
+              </Link>
             </div>
-          ) : (
-            <Panel title="Pick a template" hint="Nothing is selected — the registry is empty or the slug does not exist.">
-              <p className="text-[13px] text-[var(--muted)]">
-                Choose a slug from the registry to see what it renders into.
-              </p>
-            </Panel>
-          )}
-        </div>
-      )}
-    </>
+          </div>
+        ) : null}
+      </div>
+    </div>
   );
 }

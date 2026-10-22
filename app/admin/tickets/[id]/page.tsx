@@ -1,204 +1,217 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Paperclip } from "lucide-react";
+import { ArrowLeft, MailOpen, MailWarning } from "lucide-react";
 
 import { Field, PageHeader, PageState, Panel, Pill } from "@/components/page-header";
-import { getTicket, ticketIsOverdue } from "@/lib/mock";
-import { MOCK_ERROR, present, readState } from "@/lib/load-state";
-import { ago, bytes, dateTime } from "@/lib/format";
-import { NOW_ISO } from "@/lib/mock/world";
+import { ReplyForm } from "@/components/reply-form";
+import { readThread } from "@/lib/support";
+import { ago, dateTime } from "@/lib/format";
 
-import type { TicketPriority, TicketStatus } from "@/lib/mock/types";
+/* One thread, read from the ledger it lives in.
+ *
+ * The reference code in the URL is not a database id: it is the code the
+ * account was shown and the code every mail in this conversation quotes, which
+ * is why a code pasted from an inbox opens the same thread as a link from the
+ * queue. Nothing here is invented — the old screen's priority, category,
+ * assignee and attachments had no endpoint behind them, and a helpdesk field
+ * an operator believes is worse than a helpdesk field that does not exist.
+ *
+ * The reply box is the point of this page. Answering from here writes the
+ * answer into the ledger, mails it, and tells the account, so the same code
+ * reads as one conversation wherever either side looks. */
 
-type Params = Record<string, string | string[] | undefined>;
+const STATUS_TONE = { open: "warn", answered: "success" } as const;
+const STATUS_WORD = { open: "waiting on us", answered: "answered" } as const;
 
-const STATUS_TONE: Record<TicketStatus, "success" | "warn" | "danger" | "muted" | "accent"> = {
-  open: "warn",
-  pending: "accent",
-  resolved: "success",
-  closed: "muted",
-};
-
-const PRIORITY_TONE: Record<TicketPriority, "muted" | "accent" | "warn" | "danger"> = {
-  low: "muted",
-  normal: "accent",
-  high: "warn",
-  urgent: "danger",
+const MAIL_WORD: Record<string, string> = {
+  support_request_received: "Confirmation to the account",
+  support_request_admin: "Copy to the team",
+  support_reply: "The answer, mailed",
 };
 
 export default async function TicketThreadPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<Params>;
 }) {
-  const [{ id }, query] = await Promise.all([params, searchParams]);
-  const state = readState(query);
-  const thread = await getTicket(id);
+  const { id } = await params;
+  const code = decodeURIComponent(id ?? "").trim();
+  if (!code) notFound();
 
-  if (!thread) notFound();
+  const load = await readThread(code);
+  /* Nothing in the ledger carries this code. A thread that does not exist is a
+     404, not an error plate — the screen would otherwise ask the operator to
+     retry a code that will never resolve. */
+  if (load.status === "empty") notFound();
 
-  const load = present(state, thread);
-  const { ticket, requester, assignee, messages, attachments } = thread;
-  const overdue = await ticketIsOverdue(ticket.id);
+  const thread = load.status === "ready" ? load.data : null;
+  const account = thread?.account ?? null;
+  const replyTo = account?.replyTo ?? null;
 
   return (
     <>
       <PageHeader
-        title={ticket.subject}
-        description={`${ticket.id} · ${ticket.category} · opened ${ago(ticket.createdAt, NOW_ISO)}`}
-        unwired
-        state={state}
-        params={query}
+        title={thread?.subject ?? "A message to the team"}
+        description={
+          thread
+            ? `Reference ${thread.ref} · opened ${ago(thread.askedAt)} · ${thread.messages.length} ${
+                thread.messages.length === 1 ? "message" : "messages"
+              } on record`
+            : `Looking up ${code} in the ledger.`
+        }
         actions={
-          <>
-            <Link href="/admin/tickets" className="btn btn-quiet btn-sm">
-              <ArrowLeft size={13} aria-hidden />
-              Queue
-            </Link>
-            <button type="button" className="btn btn-secondary btn-sm" disabled title={MOCK_ERROR}>
-              Assign to me
-            </button>
-            <button type="button" className="btn btn-primary btn-sm" disabled title={MOCK_ERROR}>
-              Send reply
-            </button>
-          </>
+          <Link href="/admin/tickets" className="btn btn-quiet btn-sm">
+            <ArrowLeft size={13} aria-hidden />
+            Queue
+          </Link>
         }
       />
 
       <PageState load={load} rows={6} />
 
-      {load.status !== "ready" ? null : (
+      {thread ? (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
           <div className="flex flex-col gap-4">
-            <Panel title="Conversation" hint={`${messages.length} messages · newest at the bottom`}>
+            <Panel title="The conversation" hint="Oldest first, the way it happened.">
               <ol className="flex flex-col gap-3">
-                {messages.map((m) => (
+                {thread.messages.map((m) => (
                   <li
                     key={m.id}
                     className={`flex flex-col gap-1 rounded-[14px] px-3.5 py-2.5 ${
-                      m.fromAdmin
+                      m.from === "staff"
                         ? "ml-auto max-w-[92%] bg-[var(--accent-soft)]"
                         : "mr-auto max-w-[92%] bg-[var(--surface-2)]"
                     }`}
                   >
                     <span className="flex items-baseline gap-2 text-[11px] text-[var(--muted)]">
                       <span className="font-semibold uppercase tracking-[0.04em]">
-                        {m.fromAdmin ? "Console" : requester?.username ?? "Person"}
+                        {m.from === "staff" ? "Answered here" : account?.username ?? "The account"}
                       </span>
-                      <time className="tabular-nums" dateTime={m.createdAt}>
-                        {ago(m.createdAt, NOW_ISO)}
+                      <span className="font-mono tabular-nums">{m.ref}</span>
+                      <time className="tabular-nums" dateTime={m.at} title={dateTime(m.at)}>
+                        {ago(m.at)}
                       </time>
                     </span>
-                    <p className="text-[13px] leading-relaxed text-[var(--fg)]">{m.body}</p>
+                    <p className="text-[13px] leading-relaxed whitespace-pre-line text-[var(--fg)]">
+                      {m.text}
+                    </p>
                   </li>
                 ))}
-                {messages.length === 0 ? (
-                  <li className="text-[13px] text-[var(--muted)]">
-                    Nothing has been said yet — the subject line is all there is.
-                  </li>
-                ) : null}
               </ol>
             </Panel>
 
-            <Panel title="Reply" hint="A reply is written by an endpoint that does not exist yet, so the box cannot be filled.">
-              <form className="flex flex-col gap-3">
-                <label className="sr-only" htmlFor="reply">
-                  Reply to {requester?.email ?? "the person"}
-                </label>
-                <textarea
-                  id="reply"
-                  name="body"
-                  rows={4}
-                  disabled
-                  placeholder="Write what happens next…"
-                  className="w-full resize-y rounded-[12px] border border-[var(--border)] bg-[var(--field)] px-3 py-2.5 text-[13px] leading-relaxed text-[var(--fg)] placeholder:text-[var(--placeholder)] focus:border-[var(--accent)] focus:outline-none disabled:opacity-60"
+            <Panel
+              title="Answer"
+              hint={
+                replyTo
+                  ? "Sends from the support mailbox, writes the answer beside the question under this reference, and tells the account in its own app."
+                  : undefined
+              }
+            >
+              {replyTo ? (
+                <ReplyForm
+                  code={thread.ref}
+                  to={replyTo}
+                  subject={thread.subject}
+                  receivedAt={thread.askedAt}
                 />
-                <div className="flex flex-wrap items-center gap-2">
-                  <button type="submit" className="btn btn-primary" disabled title={MOCK_ERROR}>
-                    Send and mark resolved
-                  </button>
-                  <button type="button" className="btn btn-secondary" disabled title={MOCK_ERROR}>
-                    Send only
-                  </button>
-                  <span className="text-[12px] text-[var(--muted)]">
-                    {requester ? `Replies go to ${requester.email}.` : "No address on file."}
-                  </span>
-                </div>
-              </form>
+              ) : (
+                <p className="text-[13px] leading-relaxed text-[var(--muted)]">
+                  {account
+                    ? "This account has no address an answer could reach, so there is nothing to reply to. Everything said so far is still on the record above."
+                    : "The account that wrote this is gone, so a reply has nowhere to go. The message itself stays in the ledger under its reference."}
+                </p>
+              )}
             </Panel>
           </div>
 
           <div className="flex flex-col gap-4">
-            <Panel title="This ticket">
+            <Panel title="This request">
               <dl className="-my-1">
                 <Field label="Status">
-                  <Pill tone={STATUS_TONE[ticket.status]}>{ticket.status}</Pill>
+                  <Pill tone={STATUS_TONE[thread.status]}>{STATUS_WORD[thread.status]}</Pill>
                 </Field>
-                <Field label="Priority">
-                  <Pill tone={PRIORITY_TONE[ticket.priority]}>{ticket.priority}</Pill>
+                <Field label="Reference">
+                  <span className="font-mono tabular-nums">{thread.ref}</span>
                 </Field>
-                <Field label="Category">{ticket.category}</Field>
-                <Field label="Due">
-                  <span title={dateTime(ticket.dueAt)} className={overdue ? "text-[var(--danger-text)]" : undefined}>
-                    {overdue ? `past due · ${ago(ticket.dueAt, NOW_ISO)}` : ago(ticket.dueAt, NOW_ISO)}
-                  </span>
+                <Field label="Written">
+                  <span title={dateTime(thread.askedAt)}>{ago(thread.askedAt)}</span>
                 </Field>
-                <Field label="First response">
-                  {ticket.firstResponseAt ? ago(ticket.firstResponseAt, NOW_ISO) : <span className="text-[var(--warn-text)]">not yet</span>}
+                <Field label="Answered">
+                  {thread.answeredAt ? (
+                    <span title={dateTime(thread.answeredAt)}>{ago(thread.answeredAt)}</span>
+                  ) : (
+                    <span className="text-[var(--warn-text)]">not yet</span>
+                  )}
                 </Field>
-                <Field label="Last activity">{ago(ticket.updatedAt, NOW_ISO)}</Field>
-                <Field label="Unread here">{ticket.unreadForAdmin ? "yes" : "no"}</Field>
+                <Field label="Reached us on">
+                  {[thread.device, thread.location].filter(Boolean).join(" · ") || (
+                    <span className="text-[var(--muted)]">not recorded</span>
+                  )}
+                </Field>
+                <Field label="Network address">
+                  <span className="font-mono">{thread.ip ?? "unknown"}</span>
+                </Field>
               </dl>
             </Panel>
 
-            <Panel title="Who is involved">
+            <Panel title="Who wrote it">
               <dl className="-my-1">
-                <Field label="Requester">
-                  {requester ? (
+                <Field label="Account">
+                  {account ? (
                     <Link
-                      href={`/admin/people/${requester.id}`}
+                      href={`/admin/people/${account.id}`}
                       className="text-[var(--accent-text)] hover:underline"
                     >
-                      {requester.username ?? requester.email}
+                      {account.username ?? account.email}
                     </Link>
                   ) : (
                     <span className="text-[var(--muted)]">deleted account</span>
                   )}
                 </Field>
-                <Field label="Their status">{requester?.status.replaceAll("_", " ") ?? "—"}</Field>
-                <Field label="Owner">
-                  {assignee ? (
-                    <Link
-                      href={`/admin/people/${assignee.id}`}
-                      className="text-[var(--accent-text)] hover:underline"
-                    >
-                      {assignee.username ?? assignee.email}
-                    </Link>
-                  ) : (
-                    <span className="text-[var(--warn-text)]">unassigned</span>
-                  )}
+                {account?.name ? <Field label="Called">{account.name}</Field> : null}
+                <Field label="Their status">
+                  {account ? account.status?.replaceAll("_", " ") ?? "active" : "—"}
+                </Field>
+                <Field label="Answer reaches">
+                  {replyTo ?? <span className="text-[var(--muted)]">nothing</span>}
                 </Field>
               </dl>
             </Panel>
 
             <Panel
-              title="Attachments"
-              hint="Files are stored elsewhere; a console row is a name, a size and a mime type."
+              title="Mail on this thread"
+              hint="The send log, not a guess: what left the platform, to whom, and whether it was accepted."
             >
-              {attachments.length === 0 ? (
-                <p className="text-[13px] text-[var(--muted)]">Nothing was attached.</p>
+              {thread.emails.length === 0 ? (
+                <p className="text-[13px] text-[var(--muted)]">
+                  No mail was recorded for this account — the request came in through the app and the
+                  copies may predate the log.
+                </p>
               ) : (
                 <ul className="flex flex-col gap-2.5">
-                  {attachments.map((a) => (
-                    <li key={a.id} className="flex items-center gap-2.5">
-                      <Paperclip size={13} aria-hidden className="shrink-0 text-[var(--muted)]" />
-                      <span className="min-w-0 flex-1 truncate text-[13px] text-[var(--text-2)]">
-                        {a.name}
+                  {thread.emails.map((e, i) => (
+                    <li key={`${e.to}-${e.at}-${i}`} className="flex items-start gap-2.5">
+                      {e.status === "sent" || e.status === "delivered" || e.openedAt ? (
+                        <MailOpen size={14} aria-hidden className="mt-0.5 shrink-0 text-[var(--success-text)]" />
+                      ) : (
+                        <MailWarning
+                          size={14}
+                          aria-hidden
+                          className="mt-0.5 shrink-0 text-[var(--warn-text)]"
+                        />
+                      )}
+                      <span className="flex min-w-0 flex-1 flex-col">
+                        <span className="truncate text-[13px] text-[var(--fg)]">
+                          {MAIL_WORD[e.event] ?? e.event}
+                        </span>
+                        <span className="truncate text-[12px] text-[var(--muted)]">{e.to}</span>
                       </span>
-                      <span className="shrink-0 text-[12px] tabular-nums text-[var(--muted)]">
-                        {bytes(a.bytes)}
+                      <span
+                        className="shrink-0 text-[12px] tabular-nums text-[var(--muted)]"
+                        title={dateTime(e.at)}
+                      >
+                        {ago(e.at)}
                       </span>
                     </li>
                   ))}
@@ -207,7 +220,7 @@ export default async function TicketThreadPage({
             </Panel>
           </div>
         </div>
-      )}
+      ) : null}
     </>
   );
 }
